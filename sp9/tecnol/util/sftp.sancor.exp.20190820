@@ -1,0 +1,48 @@
+#!/usr/bin/expect
+set timeout 600
+if $argc<6 {
+  send_user "$argv0: faltan parametros\n"
+  send_user "\n"
+  send_user " Usuario            : Nombre del usuario.\n"
+  send_user " Password           : Password del usuario.\n"
+  send_user " IP/Host            : Direccion IP o nombre del host.\n"
+  send_user " Directorio_Origen  : Directorio origen del archivo.\n"
+  send_user " Directorio_Destino : Directorio destino donde se guardara el archivo.\n"
+  send_user " Archivo            : Nombre del archivo que se tiene que bajar.\n"
+  exit 1
+}
+
+#
+# Obtengo los datos que pasan.
+#
+set USUARIO            [lindex $argv 0]
+set PASSWORD           [lindex $argv 1]
+set HOST               [lindex $argv 2]
+set DIRECTORIO_ORIGEN  [lindex $argv 3]
+set DIRECTORIO_DESTINO [lindex $argv 4]
+set ARCHIVO            [lindex $argv 5]
+
+#
+# 
+spawn -noecho sftp -o port=115 ${USUARIO}@${HOST}
+expect  {
+   "Password:" {send "${PASSWORD}\r"}
+   "Connection closed" {puts "No hay conexion con al host ${HOST}.\n";exit 1}
+   "Permission denied, please try again." {puts ("Usuario incorrecto no tiene permiso.\n";exit 1}
+   "Connection to ${HOST} closed by remote host." {puts "Password incorrecta.\n";exit 1}
+}
+expect "Connection closed" {puts "No hay conexion con al host ${HOST}.\n";exit 1}
+expect "Connected to ftp.gruposancorseguros.com."
+expect  "sftp>"
+send "cd ${DIRECTORIO_ORIGEN}\r"
+expect {
+   "No such file or directory" {puts "No existe el directorio : ${DIRECTORIO_ORIGEN}\n";exit 1}
+   "sftp>"
+}
+send "mget ${ARCHIVO} ${DIRECTORIO_DESTINO}\r"
+expect {
+   "not found" {puts "No se encontraron archivos en el directorio: ${DIRECTORIO_ORIGEN}\n";exit 15}
+   "sftp>"
+}
+send "exit\r"
+expect eof

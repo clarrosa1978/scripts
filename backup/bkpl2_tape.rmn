@@ -1,0 +1,24 @@
+run {
+        configure device type sbt_tape parallelism 2;
+	allocate channel t1 type 'sbt_tape' parms 'ENV=(TDPO_OPTFILE=/usr/tivoli/tsm/client/oracle/bin64/gdm/tdpo_gdm.opt)';
+	allocate channel t2 type 'sbt_tape' parms 'ENV=(TDPO_OPTFILE=/usr/tivoli/tsm/client/oracle/bin64/gdm/tdpo_gdm.opt)';
+	backup 
+	incremental level = 2
+	database
+	format  'df_level2_%d_%u_%T';
+	
+	#switch out of de current logfile
+          sql ' alter system archive log current';
+        
+	#backup the archive logs
+         backup
+         archivelog all
+	 delete input
+	 format  'al_%d_%u_%T';
+
+        #backup a copy of the controlfile that contains records for the other backup just made
+         backup
+         current controlfile tag = cf1 format  'cf_%d_%u_%T';
+	backup spfile
+ 	format '/rman/sp_%d_%u_%T';
+	}

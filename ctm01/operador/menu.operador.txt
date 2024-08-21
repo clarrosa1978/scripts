@@ -1,0 +1,5 @@
+MENU PRINCIPAL
+Menu de Administracion de Control-M;${MENU_CTM}/menu/dynamic_menu.sh;menu/menu01.txt
+Menu de Administracion de Base Datos(EM7..);menu.operador;menu.db.txt
+Administracion de Servicios (samba,nagios...) ;menu.operador;menu.serv.txt
+Administracion de Aplicaciones (ControlM...);menu.operador;menu.apli.txt

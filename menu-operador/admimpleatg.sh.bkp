@@ -1,0 +1,336 @@
+#!/bin/bash
+##############################################################################
+# Aplicacion.........: MENU OPERACIONES SUCURSAL                              #
+# Grupo..............: 	                                                      #
+# Autor..............:  		                                      #
+# Objetivo...........:                                                        #
+# Nombre del programa:                                                        #
+# Solicitado por.....:                                                        #
+# Descripcion........:                                                        #
+# Creacion...........: 18/04/2013                                             #
+# Modificacion.......: DD/MM/AAAA                                             #
+##############################################################################
+
+#set -x
+
+##############################################################################
+##                            Variables                                    ###
+##############################################################################
+export FECHA="`date +%Y%m%d`"
+export OPERACION=${1}
+export PATHAPL="/tecnol/operador"
+export FPATH=/tecnol/funciones
+export PATH_IMPLE="/imple_atg/xml"
+export PATH_PROCE="${PATH_IMPLE}/procesados"
+export PATH_LOGS="${PATH_IMPLE}/logs"
+export PATH_LOGS="${PATH_IMPLE}"
+export ARCH_IMPLE_ATG_LOGS="${PATH_LOGS}/${NOMBRE_XML}.log"
+export USER_EXEC="`whoami`"
+
+export PATH_TMP="/tmp"
+export MENU_TMP="${PATH_TMP}/list_menu"
+export ARCH_XML="${PATH_TMP}/imple_xml_${FECHA}"
+
+export BOLD=`tput bold`               #  Coloca la pantalla en modo de realce
+export REV=`tput smso`                #  Coloca la pantalla en modo de vío inverso
+export EREV=`tput rmso`                 
+export END=`tput sgr0`                #  Despuéde usar uno de los atributos de arriba, se usa este para restaurar la pantalla a su modo normal
+export BLNK=`tput blink`              #  Los caracteres tecleados apareceráintermitentes
+export SVCRSR=`tput sc`        	#	Save Cursor position - Graba la posicióel cursor
+export RSTCSR=`tput rc`         #	Restore Cursor position - Coloca el cursor en la posicióarcada por el úo sc
+export RST=`tput reset`         	#Limpia la pantalla y restaura sus definiciones de acuerdo con el terminfo o sea, la pantalla vuelve al patróefinido x la variab $TERM
+export UNDER=`tput smul`       	#	Habilita underline en la terminal
+export EUNDER=`tput rmul`       	#Deshabilita underline en la terminal
+
+
+##############################################################################
+##                            Funciones                                    ###
+##############################################################################
+typeset -fu Borrar
+typeset -fu Enviar_A_Log
+
+titulo ()
+{
+MENSAJE=$1
+echo -e "\t-------------------------------------------------------------------------------"
+echo -e "\t$MENSAJE"
+echo -e "\t-------------------------------------------------------------------------------"
+echo -e " "
+}
+
+function PTecla
+{
+        echo -e "\tPresione una tecla para continuar"
+        read cont
+}
+
+
+crealista()
+{
+#set -x
+
+export PATHDIR=$1
+
+>${ARCH_XML}
+>${MENU_TMP}
+ls -1 ${PATHDIR} | grep -i xml >> ${ARCH_XML} 
+
+if [ -s ${ARCH_XML} ]  2>/dev/null
+then
+        echo -e "\t============================================================================================"
+        echo -e "\t Archivos XML a implementar en ATG en el directorio ${PATHDIR} "
+        echo -e "\t--------------------------------------------------------------------------------------------"
+ 	echo -e " " 
+        LISTAR=`cat ${ARCH_XML} | awk '{print sprintf("\t%02d)%s", NR , $1)}'`
+        CANT_COL=1
+        COUNT=1
+                for LIST in ${LISTAR}
+                do
+                        if [ $COUNT = $CANT_COL ]
+                        then
+                                COUNT=1
+                                echo -e "\t${LIST}\t\n"
+                        else
+                                COUNT=`expr $COUNT '+' 1`
+                                echo -e "\t${LIST}\t\c"
+                        fi      
+                done
+        echo -e " "
+	EXITE=0
+        cat ${ARCH_XML} | awk '{print sprintf("\t%02d)%s", NR , $1)}' >>${MENU_TMP}
+else
+        echo -e "Atencion no existe en el path ${PATHDIR} con un archivo XML a implementar"
+	echo -e "Vuelva a copiar el archivo XML al servidor `hostname` via samba "
+	EXIST=1
+	exit 1
+fi
+}
+
+cambia_permisos_xml()
+{
+#set -x
+# verifico usuario y grupo
+export PATH_IMPLE=/imple/importsXML
+titulo "Usted selecciono el archivo ${PATH_IMPLE}/${NOMBRE_XML}"
+
+tput ed
+tput sc
+echo -e "\tQue tiene los permisos Actuales al archivo ${PATH_IMPLE}/${NOMBRE_XML}"
+echo -e "\t`ls -lt ${PATH_IMPLE}/${NOMBRE_XML}`"
+	echo -e " "
+	echo -e "\tEsta seguro que desea ponerle los permisos oraatg.oinstall al archivo ${PATH_IMPLE}/${NOMBRE_XML}?"
+	echo -e "\tPresione S|s para continuar o cualquiera tecla para salir..."
+	read SELEC
+	if [ ${SELEC} = "S" ] 1>/dev/null 2>/dev/null || [ ${SELEC} = "s" ] 1>/dev/null 2>/dev/null
+	then
+		if [ ${USER_EXEC} = "root" ]
+		then
+			chown oraatg.oinstall ${PATH_IMPLE}/${NOMBRE_XML}
+		else
+			sudo chown oraatg.oinstall ${PATH_IMPLE}/${NOMBRE_XML}
+		fi
+		if [ $? != 0 ] 
+		then
+			echo -e "\tAtencion!!! no se cambio el permiso del archivo ${PATH_IMPLE}/${NOMBRE_XML}"
+			echo -e "\tVerifique y vuelva a intentarlo"
+			exit
+		else
+			ls -lt ${PATH_IMPLE}/${NOMBRE_XML} 1>/dev/null 2>/dev/null
+			if [ $? != 0 ]
+			then
+				titulo "Atencion!!! no existe el archivo ${PATH_IMPLE}/${NOMBRE_XML}, Verifique!!!"
+				exit
+			else
+				echo -e ""
+				titulo "\t`ls -lt ${PATH_IMPLE}/${NOMBRE_XML}`"
+				echo -e ""
+				echo -e "\tControle que el archivo que le muestra arriba ${PATH_IMPLE}/${NOMBRE_XML},"
+				echo -e "\ttenga el usuario oraatg y grupo oinstall, y continue con la implementacion.."
+				echo -e ""
+			fi
+		fi
+	else
+        	titulo "Sale sin hacer cambios al archivo ${PATH_IMPLE}/${NOMBRE_XML}"
+	        exit
+	fi
+	
+}
+
+selecciono_xml()
+{
+
+export PATH_IMPLE=$1
+#set -x 
+
+tput ed
+tput sc
+
+until [ ${NUME_XML} ]
+do
+echo -e "\t--------------------------------------------------------------------------------------------"
+echo -e "\tIngrese el nro del archivo xml que desee administrar:    "
+echo -e "\t(Por ejemplo: 01 02 04 10 11) o [s-S] Salir del Menu[s]:\c"
+read L
+echo -e "\t--------------------------------------------------------------------------------------------"
+
+CTRLINPUT=`echo ${L} | wc -c`  1>/dev/null 2>/dev/null
+CANT_LIST=`cat ${MENU_TMP} | wc -l`
+
+for CTROL in $L
+do
+	if [ ${CTROL} = "s" ]  2>/dev/null || [ ${CTROL} = "S" ]  2>/dev/null
+        then
+        	clear
+                exit
+        else
+        	if [ ${CTROL} = " " ] || [ ${CTROL} = "" ] || [ ${CTRLINPUT} -ne 3 ] 2>/dev/null || [ ${CTROL} -gt ${CANT_LIST} ] 2>/dev/null
+                then
+                	echo -e "\tError!!!  el dato ingresado es incorrecto.. Verifique y vuelvalo a intentar!!!"
+			echo -e "\tPor ejemplo: 01 02 04 10 11 y vuelva a intentarlos"
+			PTecla
+                        tput rc ; tput ed
+                 else
+                        if [ ${CTROL} -gt 0 ]  2>/dev/null && [ ${CTROL} -le ${CANT_LIST} ]  2>/dev/null 
+                        then
+				 NUME_XML=`grep "${CTROL})" ${MENU_TMP} | cut -c1-3`
+                             	 NOMBRE_XML=`grep "${CTROL})" ${MENU_TMP} | cut -c5-`
+				 EXISTE=0
+                                 tput ed
+                         else    
+                                 echo -e "\t$CTROL opcion incorrecta reingrese la opcion por favor" 
+			         PTecla
+                                 tput rc ; tput ed
+                         fi
+   		 fi
+          fi
+done
+
+done
+
+}
+
+implementa_categ_xml()
+{
+#set -x
+# verifico usuario y grupo
+if [ ${EXISTE} = 0 ]
+then
+        echo -e "\tImplementando ${NOMBRE_XML}"
+        sudo /ATG/import_categ.sh ${NOMBRE_XML}
+else
+        echo -e "\tVerifique ya que no se encuentra el archivo a Implementar"
+fi
+}
+
+implementa_clientes_xml()
+{
+#set -x
+# verifico usuario y grupo
+if [ ${EXISTE} = 0 ]
+then
+        echo -e "\tImplementando ${NOMBRE_XML}"
+        sudo /ATG/import_clientes.sh ${NOMBRE_XML}
+else
+        echo -e "\tVerifique ya que no se encuentra el archivo a Implementar"
+fi
+}
+
+
+verlogs_imple_xml()
+{
+#set -x
+export ARCH_IMPLE_ATG_LOGS="${PATH_LOGS}/${NOMBRE_XML}"
+echo -e "\tVer el log de Implementacion del XML ${ARCH_IMPLE_ATG_LOGS}"
+echo -e "\tPulse Control+C para salir del tail"
+echo -e ""
+ls -lt ${ARCH_IMPLE_ATG_LOGS}
+if [ $? != 0 ]
+then 
+	titulo "Atencion el Archivo ${ARCH_IMPLE_ATG_LOGS}, NO EXISTE!!!, Verifique...."
+else
+	tail -500 ${ARCH_IMPLE_ATG_LOGS}
+fi
+}
+
+scp_xml()
+{
+#set -x
+export ARCH_SCP=$1
+export PATH_ORI="/imple_atg/xml"
+export PATH_PROC="${PATH_ORI}/procesados"
+# verifico usuario y grupo
+if [ ${EXISTE} = 0 ]
+then
+    echo -e "\tCopiando  ${ARCH_SCP} a scdigi01"
+    scp -pr ${PATH_ORI}/${ARCH_SCP} scdigi01:/imple/importsXML/
+    if [ $? = 0 ]
+    then
+            
+               mv ${PATH_ORI}/${ARCH_SCP} ${PATH_PROC}
+               export CHECK_ARCH_ORI="$(sum ${PATH_PROC}/${ARCH_SCP} | cut -d' ' -f1)"
+               export CHECK_ARCH_DES="$(ssh scdigi01 "sum /imple/importsXML/${ARCH_SCP}" | cut -d' ' -f1)"
+               if [ "$CHECK_ARCH_ORI" = "$CHECK_ARCH_DES" ];
+               then
+               
+                   echo -e "\tLa copia se realizo con exito, valla al servidor scdigi01 y continue la operacion"
+                   ssh scdigi01 "chown oraatg:oinstall /imple/importsXML/${ARCH_SCP}"
+        
+               else
+               echo -e "\tverificar !!! el archivo no se copio correctamente."
+               fi 
+   else
+       echo -e "\tNo termino de realizarse la copia, verificar!." 
+   fi
+else
+    echo -e "\tVerifique ya que no se encuentra el archivo a Copiar"
+fi
+}
+
+
+##############################################################################
+##                            Principal                                    ###
+##############################################################################
+
+case $OPERACION in
+        VERARCH_IMPLE)	titulo "Ver los archivos a Implementar.."
+			crealista ${PATH_IMPLE}
+                        ;;
+
+	CHGPERM_IMPLE)  titulo "Cambiar los permisos del archivo a implementar, aguarde por favor.." 
+			crealista ${PATH_IMPLE}
+			selecciono_xml
+			cambia_permisos_xml
+                        ;;
+	
+	IMPARCH_IMPLE)	titulo "Implementando el XML, Aguarde por favor.."	
+			crealista ${PATH_IMPLE}
+                        selecciono_xml
+			implementa_categ_xml
+			;;
+
+        IMPCLIE_IMPLE)  titulo "Implementando el XML, Aguarde por favor.."
+                        crealista ${PATH_IMPLE}
+                        selecciono_xml
+                        implementa_clientes_xml
+                        ;;
+
+	VERLOGS_IMPLE)  titulo " Ver logs de la implementacion.. Aguarde por favor"
+			crealista ${PATH_LOGS}
+                        selecciono_xml
+			verlogs_imple_xml
+                        ;;
+        SCPXML)         titulo " Copiando el XML al scdigi01.. Aguardar por favor"
+                        crealista ${PATH_IMPLE}
+                        selecciono_xml 
+                        scp_xml ${NOMBRE_XML}
+                        ;;
+esac
+
+rm ${ARCH_XML}
+rm ${MENU_TMP}
+
+echo
+echo
+echo
+
+PTecla

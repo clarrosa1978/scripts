@@ -1,0 +1,4 @@
+CIERRE SUCURSALES
+Cerrar empresa 1;cierresf.sh;1
+Cerrar empresa 2;cierresf.sh;2
+Cerrar todas las empresas;cierresf.sh;T

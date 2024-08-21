@@ -1,0 +1,3 @@
+;espacio disponible;cantidad discos;memoria;cantidad procesadores;modelo;direccion;
+Hostaname	Aplicación	Procesadores	Espacio_libre	Marca	Modelo	Nro Serie	Discos	Total	Ubicación	Memoria				
+

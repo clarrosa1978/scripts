@@ -1,0 +1,4 @@
+menu.operador.suc
+/tecnol/backup/menudvd.sh
+menu.operador.suc
+menu.operador.suc

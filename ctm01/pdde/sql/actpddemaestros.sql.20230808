@@ -1,0 +1,20 @@
+set serveroutput on
+set echo off
+set verify off
+set feedback off
+
+spool &1
+
+DECLARE
+
+P_OBSERV VARCHAR2(500);
+
+BEGIN
+   P_OBSERV:='';
+
+   pde_abm_maestros.principal(P_OBSERV);
+   dbms_output.put_line (P_OBSERV);
+END;  
+
+spool off
+quit

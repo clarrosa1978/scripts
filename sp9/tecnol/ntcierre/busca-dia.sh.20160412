@@ -1,0 +1,81 @@
+################################################################################
+#
+# Script     : busca_dia.sh
+# Autor      : Cesar Lopez
+# Equipo     : servidores de Sucursales
+# Fecha      : 05/01/2001
+# Descripcion: Busca en el calendario especificado en el 3er. parametro, el
+#              estado de planificacion de ese dia:
+#
+#               Y : corresponde planificar
+#               N : no corresponde planificar
+#
+#
+# Parametros :
+#              $1 : dia juliano del a#o correspondiente a %%$ODATE (%%OJULDAY)
+#              $2 : a#o correspondiente a %%$ODATE (%%$OYEAR)
+#              $3 : nombre del calendario en el que se debe buscar
+#
+################################################################################
+
+set -x
+JULDAY=$1
+JOBYEAR=$2
+CALNAME=$3
+
+echo "set nocount on" > $$.sql
+if [ $? != 0 ]
+then
+	echo "No se pudo crear el sql temporal"
+	exit 5
+fi
+
+echo "select DAYMASK from CMS_DATEMM where CALNAME = '${CALNAME}' and JOBYEAR = '${JOBYEAR}'" >> $$.sql
+echo "go" >> $$.sql
+
+SQL < $$.sql > dias.$$
+if [ ! -s dias.$$ ]
+then
+	echo "No se genero el archivo dias.$$ con datos del calendario"
+	exit 5
+fi
+
+# Se toma la ultima linea del archivo dias.$$ , ya que el resto tienen los
+# encabezados generados por el .sql
+tail -1 dias.$$ > dias1.$$
+if [ ! -s dias1.$$ ]
+then
+	echo "No se genero el archivo dias1.$$"
+	exit 5
+fi
+
+# Se elimina del registro generado por el .sql dos caracteres (un tabulador, y
+# un espacio en blanco)
+sed s"/	 //" dias1.$$ > dias2.$$
+if [ ! -s dias2.$$ ]
+then
+	echo "No se genero el archivo dias2.$$"
+	exit 5
+fi
+
+PLANI=`cut -c${JULDAY}-${JULDAY} dias2.$$`
+
+if [ $PLANI = Y ]
+then
+	# corresponde planificar
+	rm -f $$.sql dias*.$$
+	exit 0
+else
+	if [ $PLANI = N ]
+	then
+		# no corresponde planificar
+		rm -f $$.sql dias*.$$
+		exit 1
+	else
+		echo "Dato invalido en el calendario ${CALNAME}"
+		exit 4
+	fi
+fi
+
+
+

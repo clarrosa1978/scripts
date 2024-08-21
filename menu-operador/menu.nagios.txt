@@ -1,0 +1,4 @@
+MENU SERVICIOS NAGIOS 
+Levantar Servicios NAGIOS;admserv_nagios.sh;UPSERV
+Bajar Servicios NAGIOS;admserv_nagios.sh;DOWNSERV
+Controlar Servicios NAGIOS;admserv_nagios.sh;VERSERV

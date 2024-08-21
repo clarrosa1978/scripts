@@ -1,0 +1,52 @@
+#!/usr/bin/expect 
+
+
+#
+# Variables                      
+#
+set USUARIO	       coto
+set HOST               sftp_galeno
+set DIRECTORIO_ORIGEN  ParaCoto
+set DIRECTORIO_DESTINO /art/galeno
+set ARCHIVO            [lindex $argv 0]
+
+#
+# 
+
+spawn -noecho sftp ${USUARIO}@${HOST}
+expect "password"
+#send "${PASSWORD}\r"
+send "new14coto\r"
+expect  {
+   "ssh: connect to host ${HOST} port 22: Connection timed out" {puts "El tiempo de conexion ha expirado\n";exit 1}
+   "Connection closed" {puts "El tiempo de conexion ha expirado\n";exit 1}
+   "Permission denied, please try again." {puts ("Usuario incorrecto no tiene permiso.\n";exit 1}
+   "Connection to ${HOST} closed by remote host." {puts "Password incorrecta.\n";exit 1}
+}
+
+expect  "sftp>"
+send "cd ${DIRECTORIO_ORIGEN}\r"
+expect  {
+  "Couldn't canonicalise: No such file or directory" {puts "No existe el directorio : ${DIRECTORIO_ORIGEN}\n";exit 1}
+}
+
+expect "sftp>"
+send "ls ${ARCHIVO}\r"
+expect {
+  "Can't ls:" {puts "No existe el archivo indicado : ${ARCHIVO}\n";exit 1}
+}
+
+expect "sftp>"
+send "mget ${ARCHIVO} ${DIRECTORIO_DESTINO}\r"
+
+expect "sftp>"
+send "lls ${DIRECTORIO_DESTINO}/${ARCHIVO}\r"
+expect {
+  "Couldn't stat remote file: No such file or directory" {puts "No existe el archivo indicado : ${ARCHIVO}\n";exit 1}
+  "does not exist." {puts "No existe el archivo indicado : ${ARCHIVO}\n";exit 1}
+}
+
+expect "sftp>"
+send "exit\r"
+
+expect eof

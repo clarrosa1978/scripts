@@ -1,0 +1,6 @@
+0:0:Menu de Control-M Agent: ../funciones/funciones_agt.lib
+1:1:Verificar Agente:check_agent 
+2:2:Activar Agente:start_agent 
+3:3:Desactivar Agente: stop_agent 
+4:4:Reiniciar Agente: stop_agent ; start_agent
+s:S:Salir:exec ./dynamic_menu.sh menu/menu01.txt

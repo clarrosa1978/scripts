@@ -1,0 +1,14 @@
+MENU DE APLICACIONES - CONTROLM
+Levantar AGENTE de CONTROLM;adm_controlm.sh;UPAGCTRLM
+Bajar AGENTE de CONTROLM;adm_controlm.sh;DOWNAGCTRLM
+Controlar los procesos de AGENTE de CONTROLM;adm_controlm.sh;VERAGCTRLM
+Levantar CONTROLM SERVER;adm_controlm.sh;UPSRVCTRLM
+Bajar CONTROLM SERVER;adm_controlm.sh;DOWNSRVCTRLM
+Controlar los procesos de CONTROLM SERVER;adm_controlm.sh;VERSRVCTRLM
+Levantar agentes creados en este Servidor;adm_controlm.sh;UPAGINSTAL
+Bajar agentes creados en este Servidor;adm_controlm.sh;DOWNAGINSTAL
+Levantar CONTROLM CONFIGURATION SERVER;adm_controlm.sh;UPCACTRLM
+Bajar CONTROLM CONFIGURATION SERVER;adm_controlm.sh;DOWNCACTRLM
+Controlar los procesos de  CONTROLM CONFIGURATION SERVER;adm_controlm.sh;VERCACTRLM
+Controlar el estado de Un agente de ControlM creado en este Servidor;adm_controlm.sh;VERAGINSTAL
+Controlar el estado de TODOS los agentes creados en este Servidor;adm_controlm.sh;VERAGINSTALTODOS

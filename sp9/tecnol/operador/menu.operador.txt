@@ -1,0 +1,4 @@
+MENU OPERACIONES 
+Menu de Tareas de OPERACIONES;menu.operador;menu.operaciones.txt
+Menu de Tareas de COTODIGITAL (PRODUCCION);menu.operador;menu.cotodigital.txt
+Menu de Tareas PROSEGUR-STS;menu.operador;menu.prosegur.txt

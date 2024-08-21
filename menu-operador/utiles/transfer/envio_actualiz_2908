@@ -1,0 +1,50 @@
+clear
+
+export fileLog=$OPERADOR_LOG/envio.actualiz.txt.log
+arch=actualiz.txt
+arch_dest=actualiz.txt
+fecha=`date +%Y%m%d`
+dd=`date +%d`
+mm=`date +%m`
+aa=`date +%Y`
+
+echo  "\n Enviando archivo: $arch a sucursales ..... \n "
+echo  "\n    Aguarde por favor ... \n "
+echo  "\nFecha: "`date` | tee -a $fileLog
+echo
+cd /sfctrl/tmp/TICKETS
+if cmp -s actualiz.txt actualiz.txt.enviado
+then
+        echo "\n \t \t ARCHIVO  YA  PROCESADO \n" ;sleep 3 ; exit 0
+else
+if [ -s  "$arch" ]
+then
+	for i in `cat /etc/listasuc|grep -v 73|grep -v 79 |grep -v 87`
+	do
+	   ping -c 3 suc$i 1>/dev/null 2>/dev/null
+	   if [ $? = 0 ]
+	     then
+		echo "" | tee -a $filelog
+		echo " Transfiriendo archivo $arch a suc$i " | tee -a $fileLog
+		rcp $arch suc$i:/sfctrl/data/carga/$arch_dest
+		rsh suc$i chown sfctrl.sfsw /sfctrl/data/carga/$arch_dest
+		rsh suc$i chmod 664 /sfctrl/data/carga/$arch_dest
+		rsh suc$i ls -l /sfctrl/data/carga/$arch_dest | tee -a $filelog
+		echo " Finalizó la transmisión a suc$i " | tee -a $fileLog
+	     else
+		echo "\n   $dd/$mm/$aa :  Sin comunicacion con suc$i ...\n" | tee -a $fileLog
+		echo "\n   Reenviar cuando se reestablezca el vinculo .\n"
+		sleep 2
+	    fi
+	done
+	rcp $arch sp9:/tickets/accor/backup/actualiz.$fecha
+	mv /sfctrl/tmp/TICKETS/actualiz.txt /sfctrl/tmp/TICKETS/actualiz.txt.enviado
+
+else
+	echo "\n El archivo $arch NO EXISTE \n" | tee -a $fileLog
+fi
+echo "\tFinalización: "`date` | tee -a $fileLog
+echo "===============================================================" | tee -a $fileLog
+fi
+echo "\t\nPresione una tecla para continuar"
+read Tecla

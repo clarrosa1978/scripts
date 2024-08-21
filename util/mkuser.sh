@@ -1,0 +1,1 @@
+mkuser -a id=${1} pgrp='oper' groups='oper' su='false' sugroups='nobody' home="/home/${2}" shell='/usr/bin/ksh' gecos="${3}" pwdwarntime='5' histsize='3' histexpire='6' maxexpired='1' maxage='6' minage='1' minlen='6' minalpha='2' maxrepeats='3' mindiff='3' registry='files' core='2097151' ${2}

@@ -1,0 +1,150 @@
+#!/usr/bin/ksh
+###############################################################################
+# Autor..............: C.A.S                                                  #
+# Usuario ...........: root                                                   #
+# Objetivo...........: Concentrar las tareas de operaciones en un menu        #
+# Nombre del programa: ReporteEquipos.ksh                                     #
+# Descripcion........: Imprime por pantalla el reporte de espacio disponible  #
+#                      por discos y totalizando por VG                        #
+# Modificacion.......: 09/01/2002                                             #
+###############################################################################
+
+###############################################################################
+#                          Definicion de Variables                            #
+###############################################################################
+
+export WHERE=$1
+OPERADOR_SIS=/tecnica/operador/sistema
+ARCHIVO_TXT=$OPERADOR_SIS/ReporteEquipos.txt
+
+###############################################################################
+#                                Funciones                                    #
+###############################################################################
+#-----------------------------------------------------------------------------#
+#                        Inicio funcion comunicacion                          # 
+#-----------------------------------------------------------------------------#
+
+function comunicacion 
+{
+ping -c 3 $m >/dev/null 2>&1
+if [ $? -ne 0 ]
+ then 
+  RC=10 
+  echo "Error $RC -* No existe comunicacion con $m"
+  return 1
+fi
+}
+
+#-----------------------------------------------------------------------------#
+#                          Fin funcion comunicacion                           # 
+#-----------------------------------------------------------------------------#
+
+#-----------------------------------------------------------------------------#
+#                        Inicio funcion AnalizaParametro                      # 
+#-----------------------------------------------------------------------------#
+
+function AnalizaParametro
+{
+case $WHERE in 
+     SUCURSALES) LISTAEQUIPOS="" 
+                 for numero in `echo $LISTASUC`
+                   do 
+                    LISTAEQUIPOS=`echo "$LISTAEQUIPOS suc${numero}"`
+                   done
+                   ;;
+     CENTRODIST) export LISTAEQUIPOS=`echo "pampa_boot pucara mirage wftesting gdm01"`
+                   ;;
+     COMCENTRAL) LISTAEQUIPOS="H70-KARDEX S80-FNCL amscentral asterix campana \
+                 ctefte  ctefte2 cws1 dccoto  escala1 escala2_boot europa \
+                 j40gdm nodo5 obelix oft01 patrol sft01 sp1 sp10 sp17 \
+                 sp9 suc260 suc76"
+                   ;;
+     ESPECIALES) #$OPERADOR_WRK/encabezado.ksh
+                 echo "\t\t\t Ingresar la lista de equipos ===> \c" 
+                 read LISTAEQUIPOS
+                 if [ "${LISTAEQUIPOS:=VACIO}" = "VACIO" ]
+                  then 
+                   exit
+                 fi
+                   ;;
+esac
+}
+
+#-----------------------------------------------------------------------------#
+#                          Fin funcion AnalizaParametro                       # 
+#-----------------------------------------------------------------------------#
+
+###############################################################################
+#                                Principal                                    #
+###############################################################################
+
+if [ $# -eq 0 ]
+ then
+  echo "Error - Falta parametros"       
+  exit 1
+ else
+  AnalizaParametro
+fi
+for m in `echo $LISTAEQUIPOS`
+do 
+ comunicacion
+ if [ $? -eq 0 ] 
+  then 
+   echo "$m hostname;\c"  >> $ARCHIVO_TXT
+   rsh $m '( TOTAL_EQUIPO=0 ;
+   for i in `lsvg -o`
+    do
+     totaldisponible=0
+     CANT_DISCOS=0
+     lsvg -p $i | grep hdisk | while read a b c d e
+      do
+       CANT_DISCOS=`expr $CANT_DISCOS + 1`
+       ESPACIO=`lspv $a | cut -f 2 -d : | cut -f 2 -d "(" |grep megab \
+       | tr -d ")" | tr -d "A-Z|a-z"`
+       suma=0
+       for cont in `echo $ESPACIO`
+        do
+         suma=`expr $suma + 1`
+         vtx[$suma]=`echo $cont`
+        done
+        totaldisponible=`expr $totaldisponible + ${vtx[2]}`
+        #echo$i $a ${vtx[1]} ${vtx[3]} ${vtx[2]}
+      done
+        TOTAL_EQUIPO=`expr $TOTAL_EQUIPO + $totaldisponible`
+    done
+   echo "$TOTAL_EQUIPO espacio total;\c" 
+   echo "$CANT_DISCOS candiscos;\c" 
+   MEMORIA_KBYTES=`bootinfo -r`
+   MEMORIA_MBYTES=`expr $MEMORIA_KBYTES / 1024`
+   if [ $MEMORIA_MBYTES -eq 0 ] 
+    then 
+     echo "${MEMORIA_KBYTES}Kb memoria;\c" 
+    else
+     echo "${MEMORIA_MBYTES} memoria;\c" 
+   fi
+   CANT_PROC=`bindprocessor -q | cut -f 2 -d ":"`
+   CANTIDAD_PROCESADORES=`expr $CANT_PROC + 1`
+   echo "$CANTIDAD_PROCESADORES cantidad procesadores;\c" 
+   )' >> $ARCHIVO_TXT
+   if [ "${WHERE}" = "SUCURSALES" ] 
+    then
+     CODIGO=`rsh $m uname -m | cut -c9,10`
+     case $CODIGO in 
+       48) MODELO=C10 
+           ;;
+       90) MODELO=C20 
+           ;;
+       4C) MODELO=43P
+           ;;
+       C0) MODELO=E30
+           ;;
+        *) MODELO=NNN
+      esac
+      echo "$MODELO modelo;\c" >> $ARCHIVO_TXT
+      DIRECCION=`rsh $m head -4 /etc/security/login.cfg |\
+      awk '{ print ( substr( $0, 675, 50 ))  }'| tr -d '\n'`
+      echo "$DIRECCION direccion;" | tr -s '[^\012]' ' '| tr -d '\r\n' >> $ARCHIVO_TXT
+      echo "\r" >> $ARCHIVO_TXT
+   fi
+ fi 
+done

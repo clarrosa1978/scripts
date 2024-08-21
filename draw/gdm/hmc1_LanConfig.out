@@ -1,0 +1,37 @@
+ManagedSystem=9115-505-SN064859A_ONLINE1,064859A,9115-505
+creationDate=Mon Mar 17 11:25:32 GMT-03:00 2014
+064859A,No
+064859A,name=Lpar_online1,lpar_id=2,lpar_env=aixlinux
+064859A,Lpar_online1,io_adapter=0,21010002 21020002 21030002 21040002 21010003 21010004,io_adapter=U789F.001.AAA9152-P1-T4,21010002 21020002 21030002 21040002 21010003 21010004,io_adapter=U789F.001.AAA9152-P1-T10,21010002 21020002 21030002 21040002 21010003 21010004,io_adapter=U789F.001.AAA9152-P1-T5,21010002 21020002 21030002 21040002 21010003 21010004,io_adapter=U789F.001.AAA9152-P1-C13-C1,21010002 21020002 21030002 21040002 21010003 21010004,io_adapter=0,21010002 21020002 21030002 21040002 21010003 21010004
+ManagedSystem=8234-EMA-SN10339C4_GDM,10339C4,8234-EMA
+creationDate=Mon Mar 17 11:25:38 GMT-03:00 2014
+10339C4,lpar_name=Lpar_DBT01,lpar_id=1,slot_num=3,state=1,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A62649C2E103
+10339C4,lpar_name=Lpar_Vios,lpar_id=2,slot_num=11,state=1,is_required=0,is_trunk=1,trunk_priority=1,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A62645EA8D0B
+10339C4,lpar_name=Lpar_EM01C,lpar_id=4,slot_num=2,state=0,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A6264CE59302
+10339C4,lpar_name=Lpar_DWHC,lpar_id=5,slot_num=2,state=0,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A6264CCC4502
+10339C4,lpar_name=Lpar_PSC,lpar_id=6,slot_num=2,state=0,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A6264B227802
+10339C4,lpar_name=Lpar_SF,lpar_id=7,slot_num=2,state=1,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A6264D2E9D02
+10339C4,lpar_name=Lpar_ADM01,lpar_id=8,slot_num=3,state=1,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A62649949D03
+10339C4,name=Lpar_ADM01,lpar_id=8,lpar_env=aixlinux
+10339C4,Lpar_ADM01
+10339C4,name=Lpar_SF,lpar_id=7,lpar_env=aixlinux
+10339C4,Lpar_SF,io_adapter=0,21010206
+10339C4,name=Lpar_PSC,lpar_id=6,lpar_env=aixlinux
+10339C4,Lpar_PSC
+10339C4,name=Lpar_DWHC,lpar_id=5,lpar_env=aixlinux
+10339C4,Lpar_DWHC
+10339C4,name=Lpar_EM01C,lpar_id=4,lpar_env=aixlinux
+10339C4,Lpar_EM01C
+10339C4,name=Lpar_GDM,lpar_id=3,lpar_env=aixlinux
+10339C4,Lpar_GDM,io_adapter=0,21010204 21010205,io_adapter=0,21010204 21010205
+10339C4,name=Lpar_DBT01,lpar_id=1,lpar_env=aixlinux
+10339C4,Lpar_DBT01,io_adapter=0,21010226
+10339C4,name=Lpar_Vios,lpar_id=2,lpar_env=vioserver
+10339C4,Lpar_Vios,io_adapter=U789D.001.DQD06KL-P1-T3,21010220 21020220 21010224 21010225 21010200 21020200 21010201 21010202,io_adapter=U789D.001.DQD06KL-P1-T1,21010220 21020220 21010224 21010225 21010200 21020200 21010201 21010202,io_adapter=0,21010220 21020220 21010224 21010225 21010200 21020200 21010201 21010202,io_adapter=0,21010220 21020220 21010224 21010225 21010200 21020200 21010201 21010202,io_adapter=U789D.001.DQD35KK-P1-T3,21010220 21020220 21010224 21010225 21010200 21020200 21010201 21010202,io_adapter=U789D.001.DQD35KK-P1-T1,21010220 21020220 21010224 21010225 21010200 21020200 21010201 21010202,io_adapter=U789D.001.DQD35KK-P1-C4,21010220 21020220 21010224 21010225 21010200 21020200 21010201 21010202,io_adapter=U789D.001.DQD35KK-P1-C5,21010220 21020220 21010224 21010225 21010200 21020200 21010201 21010202
+10339C4,Lpar_Vios,DeviceName=ent0,DeviceType=2-Port 10/100/1000 Base-TX PCI-X Adapter (14108902),PhysLoc=U789D.001.DQD35KK-P1-C4-T1,IpAddress=,MacAddess=,alt_addr=0x000000000000,busintr=273,busmem=0xffec0000,chksum_offload=yes,compat_mode=no,copy_bytes=2048,delay_open=no,failback=yes,failback_delay=15,failover=disable,flow_ctrl=yes,intr_priority=3,intr_rate=10000,jumbo_frames=no,large_send=yes,media_speed=Auto_Negotiation,rom_mem=0xfff00000,rx_hog=1000,rxbuf_pool_sz=2048,rxdesc_que_sz=1024,slih_hog=10,tx_que_sz=8192,txdesc_que_sz=512,use_alt_addr=no,=
+10339C4,Lpar_Vios,DeviceName=ent1,DeviceType=2-Port 10/100/1000 Base-TX PCI-X Adapter (14108902),PhysLoc=U789D.001.DQD35KK-P1-C4-T2,IpAddress=-,MacAddess=00:21:5e:34:dc:eb,alt_addr=0x000000000000,busintr=274,busmem=0xffee0000,chksum_offload=yes,compat_mode=no,copy_bytes=2048,delay_open=no,failback=yes,failback_delay=15,failover=disable,flow_ctrl=yes,intr_priority=3,intr_rate=10000,jumbo_frames=no,large_send=yes,media_speed=Auto_Negotiation,rom_mem=0xfff80000,rx_hog=1000,rxbuf_pool_sz=2048,rxdesc_que_sz=1024,slih_hog=10,tx_que_sz=8192,txdesc_que_sz=512,use_alt_addr=no,=
+10339C4,Lpar_Vios,DeviceName=ent2,DeviceType=2-Port 10/100/1000 Base-TX PCI-X Adapter (14108902),PhysLoc=U789D.001.DQD35KK-P1-C5-T1,IpAddress=,MacAddess=,alt_addr=0x000000000000,busintr=289,busmem=0xffec0000,chksum_offload=yes,compat_mode=no,copy_bytes=2048,delay_open=no,failback=yes,failback_delay=15,failover=disable,flow_ctrl=yes,intr_priority=3,intr_rate=10000,jumbo_frames=no,large_send=yes,media_speed=Auto_Negotiation,rom_mem=0xfff00000,rx_hog=1000,rxbuf_pool_sz=2048,rxdesc_que_sz=1024,slih_hog=10,tx_que_sz=8192,txdesc_que_sz=512,use_alt_addr=no,=
+10339C4,Lpar_Vios,DeviceName=ent3,DeviceType=2-Port 10/100/1000 Base-TX PCI-X Adapter (14108902),PhysLoc=U789D.001.DQD35KK-P1-C5-T2,IpAddress=-,MacAddess=00:21:5e:34:e2:bf,alt_addr=0x000000000000,busintr=290,busmem=0xffee0000,chksum_offload=yes,compat_mode=no,copy_bytes=2048,delay_open=no,failback=yes,failback_delay=15,failover=disable,flow_ctrl=yes,intr_priority=3,intr_rate=10000,jumbo_frames=no,large_send=yes,media_speed=Auto_Negotiation,rom_mem=0xfff80000,rx_hog=1000,rxbuf_pool_sz=2048,rxdesc_que_sz=1024,slih_hog=10,tx_que_sz=8192,txdesc_que_sz=512,use_alt_addr=no,=
+10339C4,Lpar_Vios,DeviceName=ent4,DeviceType=Virtual I/O Ethernet Adapter (l-lan),PhysLoc=U8234.EMA.10339C4-V2-C11-T1,IpAddress=,MacAddess=,alt_addr=0x000000000000,chksum_offload=yes,copy_buffs=32,copy_bytes=65536,desired_mapmem=0,max_buf_huge=64,max_buf_large=64,max_buf_medium=256,max_buf_small=2048,max_buf_tiny=2048,min_buf_huge=24,min_buf_large=24,min_buf_medium=128,min_buf_small=512,min_buf_tiny=512,trace_debug=no,use_alt_addr=no,=
+10339C4,Lpar_Vios,DeviceName=ent5,DeviceType=EtherChannel / IEEE 802.3ad Link Aggregation,PhysLoc= ,IpAddress=,MacAddess=,adapter_names=ent0,ent2,alt_addr=0x000000000000,auto_recovery=yes,backup_adapter=NONE,hash_mode=default,mode=standard,netaddr=0,noloss_failover=yes,num_retries=3,retry_time=1,use_alt_addr=no,use_jumbo_frame=no,=
+10339C4,Lpar_Vios,DeviceName=ent6,DeviceType=Shared Ethernet Adapter,PhysLoc= ,IpAddress=172.16.7.12,MacAddess=00:21:5e:34:dc:ea,accounting=disabled,ctl_chan=Control,gvrp=no,ha_mode=disabled,jumbo_frames=no,large_receive=no,largesend=0,netaddr=0,pvid=1,pvid_adapter=ent4,qos_mode=disabled,real_adapter=ent5,thread=1,virt_adapters=ent4,=

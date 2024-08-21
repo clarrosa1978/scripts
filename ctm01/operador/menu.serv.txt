@@ -1,0 +1,3 @@
+MENU ADMINISTRACION DE SERVICIOS
+Servicio SAMBA;menu.operador;menu.samba.txt
+Procesos NAGIOS (nrpe);menu.operador;menu.nagios.txt

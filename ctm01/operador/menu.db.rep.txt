@@ -1,0 +1,17 @@
+MENU BASE DE DATOS
+Habilitar replicacion a STANDBY;ejecutasql.sh;habilitalog
+Deshabilitar replicacion a STANDBY;ejecutasql.sh;deshabilitalog
+Controlar replicacion a STANDBY (Debe dar ENABLE);ejecutasql.sh;chklog
+Chequear Listener SFXXX en servidor primario;chklsnr.sh;LISTENER
+Chequear Listener CTRLMXXX en servidor primario;chklsnr.sh;LCTRLM
+Levantar Listener SF en servidor primario;lsnr.sh;UPSF
+Levantar Listener CTRLM en servidor primario;lsnr.sh;UPCTM
+Bajar Listener SF en servidor primario;lsnr.sh;DOWNSF
+Bajar Listener CTRLM en servidor primario;lsnr.sh;DOWNCTM
+Chequear Listener SFXXX en servidor secundario;chklsnrremoto.sh;LISTENER
+Levantar Listener SF en servidor secundario;lsnr.sh;UPSFSEC
+Bajar Listener SF en servidor secundario;lsnr.sh;DOWNSFSEC
+Levantar base SF en servidor primario;ejecutasql.sh;updb
+Levantar base STANDBY en servidor secundario;dbremoto.sh;UPSF
+Bajar base SF en servidor primario;ejecutasql.sh;downdb
+Bajar base STANDBY en servidor secundario;dbremoto.sh;DOWNSF

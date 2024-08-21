@@ -1,0 +1,7 @@
+MENU PRINCIPAL
+Menu para sistema STS;sts.sh;
+Menu de impresion sucursales;menu.hdesk;impresionsuc.txt
+Menu de impresion Central;menu.hdesk;impresioncen.txt
+Cambio de password;cambiopwd.sh;
+Balanzas;menu.hdesk;balanzas.txt
+Cierre Sucursales;menu.hdesk;cierresf.txt

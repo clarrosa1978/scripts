@@ -1,0 +1,3 @@
+MENU OPERACIONES 
+Menu de Tareas de OPERACIONES;menu.operador;menu.operaciones.txt
+Menu de Tareas de COTODIGITAL;menu.operador;menu.cotodigital.txt

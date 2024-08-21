@@ -1,0 +1,25 @@
+ run {
+ configure device type disk parallelism 4;
+ allocate channel t1 type disk;
+ allocate channel t2 type disk;
+ #backup the whole db
+ backup
+ tag whole_database_open
+ format '/rman/df_%d_%u_%T'
+ database;
+#switch out of the current logfile
+  sql 'alter system archive log current';
+#sincroniza los archivelogs
+crosscheck archivelog all; 
+#backup the archived logs
+ backup 
+ archivelog all delete input
+ format '/rman/al_%d_%u_%S_%T';
+ # backup a copy of the controlfile that contains records for the 
+ # other backups just made
+ backup 
+   current controlfile 
+ format '/rman/cf_%d_%u_%T';
+ backup spfile
+ format '/rman/sp_%d_%u_%T';
+}

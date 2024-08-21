@@ -1,0 +1,16 @@
+lcd=103
+while true
+do
+rm rsync.cron.ze.219
+echo LCD-$lcd
+echo "*/1 * * * * root /usr/bin/rsync -av suc219::multimedia/Picaderos/ZonaE/${lcd}/ /multimediasucursales/images --delete" > rsync.cron.ze.219
+scp -o StrictHostKeyChecking=no -o ConnectTimeout=3 resolv.conf 10.219.240.${lcd}:/etc
+scp -o StrictHostKeyChecking=no -o ConnectTimeout=3 rsync.cron.ze.219 10.219.240.${lcd}:/etc/cron.d/rsync
+scp -o StrictHostKeyChecking=no -o ConnectTimeout=3 rsyncd.conf.mod.219 10.219.240.${lcd}:/etc/rsyncd.conf
+echo ""
+let "lcd=$lcd+1"
+if [ $lcd -gt 103 ]
+then
+	exit
+fi
+done

@@ -1,0 +1,33 @@
+echo "Inicio Chequeo del: `date`" >> /home/root/operador/envio_negra.log
+
+LOGF="/home/root/operador/envio_negra.log"
+
+if [ -f /tmp/visa.jaf ]
+then
+    VISAJAF=`ls -l /tmp/visa.jaf | awk '{print $5}'`
+    echo "Tamaño a transmitir: $VISAJAF\n"
+    for I in `echo  $LISTASUC 76 `
+    do
+  	ping -c1 suc$I 1>/dev/null
+  	if [ $? -eq 0 ]
+  	then
+   	   if [ $I != 79 ] 
+   	   then
+		echo "Verificando sucursal $I: \c"
+		TAMA=`rsh suc$I "ls -l /home/root/visa.jaf" | awk '{print $5}'` 2>/dev/null
+		if [ $VISAJAF -eq $TAMA ]
+		then	
+			echo " OK [$TAMA]"
+		else
+			echo " NOTOK Retransmitir archivo [$TAMA/$VISAJAF] a suc$I"|tee -a $LOGF
+		fi
+   	   fi
+  	else 
+ 	   echo "No hay conectividad con suc$I"| tee -a $LOGF
+  	fi
+   done
+else
+   echo "Verifique existencia de /tmp/visa.jaf"
+fi
+
+echo "Fin Chequeo del: `date` \n" >> /home/root/operador/envio_negra.log

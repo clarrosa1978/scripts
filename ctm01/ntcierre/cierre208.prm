@@ -1,0 +1,26 @@
+#########################################################################
+#
+# Archivo de parametros para cadena de cierre de StoreFlow de sucursales.
+#
+# %%PARM1:  Fecha de planificacion actual en formato AAAAMMDD
+# %%PARM2:  Fecha de planificacion actual en formato DDMMAAAA
+# %%PARM3:  Numero de sucursal en formato de 3 digitos
+# %%PARM4:  Numero de sucursal en formato de 2 digitos, cuando el numero
+#             es menor a 100
+# %%PARM5:  Indica si se generan archivos para Cliente Frecuente
+# %%PARM6:  Indica si la sucursal tiene instancia de Oracle para GDM
+# %%PARM7:  SIN USO
+# %%PARM8:  Usuario administrador de StoreFlow de la sucursal %%PARM3
+# %%PARM9:  Numero del dia de la semana, de la planificacion actual
+#
+#########################################################################
+
+%%PARM1=%%$ODATE
+%%PARM2=%%ODAY.%%OMONTH.%%$OYEAR
+%%PARM3=208
+%%PARM4=208
+%%PARM5=NO
+%%PARM6=NO
+%%PARM7=NO
+%%PARM8=sfctrl
+%%PARM9=%%OWDAY

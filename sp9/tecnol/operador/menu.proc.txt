@@ -1,0 +1,2 @@
+MENU ADMINISTRACION DE PROCESOS
+Procesos Tivoli (dsmsta);menu.operador;menu.dsmsta.txt

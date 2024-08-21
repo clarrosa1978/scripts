@@ -1,0 +1,144 @@
+#!/usr/bin/ksh
+set -x
+function abort 
+{
+set -x 
+echo "Abortando..." 
+rm -f /tmp/ftpcmd.$PRU 
+rm -f /tmp/ftpctl.$PRU
+exit 40  
+}
+
+function prueba_ping  
+{
+set -x 
+echo "Probando vinculo con [$REMHOST]...\c" 
+ping -c3 $REMHOST >/dev/null 2>/dev/null
+if [ $? -ne 0 ]
+then
+   echo "ERROR: el server [$REMHOST] no responde."
+   exit 52      
+else
+   echo "OK"
+   return 0 
+fi 
+}
+set -x
+### prueba_red: prueba si el server $REMHOST esta activo 
+### envia un archivo con 0 bytes al server remoto, lo borra y lo trae de 
+### vuelta. Si llego bien se asume que el FTP server esta activo.
+function prueba_red 
+{
+echo "Probando el FTP Server [$REMHOST]...\c" 
+set -x
+>/tmp/ftpcmd.$PRU
+>/tmp/ftpctl.$PRU 
+if [ "$USR" != "NULL" ]
+then
+	echo "$USR">>/tmp/ftpcmd.$PRU
+	if [ "$PWSD" != "NULL" ]
+	then
+		echo "$PWSD">>/tmp/ftpcmd.$PRU
+	fi
+fi
+
+echo "lcd /tmp">>/tmp/ftpcmd.$PRU
+echo "cd $APPATH">>/tmp/ftpcmd.$PRU
+echo "put ftpctl.$PRU">>/tmp/ftpcmd.$PRU
+echo "!rm -f ftpctl.$PRU" >>/tmp/ftpcmd.$PRU 
+echo "get ftpctl.$PRU">>/tmp/ftpcmd.$PRU
+echo "delete ftpctl.$PRU">>/tmp/ftpcmd.$PRU
+
+
+
+
+#################################################################
+#echo "put /tmp/ftpctl.$PRU $APPATH/ftpctl.$PRU">>/tmp/ftpcmd.$PRU
+#echo "!rm -f /tmp/ftpctl.$PRU" >>/tmp/ftpcmd.$PRU 
+#echo "get $APPATH/ftpctl.$PRU /tmp/ftpctl.$PRU">>/tmp/ftpcmd.$PRU
+#echo "delete $APPATH/ftpctl.$PRU">>/tmp/ftpcmd.$PRU
+#################################################################
+
+RESULTADO=`ftp -v $REMHOST</tmp/ftpcmd.$PRU | grep '226 Transfer complete' | wc -l` 
+if [ $RESULTADO = "2" ] && [ -f /tmp/ftpctl.$PRU ]
+then
+        echo "OK: FTP Server activo" 
+	rm -f /tmp/ftpcmd.$PRU
+	rm -f /tmp/ftpctl.$PRU
+        return 0 
+else
+        echo "ERROR: FTP Server inactivo o usuario equivocado" 
+	rm -f /tmp/ftpcmd.$PRU
+	rm -f /tmp/ftpctl.$PRU
+        exit 53 
+fi
+}
+
+function exe_ftp 
+{
+set -x
+echo "Ejecutando ftp...\c"
+
+if [ "$USR" != "NULL" ]
+then
+	echo "$USR">$FTPCMD.$PRU 
+	if [ "$PWSD" != "NULL" ]
+	then
+		echo "$PWSD">>$FTPCMD.$PRU 
+	fi
+	cat $FTPCMD >>$FTPCMD.$PRU 
+	mv $FTPCMD.$PRU $FTPCMD
+fi
+
+FECHORA=`date '+%d%m%Y.%H%M'`
+RESULTADO=`cat "$FTPCMD" | ftp -iv $REMHOST | tee /tmp/ftp$FECHORA.log | grep '226 Transfer complete' | wc -l`
+
+if [ $RESULTADO = $ARCHTOT ]
+then
+  echo OK
+  rm -f /tmp/ftp$FECHORA.log 
+  exit 0
+else
+  echo Hubo errores: $RESULTADO de los $ARCHTOT archivos llegaron bien
+  exit 50 
+fi
+}
+
+############################# main ##################################
+
+trap "abort" 1 2 3 15 
+
+# Parametros
+
+REMHOST="$1"
+USR="$2"
+PWSD="$3"
+FTPCMD="$4"
+APPATH="$5"
+PRU="$RANDOM"
+
+#####################################
+export FTPCMD REMHOST USR PWSD PRU
+
+if [ $# != 5 ]
+then
+	echo "Usage: safe_ftp REMOTEHOST USER PASSWORD CMD_FILE"
+        echo "USER=NULL PASSWORD=NULL si utiliza .netrc" 
+	exit 32  
+fi
+
+if [ ! -f $FTPCMD ]
+then
+	echo "ERROR: El archivo de comandos $FTPCMD no existe"
+	exit 33 
+fi
+
+
+VGET=`grep get $FTPCMD | cut -c5-`  
+VPUT=`grep put $FTPCMD | cut -c5-`
+ARCHTOT=`echo $VGET $VPUT | wc -w`
+
+#prueba_ping 
+prueba_red 
+exe_ftp 
+

@@ -1,0 +1,2 @@
+MENU ADMINISTRACION DE SERVIDORES DE APLICACIONES
+Reiniciar JBoss osiris2 (pdt,ti,cdv,sit);menu.operador;menu.dsmsta.txt

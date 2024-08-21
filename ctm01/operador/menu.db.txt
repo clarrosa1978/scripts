@@ -1,0 +1,7 @@
+MENU BASE DE DATOS
+Levantar Listener DB EM7;lsnr.sh;UPEM7
+Bajar Listener DB EM7;lsnr.sh;DOWNEM7
+Chequear Listener DB EM7;chklsnr.sh;LISTENER
+Levantar DB EM7;ejecutasql.sh;updbem7
+Bajar DB EM7;ejecutasql.sh;downdbem7
+Chequear DB EM7;chkdb.sh;EM7

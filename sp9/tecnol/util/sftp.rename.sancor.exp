@@ -1,0 +1,53 @@
+#!/usr/bin/expect 
+
+if $argc<4 {
+  send_user "$argv0: faltan parametros\n"
+  send_user "\n"
+  send_user " Usuario            : Nombre del usuario.\n"
+  send_user " Password           : Password del usuario.\n"
+  send_user " IP/Host            : Direccion IP o nombre del host.\n"
+  send_user " Directorio_Origen  : Directorio origen del archivo.\n"
+  send_user " Directorio_Destino : Directorio destino del archivo.\n"
+  send_user " Archivo            : Nombre del archivo a renombrar.\n"
+  exit 1
+}
+
+#
+# Obtengo los datos que pasan.
+#
+set USUARIO            [lindex $argv 0]
+set PASSWORD           [lindex $argv 1]
+set HOST               [lindex $argv 2]
+set DIRECTORIO_ORIGEN  [lindex $argv 3]
+set DIRECTORIO_DESTINO [lindex $argv 4]
+set ARCHIVO            [lindex $argv 5]
+
+#
+# 
+spawn -noecho sftp -o port=115 ${USUARIO}@${HOST}
+expect "Password:"
+sleep 2
+send "${PASSWORD}\r"
+expect  {
+   "ssh: connect to host ${HOST} port 22: Connection timed out" {puts "El tiempo de conexion ha expirado\n";exit 1}
+   "Connection closed" {puts "El tiempo de conexion ha expirado\n";exit 1}
+   "Permission denied, please try again." {puts ("Usuario incorrecto no tiene permiso.\n";exit 1}
+   "Connection to ${HOST} closed by remote host." {puts "Password incorrecta.\n";exit 1}
+}
+expect "Connected to ftp.gruposancorseguros.com."
+expect  "sftp>"
+send "cd ${DIRECTORIO_ORIGEN}\r"
+expect  {
+  "Couldn't canonicalise: No such file or directory" {puts "No existe el directorio : ${DIRECTORIO_ORIGEN}\n";exit 1}
+}
+
+expect "sftp>"
+log_file -a /tecnol/util/log/sftp.sancor.rename.lst
+send "rename ${ARCHIVO} ${DIRECTORIO_DESTINO} \r" 
+sleep 10
+log_file
+
+expect "sftp>"
+send "exit\r"
+
+expect eof

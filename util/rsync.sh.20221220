@@ -1,0 +1,27 @@
+set -x
+SERVER="nodo2"
+FS="tecnol home rman"
+
+rsync -r -a -v -e "ssh -l root" --exclude '.ssh' '/root' ${SERVER}:'/'
+rsync -r -a -v '/root/.ssh/authorized_keys' ${SERVER}:'/root/.ssh/'
+rsync -r -a -v '/etc/sysconfig/iptables' ${SERVER}:'/etc/sysconfig/'
+rsync -r -a -v '/etc/rsyncd.conf' ${SERVER}:'/etc/'
+rsync -r -a -v '/etc/sudoers' ${SERVER}:'/etc/'
+rsync -r -a -v '/etc/xinetd.d/rsync' ${SERVER}:'/etc/xinetd.d/'
+STATUS=$?
+if [ $STATUS != 0 ] && [ $STATUS != 25 ] && [ $STATUS != 24 ]
+ then
+  echo "Error al sincronizar Archivos"
+  exit 3
+fi
+
+for i in $FS
+do
+ rsync -r -a -v --delete /$i ${SERVER}:/
+ STATUS=$?
+ if [ $STATUS != 0 ] && [ $STATUS != 25 ] && [ $STATUS != 24 ]
+ then
+  echo "Error al sincronizar fs"
+ exit 1
+ fi
+done

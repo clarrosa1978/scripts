@@ -1,0 +1,40 @@
+clear
+if [ $# -lt 1 ]
+then
+        echo "Error: Faltan parametros."
+        echo 
+        echo 
+        echo "Usar: envio_negtick  xxx... donde(xxx)archivo de tickets del dia..."
+        echo "                            a transferir a sucursales              "
+        echo 
+        echo "  Ej: tipear   envio_negtick  tk.negativo.tickets.04012001.080808  "
+        exit 1
+fi
+
+arch=$1
+arch_dest=tktinv.txt
+
+echo  "\n Enviando archivo de Negativos de Tickets a sucursales ..... \n "
+echo  "\n    Aguarde por favor ... \n "
+echo
+cd /sfctrl/tmp/TICKETS
+if [ -s  "$1" ]
+then
+	for i in `cat /etc/listasuc|grep -v 73|grep -v 79 |grep -v 87`
+	do
+	   ping -c 3 suc$i 1>/dev/null 2>/dev/null
+	   if [ $? = 0 ]
+	     then
+		echo " Transfiriendo archivo $arch a suc$i "
+		rcp $arch suc$i:/sfctrl/data/carga/$arch_dest
+		rsh suc$i chown sfctrl.sfsw /sfctrl/data/carga/$arch_dest
+		rsh suc$i chmod 664 /sfctrl/data/carga/$arch_dest
+	     else
+		echo "\n   Sin comunicacion con suc$i ...\n"
+		echo "\n   Reenviar cuando se reestablezca el vinculo .\n"
+		sleep 2
+	    fi
+	done
+else
+	echo "\n El archivo $1 NO EXISTE \n"
+fi

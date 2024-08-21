@@ -1,0 +1,5 @@
+Menu ALERTAS 
+Bajar alerta sf000GDMVtasPLU_scan (Controla ts041507,ts041508,ts030508,ts018020, ongdmcen);baja_alerta.sh;sf000GDMVtasPLU_scan
+Subir alerta sf000GDMVtasPLU_scan;sube_alerta.sh;sf000GDMVtasPLU_scan
+Bajar alerta sfvcc_scan (Controla SF_CLIENTE,SF_VCC,SF_DCC,SF_TOS);baja_alerta.sh;sfvcc_scan
+Subir alerta sfvcc_scan;sube_alerta.sh;sfvcc_scan

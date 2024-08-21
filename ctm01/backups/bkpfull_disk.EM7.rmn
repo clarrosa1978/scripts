@@ -1,0 +1,27 @@
+run {
+configure device type disk parallelism 2;
+allocate channel t1 type disk MAXPIECESIZE 2G;
+allocate channel t2 type disk MAXPIECESIZE 2G;
+
+# switch out of the current logfile
+sql 'alter system archive log current';
+
+#backup the whole db
+backup
+  tag whole_database_open
+  format '/backup/df_%d_%U_%T'
+  database;
+
+#backup the archived logs
+backup
+  archivelog all
+  format '/backup/al_%d_%U_%S_%T';
+
+# backup a copy of the controlfile that contains records for the
+# other backups just made
+backup
+  current controlfile
+  format '/backup/cf_%d_%U_%T';
+ backup spfile
+ format '/backup/sp_%d_%u_%T';
+}

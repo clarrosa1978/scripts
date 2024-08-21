@@ -1,0 +1,226 @@
+<?xml version="1.0" standalone="no" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" >
+<svg width="1300" height="1080" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+>
+<text x="200" y="50" style="font-size:20px">SAN Configuration from Managed System</text>
+<text x="300" y="90" style="font-size:25px">9117 - MMD - 1076D27</text>
+<text x="300" y="120" style="font-size:15px">created: Mar 14 2014</text>
+<text x="1150" y="60" style="font-size:10px">Physical Adapter</text>
+<text x="1150" y="80" style="font-size:10px">Vhost/Vscsi Adapter</text>
+<rect x="1130" y="50" width="10" height="10" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<rect x="1130" y="70" width="10" height="10" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="980" y="60" style="font-size:10px">Logical Partition</text>
+<text x="980" y="80" style="font-size:10px">Disk Pool</text>
+<rect x="960" y="50" width="10" height="10" fill="antiquewhite" style="stroke:black;stroke-width:1px"/>
+<rect x="960" y="70" width="10" height="10" fill="lightyellow" style="stroke:black;stroke-width:1px"/>
+<rect x="800" y="40" width="470" height="70" fill="none" style="stroke:black;stroke-width:1px"/>
+<rect x="800" y="40" width="130" height="35" fill="none" style="stroke:black;stroke-width:1px"/>
+<text x="810" y="60" style="font-size:15px">Legend</text>
+<text x="1150" y="10" style="font-family:Arial Unicode MS;font-size:10px">&#x00A9;</text>
+<text x="1170" y="10" style="font-size:10px">IBM Corporate 2008</text>
+<rect x="200" y="150" width="250" height="340" fill="antiquewhite" style="stroke:black;stroke-width:1px" onclick="top.showMessage('lsnports_vios1_p770_central')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');"/>
+<text x="300" y="170">vios1_p770_central</text>
+<rect x="185" y="200" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="211" style="font-size:10px">fcs0</text>
+<text x="135" y="198" style="font-size:10px">U2C4E.001.DBJM637-P2-C1-T1</text>
+<text x="135" y="225" style="font-size:10px">10000090FA454252</text>
+<rect x="185" y="250" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="261" style="font-size:10px">fcs1</text>
+<text x="135" y="248" style="font-size:10px">U2C4E.001.DBJM637-P2-C1-T2</text>
+<text x="135" y="275" style="font-size:10px">10000090FA454253</text>
+<rect x="185" y="300" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="311" style="font-size:10px">fcs2</text>
+<text x="135" y="298" style="font-size:10px">U2C4E.001.DBJN019-P2-C1-T1</text>
+<text x="135" y="325" style="font-size:10px">10000090FA454970</text>
+<rect x="185" y="350" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="361" style="font-size:10px">fcs3</text>
+<text x="135" y="348" style="font-size:10px">U2C4E.001.DBJN019-P2-C1-T2</text>
+<text x="135" y="375" style="font-size:10px">10000090FA454971</text>
+<rect x="435" y="200" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="440" y="211" style="font-size:10px">vhost0</text>
+<text x="385" y="198" style="font-size:10px">U9117.MMD.1076D27-V1-C90-T1</text>
+<line x1="470" y1="205" x2="550" y2="205" style="stroke:black;stroke-width:1;" />
+<circle cx="550" cy="205" r="2.5" />
+<ellipse id="vios1_p770_central_vhost0" cx="355" cy="205" rx="35" ry="12" fill="lightyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios1_p770_central_vhost0')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');"/> 
+<line x1="390" y1="205" x2="435" y2="205" style="stroke:red;stroke-width:1;" />
+<text x="345" y="210" style="font-size:10px" onclick="top.showMessage('vios1_p770_central_vhost0')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">hdisk</text>
+<rect x="435" y="250" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="440" y="261" style="font-size:10px">vhost1</text>
+<text x="385" y="248" style="font-size:10px">U9117.MMD.1076D27-V1-C91-T1</text>
+<line x1="470" y1="255" x2="580" y2="255" style="stroke:black;stroke-width:1;" />
+<circle cx="580" cy="255" r="2.5" />
+<ellipse id="vios1_p770_central_vhost1" cx="355" cy="255" rx="35" ry="12" fill="lightyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios1_p770_central_vhost1')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');"/> 
+<line x1="390" y1="255" x2="435" y2="255" style="stroke:red;stroke-width:1;" />
+<text x="345" y="260" style="font-size:10px" onclick="top.showMessage('vios1_p770_central_vhost1')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">hdisk</text>
+<rect x="435" y="300" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios1_p770_central_vfchost0')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute(opacity, 1);"/>
+<text x="438" y="311" style="font-size:10px" onclick="top.showMessage('vios1_p770_central_vfchost0')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">vfchost0</text>
+<text x="385" y="298" style="font-size:10px">U9117.MMD.1076D27-V1-C10</text>
+<line x1="470" y1="305" x2="610" y2="305" style="stroke:black;stroke-width:1;" />
+<circle cx="610" cy="305" r="2.5" />
+<line x1="220" y1="206" x2="435" y2="306" style="stroke:black;stroke-width:1;" />
+<rect x="435" y="350" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios1_p770_central_vfchost1')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute(opacity, 1);"/>
+<text x="438" y="361" style="font-size:10px" onclick="top.showMessage('vios1_p770_central_vfchost1')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">vfchost1</text>
+<text x="385" y="348" style="font-size:10px">U9117.MMD.1076D27-V1-C11</text>
+<line x1="470" y1="355" x2="640" y2="355" style="stroke:black;stroke-width:1;" />
+<circle cx="640" cy="355" r="2.5" />
+<line x1="220" y1="306" x2="435" y2="356" style="stroke:black;stroke-width:1;" />
+<rect x="435" y="400" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios1_p770_central_vfchost2')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute(opacity, 1);"/>
+<text x="438" y="411" style="font-size:10px" onclick="top.showMessage('vios1_p770_central_vfchost2')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">vfchost2</text>
+<text x="385" y="398" style="font-size:10px">U9117.MMD.1076D27-V1-C12</text>
+<line x1="470" y1="405" x2="670" y2="405" style="stroke:black;stroke-width:1;" />
+<circle cx="670" cy="405" r="2.5" />
+<line x1="220" y1="206" x2="435" y2="406" style="stroke:black;stroke-width:1;" />
+<rect x="435" y="450" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios1_p770_central_vfchost3')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute(opacity, 1);"/>
+<text x="438" y="461" style="font-size:10px" onclick="top.showMessage('vios1_p770_central_vfchost3')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">vfchost3</text>
+<text x="385" y="448" style="font-size:10px">U9117.MMD.1076D27-V1-C13</text>
+<line x1="470" y1="455" x2="700" y2="455" style="stroke:black;stroke-width:1;" />
+<circle cx="700" cy="455" r="2.5" />
+<line x1="220" y1="306" x2="435" y2="456" style="stroke:black;stroke-width:1;" />
+<rect x="185" y="400" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="411" style="font-size:10px">PCI-E</text>
+<text x="135" y="398" style="font-size:10px">U2C4E.001.DBJM637-P2-C9-T1</text>
+<rect x="185" y="450" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="461" style="font-size:10px">RAID</text>
+<text x="135" y="448" style="font-size:10px">U2C4E.001.DBJM637-P2-T3</text>
+<rect x="200" y="590" width="250" height="290" fill="antiquewhite" style="stroke:black;stroke-width:1px" onclick="top.showMessage('lsnports_vios2_p770_central')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');"/>
+<text x="300" y="610">vios2_p770_central</text>
+<rect x="185" y="640" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="651" style="font-size:10px">fcs0</text>
+<text x="135" y="638" style="font-size:10px">U2C4E.001.DBJM637-P2-C2-T1</text>
+<text x="135" y="665" style="font-size:10px">10000090FA454C94</text>
+<rect x="185" y="690" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="701" style="font-size:10px">fcs1</text>
+<text x="135" y="688" style="font-size:10px">U2C4E.001.DBJM637-P2-C2-T2</text>
+<text x="135" y="715" style="font-size:10px">10000090FA454C95</text>
+<rect x="185" y="740" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="751" style="font-size:10px">fcs2</text>
+<text x="135" y="738" style="font-size:10px">U2C4E.001.DBJN019-P2-C2-T1</text>
+<text x="135" y="765" style="font-size:10px">10000090FA45492A</text>
+<rect x="185" y="790" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="801" style="font-size:10px">fcs3</text>
+<text x="135" y="788" style="font-size:10px">U2C4E.001.DBJN019-P2-C2-T2</text>
+<text x="135" y="815" style="font-size:10px">10000090FA45492B</text>
+<rect x="435" y="640" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios2_p770_central_vfchost0')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute(opacity, 1);"/>
+<text x="438" y="651" style="font-size:10px" onclick="top.showMessage('vios2_p770_central_vfchost0')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">vfchost0</text>
+<text x="385" y="638" style="font-size:10px">U9117.MMD.1076D27-V2-C20</text>
+<line x1="470" y1="645" x2="730" y2="645" style="stroke:black;stroke-width:1;" />
+<circle cx="730" cy="645" r="2.5" />
+<line x1="220" y1="646" x2="435" y2="646" style="stroke:black;stroke-width:1;" />
+<rect x="435" y="690" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios2_p770_central_vfchost1')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute(opacity, 1);"/>
+<text x="438" y="701" style="font-size:10px" onclick="top.showMessage('vios2_p770_central_vfchost1')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">vfchost1</text>
+<text x="385" y="688" style="font-size:10px">U9117.MMD.1076D27-V2-C21</text>
+<line x1="470" y1="695" x2="760" y2="695" style="stroke:black;stroke-width:1;" />
+<circle cx="760" cy="695" r="2.5" />
+<line x1="220" y1="746" x2="435" y2="696" style="stroke:black;stroke-width:1;" />
+<rect x="435" y="740" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios2_p770_central_vfchost2')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute(opacity, 1);"/>
+<text x="438" y="751" style="font-size:10px" onclick="top.showMessage('vios2_p770_central_vfchost2')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">vfchost2</text>
+<text x="385" y="738" style="font-size:10px">U9117.MMD.1076D27-V2-C22</text>
+<line x1="470" y1="745" x2="790" y2="745" style="stroke:black;stroke-width:1;" />
+<circle cx="790" cy="745" r="2.5" />
+<line x1="220" y1="646" x2="435" y2="746" style="stroke:black;stroke-width:1;" />
+<rect x="435" y="790" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px" onclick="top.showMessage('vios2_p770_central_vfchost3')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute(opacity, 1);"/>
+<text x="438" y="801" style="font-size:10px" onclick="top.showMessage('vios2_p770_central_vfchost3')" onmouseover="evt.target.setAttribute('opacity', '0.5');" onmouseout="evt.target.setAttribute('opacity', '1');">vfchost3</text>
+<text x="385" y="788" style="font-size:10px">U9117.MMD.1076D27-V2-C23</text>
+<line x1="470" y1="795" x2="820" y2="795" style="stroke:black;stroke-width:1;" />
+<circle cx="820" cy="795" r="2.5" />
+<line x1="220" y1="746" x2="435" y2="796" style="stroke:black;stroke-width:1;" />
+<rect x="185" y="840" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="851" style="font-size:10px">PCI-E</text>
+<text x="135" y="838" style="font-size:10px">U2C4E.001.DBJN019-P2-C9-T1</text>
+<rect x="950" y="150" width="200" height="240" fill="antiquewhite" style="stroke:black;stroke-width:1px"/>
+<text x="1000" y="170">NIMCOTO</text>
+<rect x="935" y="190" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="940" y="201" style="font-size:10px">vhost0</text>
+<text x="885" y="188" style="font-size:10px">U9117.MMD.1076D27-V4 NIMCOTO-C91-T1</text>
+<line x1="935" y1="195" x2="580" y2="195" style="stroke:black;stroke-width:1;" />
+<circle cx="580" cy="195" r="2.5" />
+<line x1="580" y1="195" x2="580" y2="255" style="stroke:black;stroke-width:1;" />
+<rect x="935" y="230" width="35" height="12" fill="greenyellow" style="stroke:black;s
+troke-width:1px"/>
+<text x="940" y="241" style="font-size:10px"></text>
+<text x="885" y="228" style="font-size:10px"></text>
+<text x="885" y="255" style="font-size:10px">c05076075aac000a,c05076075aac000b</text>
+<line x1="935" y1="235" x2="670" y2="235" style="stroke:black;stro
+ke-width:1;" />
+<circle cx="670" cy="235" r="2.5" />
+<line x1="670" y1="235" x2="670" y2="405" style="stroke:black;stro
+ke-width:1;" />
+<rect x="935" y="270" width="35" height="12" fill="greenyellow" style="stroke:black;s
+troke-width:1px"/>
+<text x="940" y="281" style="font-size:10px"></text>
+<text x="885" y="268" style="font-size:10px"></text>
+<text x="885" y="295" style="font-size:10px">c05076075aac000e,c05076075aac000f</text>
+<line x1="935" y1="275" x2="700" y2="275" style="stroke:black;stro
+ke-width:1;" />
+<circle cx="700" cy="275" r="2.5" />
+<line x1="700" y1="275" x2="700" y2="455" style="stroke:black;stro
+ke-width:1;" />
+<rect x="935" y="310" width="35" height="12" fill="greenyellow" style="stroke:black;s
+troke-width:1px"/>
+<text x="940" y="321" style="font-size:10px"></text>
+<text x="885" y="308" style="font-size:10px"></text>
+<text x="885" y="335" style="font-size:10px">c05076075aac0008,c05076075aac0009</text>
+<line x1="935" y1="315" x2="790" y2="315" style="stroke:black;stro
+ke-width:1;" />
+<circle cx="790" cy="315" r="2.5" />
+<line x1="790" y1="315" x2="790" y2="745" style="stroke:black;stro
+ke-width:1;" />
+<rect x="935" y="350" width="35" height="12" fill="greenyellow" style="stroke:black;s
+troke-width:1px"/>
+<text x="940" y="361" style="font-size:10px"></text>
+<text x="885" y="348" style="font-size:10px"></text>
+<text x="885" y="375" style="font-size:10px">c05076075aac000c,c05076075aac000d</text>
+<line x1="935" y1="355" x2="820" y2="355" style="stroke:black;stro
+ke-width:1;" />
+<circle cx="820" cy="355" r="2.5" />
+<line x1="820" y1="355" x2="820" y2="795" style="stroke:black;stro
+ke-width:1;" />
+<rect x="950" y="440" width="200" height="240" fill="antiquewhite" style="stroke:black;stroke-width:1px"/>
+<text x="1000" y="460">GDM_P770</text>
+<rect x="935" y="480" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="940" y="491" style="font-size:10px">vhost0</text>
+<text x="885" y="478" style="font-size:10px">U9117.MMD.1076D27-V3 GDM_P770-C90-T1</text>
+<line x1="935" y1="485" x2="550" y2="485" style="stroke:black;stroke-width:1;" />
+<circle cx="550" cy="485" r="2.5" />
+<line x1="550" y1="485" x2="550" y2="205" style="stroke:black;stroke-width:1;" />
+<rect x="935" y="520" width="35" height="12" fill="greenyellow" style="stroke:black;s
+troke-width:1px"/>
+<text x="940" y="531" style="font-size:10px"></text>
+<text x="885" y="518" style="font-size:10px"></text>
+<text x="885" y="545" style="font-size:10px">c05076075aac0002,c05076075aac0003</text>
+<line x1="935" y1="525" x2="610" y2="525" style="stroke:black;stro
+ke-width:1;" />
+<circle cx="610" cy="525" r="2.5" />
+<line x1="610" y1="525" x2="610" y2="305" style="stroke:black;stro
+ke-width:1;" />
+<rect x="935" y="560" width="35" height="12" fill="greenyellow" style="stroke:black;s
+troke-width:1px"/>
+<text x="940" y="571" style="font-size:10px"></text>
+<text x="885" y="558" style="font-size:10px"></text>
+<text x="885" y="585" style="font-size:10px">c05076075aac0006,c05076075aac0007</text>
+<line x1="935" y1="565" x2="640" y2="565" style="stroke:black;stro
+ke-width:1;" />
+<circle cx="640" cy="565" r="2.5" />
+<line x1="640" y1="565" x2="640" y2="355" style="stroke:black;stro
+ke-width:1;" />
+<rect x="935" y="600" width="35" height="12" fill="greenyellow" style="stroke:black;s
+troke-width:1px"/>
+<text x="940" y="611" style="font-size:10px"></text>
+<text x="885" y="598" style="font-size:10px"></text>
+<text x="885" y="625" style="font-size:10px">c05076075aac0000,c05076075aac0001</text>
+<line x1="935" y1="605" x2="730" y2="605" style="stroke:black;stro
+ke-width:1;" />
+<circle cx="730" cy="605" r="2.5" />
+<line x1="730" y1="605" x2="730" y2="645" style="stroke:black;stro
+ke-width:1;" />
+<rect x="935" y="640" width="35" height="12" fill="greenyellow" style="stroke:black;s
+troke-width:1px"/>
+<text x="940" y="651" style="font-size:10px"></text>
+<text x="885" y="638" style="font-size:10px"></text>
+<text x="885" y="665" style="font-size:10px">c05076075aac0004,c05076075aac0005</text>
+<line x1="935" y1="645" x2="760" y2="645" style="stroke:black;stro
+ke-width:1;" />
+<circle cx="760" cy="645" r="2.5" />
+<line x1="760" y1="645" x2="760" y2="695" style="stroke:black;stro
+ke-width:1;" />
+</svg>

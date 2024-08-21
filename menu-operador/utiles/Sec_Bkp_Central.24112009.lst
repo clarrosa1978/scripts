@@ -1,0 +1,12 @@
+
+Secuencias del día 24/11/2009 para servidores de Central
+
+ amscentral         -->   SAP1 (brarchive)   -->  PRDA05
+ SAP1 (brbackup)    -->  BR103I Following backup volume will be used: PRDB31
+ nodo9              -->  1
+ S80-FNCL           -->  1
+ escala1            -->  3
+ escala2_boot       -->  5
+ pucara             -->  3
+ sp17               -->  1
+ odin             -->  

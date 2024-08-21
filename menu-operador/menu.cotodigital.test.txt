@@ -1,0 +1,3 @@
+MENU COTODIGITAL (TESTING)
+Menu para Implementar un archivo XML;menu.operador;menu.implexml.test.txt
+Menu para Implementar un Deploy de COTODIGITAL_STORE;menu.operador;menu.impledeploytest.txt

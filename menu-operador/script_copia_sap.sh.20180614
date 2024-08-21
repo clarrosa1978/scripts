@@ -1,0 +1,16 @@
+#!/bin/sh
+# Pasar el numero de archivo y que lo copie siempre al mismo directorio de sapdes a sapprd
+
+echo -e "\t\t Ingrese numero de archivo a copiar o [S|s] para salir: \c"
+read OPCION
+if [ "${OPCION}" = "s" -o "${OPCION}" = "S" ]
+   then
+       tput sgr0
+       exit
+fi
+#Primera Opcion
+echo -e "\t\t Se realizará la copia de archivos: \n"
+echo -e "\t\t R${OPCION}.DES al directorio /usr/sap/trans/data \n"
+#sudo scp -p sapdes:/usr/sap/trans/data/R${OPCION}.DES sap1:/usr/sap/trans/data/
+echo -e "\t\t K${OPCION}.DES al directorio /usr/sap/trans/cofiles \n"
+#sudo scp -p sapdes:/usr/sap/trans/cofiles/K${OPCION}.DES sap1:/usr/sap/trans/cofiles/

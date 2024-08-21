@@ -1,0 +1,27 @@
+###############################################################################
+# Nombre.............: Enviar_A_Log                                           #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Loguea un mensaje en el archivo pasado como parametro  #
+# Nombre.............: Enviar_A_Log                                           #
+# Descripcion........: Recibe como parametro el mensaje y el archivo log con  #
+#                      el path absoluto, si el archivo existe realiza un      #
+#                      append sobre el mismo.
+# Valores de Retorno.: 0 - La funcion termino ok.                             #
+#                      1 - La funcion fallo.                                  #
+# Modificacion.......: 2005/03/11                                             #
+###############################################################################
+function Enviar_A_Log
+{
+        typeset MENSAJE=$1
+        typeset LOG=$2
+        typeset FECHA=`date '+%d/%m/%Y %H:%M:%S'`
+        typeset EXIT="1"
+        autoload Check_Par
+        Check_Par 2 "$@"
+        if [ $? = 0 ] 
+        then
+                echo "${FECHA} : ${MENSAJE}" | tee -a ${LOG}
+                [ $? = 0 ] && EXIT="0"
+        fi
+        return ${EXIT}
+}

@@ -1,0 +1,2 @@
+%%USR=root
+%%PASS=qipesipa

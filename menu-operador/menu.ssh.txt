@@ -1,0 +1,3 @@
+MENU DE ACCESO A SERVIDORES
+Acceder a Servidores de Sucursal (sucXX);/tecnol/operador/admaccserv.sh SUCURSAL
+Acceder a Servidores de Central  (sp9,gdm,dwh);/tecnol/operador/admaccserv.sh CENTRAL

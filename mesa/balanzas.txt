@@ -1,0 +1,2 @@
+MENU DE BALANZAS
+Chequear ip de pc de balanzas;checkbalanzas.sh;${SUCURSAL}

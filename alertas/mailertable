@@ -1,0 +1,5 @@
+coto.com.ar     smtp:relayinterno.redcoto.com.ar
+redcoto.com.ar  smtp:relayinterno.redcoto.com.ar
+gmail.com       smtp:relayinterno.redcoto.com.ar
+ar.prosegur.com smtp:relayinterno.redcoto.com.ar
+

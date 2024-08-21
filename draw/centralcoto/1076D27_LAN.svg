@@ -1,0 +1,167 @@
+<?xml version="1.0" standalone="no" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" >
+<svg width="1300" height="1330" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<text x="200" y="50" style="font-size:20px">VLAN Configuration from Managed System</text>
+<text x="300" y="90" style="font-size:25px">9117-MMD-SN1076D27_P770Central</text>
+<text x="300" y="120" style="font-size:15px">created: Mar 14 2014</text>
+<text x="1150" y="60" style="font-size:10px">VLAN Adapter</text>
+<text x="1150" y="80" style="font-size:10px">Virtual Adapter</text>
+<text x="1150" y="100" style="font-size:10px">Control Channel Adapter</text>
+<rect x="1130" y="50" width="10" height="10" fill="peachpuff" style="stroke:black;stroke-width:1px"/>
+<rect x="1130" y="70" width="10" height="10" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<rect x="1130" y="90" width="10" height="10" fill="lightgrey" style="stroke:black;stroke-width:1px"/>
+<text x="980" y="60" style="font-size:10px">Shared Ethernet Adapter</text>
+<text x="980" y="80" style="font-size:10px">Ether Channel Adapter</text>
+<text x="980" y="100" style="font-size:10px">Physical Adapter</text>
+<rect x="960" y="50" width="10" height="10" fill="yellow" style="stroke:black;stroke-width:1px"/>
+<rect x="960" y="70" width="10" height="10" fill="lavender" style="stroke:black;stroke-width:1px"/>
+<rect x="960" y="90" width="10" height="10" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="830" y="100" style="font-size:10px">Logical Partition</text>
+<rect x="810" y="90" width="10" height="10" fill="antiquewhite" style="stroke:black;stroke-width:1px"/>
+<rect x="800" y="40" width="470" height="70" fill="none" style="stroke:black;stroke-width:1px"/>
+<rect x="800" y="40" width="130" height="35" fill="none" style="stroke:black;stroke-width:1px"/>
+<text x="830" y="60" style="font-size:15px">Legend</text>
+<text x="1150" y="10" style="font-family:Arial Unicode MS;font-size:10px">&#x00A9;</text>
+<text x="1170" y="10" style="font-size:10px">IBM Corporate 2008</text>
+<rect x="200" y="150" width="250" height="490" fill="antiquewhite" style="stroke:black;stroke-width:1px"/>
+<text x="300" y="170">vios1_p770_central</text>
+<rect x="200" y="740" width="250" height="490" fill="antiquewhite" style="stroke:black;stroke-width:1px"/>
+<text x="300" y="760">vios2_p770_central</text>
+<rect x="340" y="200" width="35" height="12" fill="yellow" style="stroke:black;stroke-width:1px"/>
+<text x="345" y="211" style="font-size:10px">ent12</text>
+<rect x="185" y="200" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<line x1="220" y1="205" x2="340" y2="205" style="stroke:black;stroke-width:1;" />
+<text x="190" y="211" style="font-size:10px">yes</text>
+<text x="100" y="198" style="font-size:10px"></text>
+<rect x="435" y="200" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="440" y="211" style="font-size:10px">ent9</text>
+<line x1="415" y1="205" x2="435" y2="205" style="stroke:black;stroke-width:1;" />
+<circle cx="415" cy="205" r="2" />
+<text x="405" y="198" style="font-size:10px">U9117.MMD.1076D27-V1-C30-T1</text>
+<text x="320" y="198" style="font-size:10px">trunk_priority=1</text>
+<rect x="435" y="240" width="35" height="12" fill="lightgrey" style="stroke:black;stroke-width:1px"/>
+<text x="440" y="251" style="font-size:10px">ent10</text>
+<line x1="415" y1="245" x2="435" y2="245" style="stroke:black;stroke-width:1;" />
+<circle cx="415" cy="245" r="2" />
+<text x="405" y="238" style="font-size:10px">U9117.MMD.1076D27-V1-C40-T1</text>
+<line x1="415" y1="205" x2="375" y2="205" style="stroke:black;stroke-width:1;" />
+<line x1="415" y1="245" x2="415" y2="205" style="stroke:black;stroke-width:1;" />
+<rect x="185" y="280" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="291" style="font-size:10px">ent0</text>
+<text x="100" y="278" style="font-size:10px">U2C4E.001.DBJM637-P2-C3-T1</text>
+<rect x="185" y="320" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="331" style="font-size:10px">ent1</text>
+<text x="100" y="318" style="font-size:10px">U2C4E.001.DBJM637-P2-C3-T2</text>
+<rect x="185" y="360" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="371" style="font-size:10px">ent2</text>
+<text x="100" y="358" style="font-size:10px">U2C4E.001.DBJM637-P2-C3-T3</text>
+<rect x="185" y="400" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="411" style="font-size:10px">ent3</text>
+<text x="100" y="398" style="font-size:10px">U2C4E.001.DBJM637-P2-C3-T4</text>
+<rect x="185" y="440" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="451" style="font-size:10px">ent4</text>
+<text x="100" y="438" style="font-size:10px">U2C4E.001.DBJN019-P2-C3-T1</text>
+<rect x="185" y="480" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="491" style="font-size:10px">ent5</text>
+<text x="100" y="478" style="font-size:10px">U2C4E.001.DBJN019-P2-C3-T2</text>
+<rect x="185" y="520" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="531" style="font-size:10px">ent6</text>
+<text x="100" y="518" style="font-size:10px">U2C4E.001.DBJN019-P2-C3-T3</text>
+<rect x="185" y="560" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="571" style="font-size:10px">ent7</text>
+<text x="100" y="558" style="font-size:10px">U2C4E.001.DBJN019-P2-C3-T4</text>
+<rect x="435" y="600" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="440" y="611" style="font-size:10px">ent8</text>
+<text x="350" y="598" style="font-size:10px">U9117.MMD.1076D27-V1-C2-T1</text>
+<text x="345" y="623" style="font-size:10px">172.16.7.21</text>
+<text x="425" y="623" style="font-size:10px">de:16:68:18:45:02</text>
+<rect x="340" y="790" width="35" height="12" fill="yellow" style="stroke:black;stroke-width:1px"/>
+<text x="345" y="801" style="font-size:10px">ent12</text>
+<rect x="185" y="790" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<line x1="220" y1="795" x2="340" y2="795" style="stroke:black;stroke-width:1;" />
+<text x="190" y="801" style="font-size:10px">yes</text>
+<text x="100" y="788" style="font-size:10px"></text>
+<rect x="435" y="790" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="440" y="801" style="font-size:10px">ent9</text>
+<line x1="415" y1="795" x2="435" y2="795" style="stroke:black;stroke-width:1;" />
+<circle cx="415" cy="795" r="2" />
+<text x="405" y="788" style="font-size:10px">U9117.MMD.1076D27-V2-C30-T1</text>
+<text x="320" y="788" style="font-size:10px">trunk_priority=2</text>
+<rect x="435" y="830" width="35" height="12" fill="lightgrey" style="stroke:black;stroke-width:1px"/>
+<text x="440" y="841" style="font-size:10px">ent10</text>
+<line x1="415" y1="835" x2="435" y2="835" style="stroke:black;stroke-width:1;" />
+<circle cx="415" cy="835" r="2" />
+<text x="405" y="828" style="font-size:10px">U9117.MMD.1076D27-V2-C40-T1</text>
+<line x1="415" y1="795" x2="375" y2="795" style="stroke:black;stroke-width:1;" />
+<line x1="415" y1="835" x2="415" y2="795" style="stroke:black;stroke-width:1;" />
+<rect x="185" y="870" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="881" style="font-size:10px">ent0</text>
+<text x="100" y="868" style="font-size:10px">U2C4E.001.DBJM637-P2-C6-T1</text>
+<rect x="185" y="910" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="921" style="font-size:10px">ent1</text>
+<text x="100" y="908" style="font-size:10px">U2C4E.001.DBJM637-P2-C6-T2</text>
+<rect x="185" y="950" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="961" style="font-size:10px">ent2</text>
+<text x="100" y="948" style="font-size:10px">U2C4E.001.DBJM637-P2-C6-T3</text>
+<rect x="185" y="990" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="1001" style="font-size:10px">ent3</text>
+<text x="100" y="988" style="font-size:10px">U2C4E.001.DBJM637-P2-C6-T4</text>
+<rect x="185" y="1030" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="1041" style="font-size:10px">ent4</text>
+<text x="100" y="1028" style="font-size:10px">U2C4E.001.DBJN019-P2-C6-T1</text>
+<rect x="185" y="1070" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="1081" style="font-size:10px">ent5</text>
+<text x="100" y="1068" style="font-size:10px">U2C4E.001.DBJN019-P2-C6-T2</text>
+<rect x="185" y="1110" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="1121" style="font-size:10px">ent6</text>
+<text x="100" y="1108" style="font-size:10px">U2C4E.001.DBJN019-P2-C6-T3</text>
+<rect x="185" y="1150" width="35" height="12" fill="powderblue" style="stroke:black;stroke-width:1px"/>
+<text x="190" y="1161" style="font-size:10px">ent7</text>
+<text x="100" y="1148" style="font-size:10px">U2C4E.001.DBJN019-P2-C6-T4</text>
+<rect x="435" y="1190" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="440" y="1201" style="font-size:10px">ent8</text>
+<text x="350" y="1188" style="font-size:10px">U9117.MMD.1076D27-V2-C2-T1</text>
+<text x="345" y="1213" style="font-size:10px">172.16.7.22</text>
+<text x="425" y="1213" style="font-size:10px">de:16:6f:0c:3a:02</text>
+<line x1="470" y1="245" x2="550" y2="245" style="stroke:black;stroke-width:1;stroke-dasharray:2px, 2px" />
+<circle cx="550" cy="245" r="2.5" />
+<line x1="470" y1="835" x2="550" y2="835" style="stroke:black;stroke-width:1;stroke-dasharray:2px, 2px" />
+<circle cx="550" cy="835" r="2.5" />
+<line x1="550" y1="150" x2="550" y2="1280" style="stroke:black;stroke-width:1;stroke-dasharray:2px, 2px" />
+<rect x="550" y="150" width="25" height="12" fill="white" style="stroke:black;stroke-width:1px"/>
+<text x="550" y="161" style="font-size:10px">999</text>
+<text x="550" y="135" style="font-size:10px">Control Channel</text>
+<line x1="470" y1="800" x2="630" y2="800" style="stroke:black;stroke-width:1" />
+<circle cx="630" cy="800" r="2.5" />
+<line x1="630" y1="150" x2="630" y2="1280" style="stroke:black;stroke-width:1" />
+<rect x="630" y="150" width="25" height="12" fill="white" style="stroke:black;stroke-width:1px"/>
+<text x="630" y="161" style="font-size:10px">1</text>
+<line x1="470" y1="210" x2="660" y2="210" style="stroke:black;stroke-width:1" />
+<circle cx="660" cy="210" r="2.5" />
+<line x1="660" y1="150" x2="660" y2="1280" style="stroke:black;stroke-width:1" />
+<rect x="660" y="150" width="25" height="12" fill="white" style="stroke:black;stroke-width:1px"/>
+<text x="660" y="161" style="font-size:10px">7</text>
+<text x="630" y="135" style="font-size:10px">Port VLAN IDs</text>
+<line x1="470" y1="203" x2="660" y2="203" style="stroke:black;stroke-width:1" />
+<circle cx="660" cy="203" r="2.5" />
+<line x1="470" y1="603" x2="660" y2="603" style="stroke:black;stroke-width:1" />
+<circle cx="660" cy="603" r="2.5" />
+<line x1="470" y1="793" x2="660" y2="793" style="stroke:black;stroke-width:1" />
+<circle cx="660" cy="793" r="2.5" />
+<line x1="470" y1="1193" x2="660" y2="1193" style="stroke:black;stroke-width:1" />
+<circle cx="660" cy="1193" r="2.5" />
+<rect x="790" y="150" width="200" height="80" fill="antiquewhite" style="stroke:black;stroke-width:1px"/>
+<text x="840" y="170">NIMCOTO</text>
+<rect x="775" y="190" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="715" y="188" style="font-size:10px">U9117.MMD.1076D27-V4-C10-T1</text>
+<text x="755" y="213" style="font-size:10px">DE166D7B600A</text>
+<line x1="660" y1="195" x2="775" y2="195" style="stroke:black;stroke-width:1" />
+<circle cx="660" cy="195" r="2.5" />
+<rect x="790" y="270" width="200" height="80" fill="antiquewhite" style="stroke:black;stroke-width:1px"/>
+<text x="840" y="290">GDM_P770</text>
+<rect x="775" y="310" width="35" height="12" fill="greenyellow" style="stroke:black;stroke-width:1px"/>
+<text x="715" y="308" style="font-size:10px">U9117.MMD.1076D27-V3-C2-T1</text>
+<text x="755" y="333" style="font-size:10px">DE166C998402</text>
+<line x1="660" y1="315" x2="775" y2="315" style="stroke:black;stroke-width:1" />
+<circle cx="660" cy="315" r="2.5" />
+</svg>

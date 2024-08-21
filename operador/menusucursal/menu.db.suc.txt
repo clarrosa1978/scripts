@@ -1,0 +1,21 @@
+MENU BASE DE DATOS
+Levantar Listener SFXXX____(Server Primario);lsnr.sh;UPSF
+Bajar Listener SFXXX_______(Server Primario);lsnr.sh;DOWNSF
+Chequear Listener SFXXX____(Server Primario);chklsnr.sh;LISTENER
+Levantar Listener CTRLMXXX_(Server Primario);lsnr.sh;UPCTM
+Bajar Listener CTRLMXXX____(Server Primario);lsnr.sh;DOWNCTM
+Chequear Listener CTRLMXXX_(Server Primario);chklsnr.sh;LCTRLM
+Levantar base SFXXX________(Server Primario);ejecutasql.sh;updb
+Bajar base SFXXX___________(Server Primario);ejecutasql.sh;downdb
+Chequear Base de SFXXX_____(Server Primario);chkdb.sh;SF
+Levantar base CTRLMXXX_____(Server Primario);ejecutasql.sh;updbctrlm
+Bajar base CTRLMXXX________(Server Primario);ejecutasql.sh;downdbctrlm
+Chequear Base de CTRLXXX___(Server Primario);chkdb.sh;CTRLM
+Levantar Listener SFXXX____________(Server Secundario);lsnr.sh;UPSFSEC
+Bajar Listener SFXXX_______________(Server Secundario);lsnr.sh;DOWNSFSEC
+Chequear Listener SFXXX____________(Server Secundario);chklsnrremoto.sh;LISTENER
+Levantar base STANDBY______________(Server Secundario);dbremoto.sh;UPSF
+Bajar base STANDBY_________________(Server Secundario);dbremoto.sh;DOWNSF
+Habilitar replicacion a STANDBY____(Sucursales con 2 Server);ejecutasql.sh;habilitalog
+Deshabilitar replicacion a STANDBY_(Sucursales con 2 Server);ejecutasql.sh;deshabilitalog
+Controlar replicacion a STANDBY (Debe dar ENABLE)_(Sucursales con 2 Server);ejecutasql.sh;chklog

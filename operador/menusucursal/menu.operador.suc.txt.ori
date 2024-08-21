@@ -1,0 +1,5 @@
+MENU PRINCIPAL
+Menu de Procesos;menu.operador.suc;menu.procesos.suc.txt
+Menu de Backups;/tecnol/backup/menudvd.sh
+Menu de Alertas;menu.operador.suc;menu.alertas.suc.txt
+Menu de Base Datos;menu.operador.suc;menu.db.suc.txt

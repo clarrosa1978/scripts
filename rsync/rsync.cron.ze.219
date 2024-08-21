@@ -1,0 +1,1 @@
+*/1 * * * * root /usr/bin/rsync -av suc219::multimedia/Picaderos/ZonaE/103/ /multimediasucursales/images --delete

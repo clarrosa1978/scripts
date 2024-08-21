@@ -1,0 +1,4 @@
+MENU PROCESOS TIVOLI
+Levantar Procesos Tivoli (dsmsta);admproc_dsmsta.sh;UPPROC
+Bajar Procesos Tivoli (dsmsta);admproc_dsmsta.sh;DOWNPROC
+Controlar Procesos Tivoli (dsmsta);admproc_dsmsta.sh;VERPROC

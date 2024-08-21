@@ -1,0 +1,55 @@
+#Depuramos los filesystems /u01
+DIRECTORIO=/u01/app/oracle/product/9.2.0/network/log/
+FECHA=`date +%d%m%Y`
+ORACLE_HOME=/u01/app/oracle/product/9.2.0
+
+
+#Pedido por Claudio Panuccio
+
+echo "Borrando datos de auditoria del usuario SYS ...."
+find $ORACLE_HOME/rdbms/audit -name "*.aud" -mtime +90 -exec rm {} \;
+echo "Hecho"
+
+
+if [ -s /etc/oratab ] ; then
+
+        INSTANCIA_SF=`grep ^SF /etc/oratab | awk -F ":" ' { print $1 } '`
+
+        if [ ${INSTANCIA_SF} ] ; then
+
+                find /u01/app/oracle/admin/${INSTANCIA_SF}/udump -name "*.trc" -exec rm {} \;
+                find /u01/app/oracle/admin/${INSTANCIA_SF}/bdump -name "*.trc" -mtime +3 -exec rm {} \;
+                rmdir /u01/app/oracle/admin/${INSTANCIA_SF}/cdump/core_* 2>/dev/null
+                find /u01/app/oracle/product/9.2.0/network/log  -name "sqlnet.log" -exec rm  {} \;
+        fi
+
+
+        INSTANCIA_CTRLM=`grep ^CTRLM /etc/oratab | awk -F ":" ' { print $1 } '`
+
+        if [ ${INSTANCIA_CTRLM} ] ; then
+
+                find /u01/app/oracle/admin/${INSTANCIA_CTRLM}/udump -name "*.trc" -exec rm {} \;
+                find /u01/app/oracle/admin/${INSTANCIA_CTRLM}/bdump -name "*.trc" -mtime +3 -exec rm {} \;
+                rmdir /u01/app/oracle/admin/${INSTANCIA_CTRLM}/cdump/core_* 2>/dev/null
+                find /u01/app/oracle/product/9.2.0/network/log  -name "sqlnet.log" -exec rm  {} \;
+
+        fi
+
+else
+        echo "No existe archivo /etc/oratab"
+        echo "LLamar a la guardia para que lo creen"
+        exit 3
+fi
+
+	if [ -f $DIRECTORIO/listener.log ];then
+		cp $DIRECTORIO/listener.log $DIRECTORIO/listener.log.$FECHA
+		compress $DIRECTORIO/listener.log.$FECHA
+		> $DIRECTORIO/listener.log
+		find $DIRECTORIO -name "listener.log.*" -mtime +5 -exec rm  {} \;
+	fi
+
+
+echo
+uname -n
+df -k /u01 2>/dev/null
+echo

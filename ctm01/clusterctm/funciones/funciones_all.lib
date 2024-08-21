@@ -1,0 +1,3 @@
+. $MENU_CTM/funciones/funciones_ecs.lib
+. $MENU_CTM/funciones/funciones_ctm.lib
+. $MENU_CTM/funciones/funciones_agt.lib

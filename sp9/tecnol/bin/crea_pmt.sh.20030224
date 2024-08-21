@@ -1,0 +1,253 @@
+
+##############################################################################
+#NOMBRE: crea_pmt.sh                                                         #
+#DIRECTORIO: /tecnol/bin                                                     #
+#EQUIPO: nodo9                                                               #
+#USUARIO: root                                                               #
+#DESCRIPCION: copia los archivos .pmt necesarios para un datacenter nuevo    #
+#             para los jobs de transferencias de archivos de cierre          #
+#             de sucursales.                                                 #
+#METODO DE EJECUCION: manual                                                 #
+#AUTOR: Cesar Lopez - Tecnologia de Sistemas                                 #
+#FECHA: 02/02/2000                                                           #
+#
+##############################################################################
+#
+# Se agrego la generacion de los archivos de parametros para la transferencia
+# de las interfases de StoreFlow para Financial
+#
+# Cesar Lopez  -  21/10/2000
+#
+##############################################################################
+#
+# Se agrego la generacion de los archivos de parametros para la transferencia
+# de las interfases de ventas de Cuentas de Internet
+# Se modifico el numero de sucursal ORIGEN, para que asigne siempre un valor
+# generico XX, en vez de pedir el dato por pantalla.
+#
+# Cesar Lopez  -  01/11/2001
+#
+##############################################################################
+#
+# Se elimino la generacion de los archivos de parametros de una cadena de
+# Conciliacion de Creditos, que no se puso en produccion.
+#
+# Cesar Lopez  -  29/11/2001
+#
+##############################################################################
+#
+# Se elimino la generacion de los archivos de parametros de la transferencia
+# del vtaplu, del sp9 al sp17, ya que no existe mas la cadena VTASUCGDM.
+#
+# Cesar Lopez  -  19/03/2002
+#
+##############################################################################
+#
+# Se agrego la generacion de los archivos de parametros para la transferencia
+# de los archivos TL y PS para Conciliaciones de Tarjetas de Credito
+#
+# Cesar Lopez  -  22/10/2002
+#
+##############################################################################
+
+#
+# Descripcion de variables utilizadas para los distintos formatos del
+# numero de sucursal :
+#
+# ORIGEN  : nro. de origen, sin ceros adelante
+# DESTINO : idem ORIGEN, para el numero de destino
+#
+# ORI     : nro. de origen utilizado en los casos en que el numero es menor
+#           a 100, y se utilizan 2 digitos (ej. hostname)
+# DEST    : idem ORI, para el numero de destino
+#
+# F_ORI   : nro. de origen convertido a formato de 3 digitos
+# F_DEST  : idem F_ORI, para el numero de destino
+#
+#
+
+
+ORIGEN=XX
+ORI=${ORIGEN}
+F_ORI=0${ORIGEN}
+
+while true
+do
+	clear
+	echo "\nIngrese sucursal nueva (sin ceros a la izquierda): \c"
+	read DESTINO
+	if [ x$DESTINO != x ]
+	then
+		break
+	fi
+done
+
+while true
+do
+	clear
+	echo "\nOrigen generico   : $ORIGEN"
+	echo "\n\nSucursal nueva  : $DESTINO"
+	echo "\n\nSon correctos los datos? (s/n) \c"
+	read a
+	case "$a" in
+	s|S)
+		break
+		;;
+	n|N)
+		exit
+		;;
+	esac
+done
+
+if [ `echo $DESTINO|cut -c1-1` = 0 ]
+then
+	clear
+	echo "\nDebe ingresar el numero de sucursal SIN ceros a la izquierda"
+	exit
+fi
+
+cd /tecnol
+
+if [ ! -s ./trntcierre/opercard${F_ORI}A.pmt ]
+then
+	echo "\n\nNo existen los archivos de la sucursal de origen\n"
+	exit
+fi
+
+long_dest=`echo $DESTINO |wc -c`
+
+if [ $long_dest = 2 ]
+then
+	DEST=0${DESTINO}
+	F_DEST=00${DESTINO}
+else
+	DEST=${DESTINO}
+	if [ $long_dest = 3 ]
+	then
+		F_DEST=0${DESTINO}
+	else
+		F_DEST=${DESTINO}
+	fi
+fi
+
+#
+# Creacion de los archivos para la nueva sucursal, con el contenido modificado.
+# En esta parte se cambia el numero de sucursal cuando aparece con 2 digitos.
+#
+sed s/suc$ORI/suc$DEST/ ./trntcierre/opercard${F_ORI}A.pmt > ./trntcierre/opercard${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/ts03020f${F_ORI}A.pmt > ./trntcierre/ts03020f${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/ts03020i${F_ORI}A.pmt > ./trntcierre/ts03020i${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtacard${F_ORI}A.pmt > ./trntcierre/vtacard${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtadept${F_ORI}A.pmt > ./trntcierre/vtadept${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtaplu${F_ORI}A.pmt > ./trntcierre/vtaplu${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vta${F_ORI}A.pmt > ./trntcierre/vta${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vta${F_ORI}G.pmt > ./trntcierre/vta${F_DEST}G.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtafac${F_ORI}A.pmt > ./trntcierre/vtafac${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtafac${F_ORI}G.pmt > ./trntcierre/vtafac${F_DEST}G.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/zeta${F_ORI}A.pmt > ./trntcierre/zeta${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/opercard${F_ORI}B.pmt > ./trntcierre/opercard${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/ts03020f${F_ORI}B.pmt > ./trntcierre/ts03020f${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/ts03020i${F_ORI}B.pmt > ./trntcierre/ts03020i${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtacard${F_ORI}B.pmt > ./trntcierre/vtacard${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtadept${F_ORI}B.pmt > ./trntcierre/vtadept${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtaplu${F_ORI}B.pmt > ./trntcierre/vtaplu${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/zeta${F_ORI}B.pmt > ./trntcierre/zeta${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/opercard${F_ORI}C.pmt > ./trntcierre/opercard${F_DEST}C.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/ts03020f${F_ORI}C.pmt > ./trntcierre/ts03020f${F_DEST}C.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/ts03020i${F_ORI}C.pmt > ./trntcierre/ts03020i${F_DEST}C.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtacard${F_ORI}C.pmt > ./trntcierre/vtacard${F_DEST}C.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtadept${F_ORI}C.pmt > ./trntcierre/vtadept${F_DEST}C.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtaplu${F_ORI}C.pmt > ./trntcierre/vtaplu${F_DEST}C.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/zeta${F_ORI}C.pmt > ./trntcierre/zeta${F_DEST}C.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/vtacard${F_ORI}D.pmt > ./trntcierre/vtacard${F_DEST}D.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/opercard${F_ORI}E.pmt > ./trntcierre/opercard${F_DEST}E.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trctefte/total${F_ORI}A.pmt > ./trctefte/total${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trctefte/total${F_ORI}B.pmt > ./trctefte/total${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trctefte/totales${F_ORI}A.pmt > ./trctefte/totales${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trctefte/totales${F_ORI}B.pmt > ./trctefte/totales${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trctefte/detalle${F_ORI}A.pmt > ./trctefte/detalle${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trctefte/detalle${F_ORI}B.pmt > ./trctefte/detalle${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trelectro/reselectro${F_ORI}A.pmt > ./trelectro/reselectro${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trelectro/reselectro${F_ORI}B.pmt > ./trelectro/reselectro${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trvtainternet/vtaint${F_ORI}A.pmt > ./trvtainternet/vtaint${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trvtainternet/vtaint${F_ORI}H.pmt > ./trvtainternet/vtaint${F_DEST}H.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/TL${F_ORI}A.pmt > ./trntcierre/TL${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/TL${F_ORI}B.pmt > ./trntcierre/TL${F_DEST}B.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/PS${F_ORI}A.pmt > ./trntcierre/PS${F_DEST}A.pmt
+
+sed s/suc$ORI/suc$DEST/ ./trntcierre/PS${F_ORI}B.pmt > ./trntcierre/PS${F_DEST}B.pmt
+
+
+
+
+
+#
+# Modificacion del numero de sucursal cuando aparece con 3 digitos.
+#
+
+sed s/vta${F_ORI}/vta${F_DEST}/ ./trntcierre/vta${F_DEST}A.pmt > ./trntcierre/vta${F_DEST}A.pmt.$$
+mv ./trntcierre/vta${F_DEST}A.pmt.$$ ./trntcierre/vta${F_DEST}A.pmt
+
+sed s/vta${F_ORI}/vta${F_DEST}/ ./trntcierre/vta${F_DEST}G.pmt > ./trntcierre/vta${F_DEST}G.pmt.$$
+mv ./trntcierre/vta${F_DEST}G.pmt.$$ ./trntcierre/vta${F_DEST}G.pmt
+
+sed s/vta${F_ORI}/vta${F_DEST}/ ./trntcierre/vtafac${F_DEST}A.pmt > ./trntcierre/vtafac${F_DEST}A.pmt.$$
+mv ./trntcierre/vtafac${F_DEST}A.pmt.$$ ./trntcierre/vtafac${F_DEST}A.pmt
+
+sed s/vta${F_ORI}/vta${F_DEST}/ ./trntcierre/vtafac${F_DEST}G.pmt > ./trntcierre/vtafac${F_DEST}G.pmt.$$
+mv ./trntcierre/vtafac${F_DEST}G.pmt.$$ ./trntcierre/vtafac${F_DEST}G.pmt
+
+sed s"/data\/suc${F_ORI}/data\/suc${F_DEST}/" ./trctefte/total${F_DEST}B.pmt > ./trctefte/total${F_DEST}B.pmt.$$
+mv ./trctefte/total${F_DEST}B.pmt.$$ ./trctefte/total${F_DEST}B.pmt
+
+sed s"/data\/suc${F_ORI}/data\/suc${F_DEST}/" ./trctefte/totales${F_DEST}B.pmt > ./trctefte/totales${F_DEST}B.pmt.$$
+mv ./trctefte/totales${F_DEST}B.pmt.$$ ./trctefte/totales${F_DEST}B.pmt
+
+sed s"/data\/suc${F_ORI}/data\/suc${F_DEST}/" ./trctefte/detalle${F_DEST}B.pmt > ./trctefte/detalle${F_DEST}B.pmt.$$
+mv ./trctefte/detalle${F_DEST}B.pmt.$$ ./trctefte/detalle${F_DEST}B.pmt
+
+sed s"/data\/suc${F_ORI}/data\/suc${F_DEST}/" ./trvtainternet/vtaint${F_DEST}H.pmt > ./trvtainternet/vtaint${F_DEST}H.pmt.$$
+mv ./trvtainternet/vtaint${F_DEST}H.pmt.$$ ./trvtainternet/vtaint${F_DEST}H.pmt
+
+
+
+

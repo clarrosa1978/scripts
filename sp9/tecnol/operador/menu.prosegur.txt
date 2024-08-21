@@ -1,0 +1,2 @@
+MENU PROSEGUR
+Formatear Archivos para Procesarlos en Control-M;menu.operador;tr_prosegur.sh 

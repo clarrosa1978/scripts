@@ -1,0 +1,4 @@
+MENU ADMINISTRACION DE SERVICIOS
+Servicio SAMBA;menu.operador;menu.samba.txt
+Procesos NAGIOS (nrpe);menu.operador;menu.nagios.txt
+Servicio Apache web server (httpd);menu.operador;menu.apache.txt

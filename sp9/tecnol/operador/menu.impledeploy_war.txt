@@ -1,0 +1,3 @@
+IMPLEMENTAR DEPLOY WAR ANDROID
+- VER ARCHIVOS A IMPLEMENTAR;admimpleatg_adm01.sh;VER_DEPLOY_WAR
+- Copiar Archivo WAR DE ANDROID a scdigi01 para implementar;admimpleatg_adm01.sh;SCP_DEPLOY_WAR

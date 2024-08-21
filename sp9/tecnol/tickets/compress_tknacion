@@ -1,0 +1,65 @@
+#! /bin/sh
+
+#########################################################################
+#                                      Jorge Fernandez Garay - 04/2007
+# compress_tknacion.sh
+#
+# Programa lanzado por el Job COMPRTKNAC, de la cadena 'TICKETS' NACION
+# que comprime con 'compress' los boletines de Ticket Nacion renombrados
+# a 'dk036020.$ODATE', de fechas anteriores a la actual.
+#
+#########################################################################
+
+set -x
+
+notify_by_mail()
+{
+        set -x
+
+        # Notifica el incidente por mail
+        # En $1 recibe El mensaje a notificar
+
+        echo "$1"|/usr/bin/mhmail -s "Server $HOSTNAME - CADENA DE TRANSMISION DE TICKETS NACION" operacionesaix@coto.com.ar
+
+}
+
+##################### MAIN PROGRAM ###########################
+
+# Recibe 3 Parametros del JOB
+export PLANIF_DATE="$1"
+export TICK_BOL_DIR="$2"
+# Nombre del Boletin, sin extencion '.zip'
+export TICK_BOL_NAME="$3"
+
+export MAIL_BODY=''
+export TO_COMPRESS_BOLS_LIST=''
+export BOL_HEADER=''
+export BOL_HEADER_DATE=''
+export EXIT_STAT=''
+export INCIDENT_FLAG=''
+
+# Lista de Boletines previos (Excluidos los de hoy) a comprimir
+TO_COMPRESS_BOLS_LIST=`ls -tr "$TICK_BOL_DIR"|\
+                       eval egrep '^${TICK_BOL_NAME}\.[0-9]{8}\.[0-9]{4}$\|^${TICK_BOL_NAME}\.[0-9]{8}\.same$'|\
+                       eval egrep -v '^${TICK_BOL_NAME}\.${PLANIF_DATE}\.[0-9]{4}$'`
+
+if [ "$TO_COMPRESS_BOLS_LIST" ]
+then
+          # Se comprimen los Boletines anteriores descomprimidos
+          for bolname in $TO_COMPRESS_BOLS_LIST
+          do
+                  compress "$TICK_BOL_DIR/$bolname"
+                  EXIT_STAT="$?"
+                  if [ "$EXIT_STAT" -ne 0 ] || [ ! -f "/$TICK_BOL_DIR/$bolname.Z" ]
+                  then
+                            MAIL_BODY="JOB COMPRTKNAC: ERROR al comprimir el Boletin $TICK_BOL_DIR/$bolname.\nRevisar..."
+                            notify_by_mail "$MAIL_BODY"
+                            INCIDENT_FLAG="TRUE"
+                  fi
+          done
+
+          [ "$INCIDENT_FLAG" = "TRUE" ] && exit 30
+          exit 0
+else
+          exit 0
+fi

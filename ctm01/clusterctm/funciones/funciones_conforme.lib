@@ -1,0 +1,7 @@
+cambia_conforme_srv()
+{
+SERVER_CONF=$1
+su - $CTM_USR -c "/CTM/ctmadmin/exe/cambia_node_group.sh AGENT $SERVER_CONF MENU" 
+su - $CTM_USR -c "/CTM/ctmadmin/exe/cambia_variable_global.sh SERVER $SERVER_CONF MENU"
+su - $CTM_USR -c "/CTM/ctmadmin/exe/cambia_variable_global.sh SERVER_DOM ${SERVER_CONF}.cc.bna.net MENU" 
+}

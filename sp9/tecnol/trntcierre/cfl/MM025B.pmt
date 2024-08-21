@@ -1,0 +1,9 @@
+%%PARM1=P
+%%PARM2=/trntcierre/suc25
+%%PARM3=MM%%$ODATE..001
+%%PARM4=escala2_boot
+%%PARM5=/appdata/suc25
+%%PARM6=MM%%$ODATE..001
+%%PARM7=transfer
+%%PARM8=desa
+%%PARM9=640

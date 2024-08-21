@@ -1,0 +1,10 @@
+%%AYER=%%CALCDATE %%ODATE -1
+%%PARM1=G
+%%PARM2=/home/ctm/server
+%%PARM3=CTMLOG.suc01.%%AYER..txt.Z
+%%PARM4=suc01
+%%PARM5=/ctmlog
+%%PARM6=CTMLOG.suc01.%%AYER..txt.Z
+%%PARM7=root
+%%PARM8=system
+%%PARM9=600

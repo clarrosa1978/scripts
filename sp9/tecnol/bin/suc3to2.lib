@@ -1,0 +1,21 @@
+#/usr/bin/ksh
+#set -x
+################################################################################
+#      Script: suc3to2.lib
+#       Autor: Gustavo Goette, Francisco Corvalan
+#    Ult.Mod.: 
+# Descripcion: Convierte los numeros de sucursal en formato de tres digitos a
+#              formato de dos digitos
+################################################################################
+function suc3to2
+{
+SUC3="$1"
+export SUC3
+if [ "$SUC3" -lt  100 ]
+then 
+	echo "$SUC3" | sed s/" "//g | cut -c2-3
+else
+	echo "$SUC3" | sed s/" "//g
+fi
+return 0
+}

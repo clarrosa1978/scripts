@@ -1,0 +1,40 @@
+#!/usr/bin/ksh
+set -x
+
+FECHA=$1
+
+PMT_FILE=/tecnol/psoft/pmt/ld_vouchers.pmt
+IN_PATH=/ps/tools2/interfaces/deployment/input
+
+# cd ${IN_PATH}
+if [ $? != 0 ]
+then
+        echo "No se pudo acceder a ${IN_PATH}"
+        exit 2
+fi
+
+FILE=GDMAP09_01_${FECHA}??????
+AUX=`ssh psp1 "cd ${IN_PATH} ; ls -t ${FILE} | head -1"`
+
+
+ if [ "$AUX" = "" ]
+ then
+
+ echo "No se pudo determinar el nombre del archivo"
+
+ exit 1
+
+ else
+
+echo "%%PARM1=${IN_PATH}/${AUX}" > ${PMT_FILE}
+echo "%%PARM2=GDM_AP09" >> ${PMT_FILE}
+echo "%%PARM3=%%ODATE" >> ${PMT_FILE}
+echo "%%PARM4=INTER_GDM" >> ${PMT_FILE}
+
+ fi
+
+if [ ! -s ${PMT_FILE} ]
+then
+        echo "No se pudo generar ${PMT_FILE}"
+        exit 2
+fi

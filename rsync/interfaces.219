@@ -1,0 +1,13 @@
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+# The primary network interface
+auto enp2s0
+iface enp2s0 inet static
+address 10.219.240.XX
+netmask 255.255.254.0
+gateway 10.219.241.254
+dns-nameservers 172.16.3.52
+dns-nameservers 128.2.254.183
+dns-search redcoto.com.ar

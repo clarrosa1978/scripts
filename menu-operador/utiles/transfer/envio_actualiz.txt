@@ -1,0 +1,91 @@
+### Opcion de Menu para transferir  actualiz.txt
+### de Accor tickets negativos. Por Dario Machado
+clear
+#!/bin/ksh
+export fileLog=$OPERADOR_LOG/envio.actualiz.txt.log
+arch=actualiz.txt
+arch_dest=actualiz.txt
+
+cd /sfctrl/tmp/TICKETS
+file $arch |grep text
+VAR="$?"
+if [ $VAR -ne 0 ]
+then
+        echo "\n \t TIPO DE ARCHIVO INCORRECTO, VERIFICAR \n "
+else
+
+if [ ! -s "$arch" ] 2>/dev/null
+then
+        echo "\n\t EL ARCHIVO $arch  NO EXISTE O ESTA VACIO \n"
+else
+fecha=`date +%Y%m%d`
+dd=`date +%d`
+mm=`date +%m`
+aa=`date +%Y`
+echo "\n \t EL ARCHIVO A TRANSFERIR DEBE LLAMARSE actualiz.txt "
+echo "\n \t CHEQUEAR AQUI SI ES CORRECTO NOMBRE Y FECHA "
+echo "\n"
+ls -l $arch
+echo "\n \t EL ARCHIVO ES CORRECTO ? S/N: "
+read A
+case $A in
+s|S) continue ;;
+n|N) exit 0 ;;
+*) echo "\n \t OPCION ERRONEA " ; exit 0 ;;
+esac
+
+echo  "\n Enviando archivo: $arch a sucursales ..... \n "
+echo  "\n    Aguarde por favor ... \n "
+echo  "\nFecha: "`date` | tee -a $fileLog
+echo
+fi
+cd /sfctrl/tmp/TICKETS
+if cmp -s actualiz.txt actualiz.txt.enviado
+then
+        echo "\n \t \t ARCHIVO  YA  PROCESADO \n" ;sleep 3 ; exit 0
+else
+if [ -s  "$arch" ]
+then
+	for i in `cat /etc/listasuc|grep -v 73|grep -v 79 |grep -v 87`
+	do
+	   ping -c 3 suc$i 1>/dev/null 2>/dev/null
+	   if [ $? = 0 ]
+	     then
+		echo "" | tee -a $filelog
+		echo " Transfiriendo archivo $arch a suc$i " | tee -a $fileLog
+		rcp $arch suc$i:/sfctrl/data/carga/$arch_dest
+		rsh suc$i chown sfctrl.sfsw /sfctrl/data/carga/$arch_dest
+		rsh suc$i chmod 664 /sfctrl/data/carga/$arch_dest
+		rsh suc$i ls -l /sfctrl/data/carga/$arch_dest | tee -a $filelog
+		echo " Finalizó la transmisión a suc$i " | tee -a $fileLog
+	     else
+		echo "\n   $dd/$mm/$aa :  Sin comunicacion con suc$i ...\n" | tee -a $fileLog
+		echo "\n   Reenviar cuando se reestablezca el vinculo .\n"
+		sleep 2
+	    fi
+	done
+# Transferencia a servidor RHEL ZonaE 
+                echo " Transfiriendo archivo $arch a ze094 " | tee -a $fileLog
+                scp $arch ze094:/sfctrl/data/carga/$arch_dest
+                ssh ze094 chown sfctrl.sfsw /sfctrl/data/carga/$arch_dest
+                ssh ze094 chmod 664 /sfctrl/data/carga/$arch_dest
+                echo " Finalizó la transmisión a ze094 " | tee -a $fileLog
+		echo " Transfiriendo archivo $arch a ze103 " | tee -a $fileLog
+                scp $arch ze103:/sfctrl/data/carga/$arch_dest
+                ssh ze103 chown sfctrl.sfsw /sfctrl/data/carga/$arch_dest
+                ssh ze103 chmod 664 /sfctrl/data/carga/$arch_dest
+                echo " Finalizó la transmisión a ze103 " | tee -a $fileLog
+
+#
+	rcp $arch sp9:/tickets/accor/backup/actualiz.$fecha
+	mv /sfctrl/tmp/TICKETS/actualiz.txt /sfctrl/tmp/TICKETS/actualiz.txt.enviado
+
+else
+	echo "\n El archivo $arch NO EXISTE \n" | tee -a $fileLog
+fi
+echo "\tFinalización: "`date` | tee -a $fileLog
+echo "===============================================================" | tee -a $fileLog
+fi
+fi
+echo "\t\nPresione una tecla para continuar"
+read Tecla

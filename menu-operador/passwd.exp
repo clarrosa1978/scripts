@@ -1,0 +1,21 @@
+#!/usr/bin/expect
+#
+# Ejemplo de invoca expect CopiarArchivo.sh con una lista host.txt
+#
+# Este script  Copia el archivo al pos de la Sucursal.
+
+set timeout 15
+
+;# -- command line arguments to our scripts
+set user "$argv"
+set password "123456"
+
+
+spawn passwd $user
+
+expect "password:"
+send -- "$password\r"
+expect "new password:"
+send -- "$password\r"
+
+expect eof

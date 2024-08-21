@@ -1,0 +1,67 @@
+#!/usr/bin/ksh
+###############################################################################
+# Grupo..............: BACKUP                                                 #
+# Autor..............: Marcos Pablo Russo                                     #
+# Objetivo...........: Realizar backup del filesystem.			      #
+# Nombre del programa: bkp_fsys.sh                                            #
+# Nombre del JOB.....: BKPSP9FSYS-F y BKPSP9FSYS-I                            #
+# Solicitado por.....:                                                        #
+# Descripcion........: Realiza un backup full/incremental del filesystem de   #
+#                      sp9.                                                   #
+# Modificacion.......: DD/MM/AAAA                                             #
+#                                                                             #
+# Parametros.........: Fecha (AAAAMMDD).                                      #
+#                      incremental (Backup Incremental)                       #
+#                              o                                              #
+#                      selective   (Backup Full)                              #
+#                                                                             #
+# Tipo de errores de salida :                                                 #
+#                          1: Error.                                          #
+###############################################################################
+
+set -x
+
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+export FECHA=${1}
+export TIPO_BACKUP=${2}
+export HORA=`date +'%H:%M'`
+export NOMBRE="bkp_fsys"
+export PATHAPL="/tecnol/backups"
+export PATHLOG="${PATHAPL}/log"
+export LOGSCRIPT="${PATHLOG}/${NOMBRE}.${TIPO_BACKUP}.${FECHA}.${HORA}.log"
+
+###############################################################################
+###                            Funciones                                    ###
+###############################################################################
+autoload Borrar
+autoload Check_Par
+autoload Enviar_A_Log
+
+###############################################################################
+###                            Principal                                    ###
+###############################################################################
+Check_Par 2 $@
+[ $? != 0 ] && exit 1
+Enviar_A_Log "INICIO - Comienza la ejecucion del backup full/incremental del filesystem." ${LOGSCRIPT}
+[ $? != 0 ] && exit 3
+if [ -x /usr/bin/dsmc ]; then
+	sudo /usr/bin/dsmc ${TIPO_BACKUP} | tee -a ${LOGSCRIPT}
+
+	RESUL=$?
+        if [ $RESUL != 0 ] && [ $RESUL != 4 ]; then
+          Enviar_A_Log "ERROR - Fallo la ejecucion del backup full/incremental de sp9." ${LOGSCRIPT}
+          Enviar_A_Log "FINALIZACION - CON ERROR." ${LOGSCRIPT}
+          exit 1
+	else
+	 Enviar_A_Log "FINALIZACION - OK." ${LOGSCRIPT}
+	 find ${PATHLOG} -name "${NOMBRE}.*.log" -mtime +2 -exec rm {} \;
+	 find /backup_suc -name "*.bzip2" -mtime +1 -exec rm {} \;
+ 	 exit 0
+        fi
+else
+        Enviar_A_Log "ERROR - No hay permisos de ejecucion para el comando dsmc." ${LOGSCRIPT}
+        Enviar_A_Log "FINALIZACION - CON ERRORES." ${LOGSCRIPT}
+        exit 1
+fi

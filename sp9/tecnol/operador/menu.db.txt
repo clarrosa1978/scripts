@@ -1,0 +1,7 @@
+MENU BASE DE DATOS
+Levantar Listener LCTM7XXX;adm_controlm.sh;UPLSNCTM7
+Bajar Listener LCTM7XXX;adm_controlm.sh;DOWNLSNCTM7
+Chequear Listener LCT7MXXX;adm_controlm.sh;VERLSNCTM7
+Levantar DB CTM7XXX;adm_controlm.sh;UPDBCTM7
+Bajar DB CTM7XXX;adm_controlm.sh;DOWNDBCTM7
+Chequear DB de CTM7XXX;adm_controlm.sh;VERDBCTM7

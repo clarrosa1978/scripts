@@ -1,0 +1,172 @@
+#!/usr/bin/ksh
+###############################################################################
+# Autor..............: C.A.S                                                  #
+# Usuario ...........: root                                                   #
+# Objetivo...........: Mostrar el ultimo login del usuario                    #
+# Nombre del programa: menu_Operador.ksh                                      #
+# Descripcion........: Para esta opcion es necesario tener instalado accting  #
+# Modificacion.......: 17/10/2001                                             #
+###############################################################################
+
+# set -x
+###############################################################################
+#                        Definicion de variables                              #
+###############################################################################
+
+DATOS="/var/adm/acct/sum/loginlog"
+export DATOS
+DENEGADOS="root|sys|adm|qpgmr|oracle|anonymous|daemon|netinst|legato|guest|nobody|lpd|lpad|uucp|bin|imnadm|servdir|ftp|odm|odf"
+LUGAR=/local/auditor/reportes
+
+###############################################################################
+#                          Definicion Funciones  
+###############################################################################
+
+function vectores
+{
+	contador=0
+	mes_actual=`date +%m`
+	anno_actual=`date +%Y`
+	cta_annos=0
+	i=0
+	while [ $i -lt 12 ]
+       		do
+                	i=`expr $i + 1`
+                	vector[$i]=0
+        	done
+	while [ $contador -lt 12 ]
+        	do
+                	contador=`expr $contador + 1`
+                	vector[$contador]=$contador
+        	done
+}
+function ultimo
+{
+	clear
+	while true
+		do
+		vectores
+		echo "Ingrese la cantidad de meses (menor a 25)"
+		read cant
+		case $cant in
+			[1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24) mes_buscado=`echo ${vector[mes_actual]}`
+                        while [ $cant -ne 0 ]
+                              do
+                              	cant=`expr $cant - 1`
+                               	mes_buscado=`expr $mes_buscado - 1`
+                               	if [ $mes_buscado -eq 0 ]
+                                       	then
+                                       		mes_buscado=12
+                                       		cta_annos=`expr $cta_annos + 1 `
+                                	fi
+                          	done
+                        ;;
+        	*) echo "Error"
+                	sleep  2
+                	exit
+                        ;;
+		esac
+anno_buscado=`expr $anno_actual - $cta_annos`
+
+#
+# Condicional para que salga el formato de fecha por pantalla.
+#
+
+if [ $mes_buscado -lt 10 ]
+        then
+                buscado=`echo $anno_buscado"-""0"$mes_buscado`
+        else
+                buscado=`echo $anno_buscado"-"$mes_buscado`
+fi
+echo "Fecha a buscar: $buscado"
+buscadox=`echo $buscado |cut -c3-7`
+export buscadox
+echo "Confirma la fecha: (S/N) \c"
+read resp 
+case $resp in 
+	S|s) break 
+		;; 
+	N|n) clear
+		;; 
+esac
+done
+}
+
+###############################################################################
+#                                   Principal                                 # 
+###############################################################################
+
+while true 
+	do 
+		clear
+		echo "\t\t\t Ver ultimo login de usuarios"
+		echo "\t\t\t ****************************"
+		echo "" 
+		echo "\t\t\t 1 - Busqueda por nombre " 
+		echo "\t\t\t 2 - Listar todos los usuarios" 
+		echo "\t\t\t 3 - Usuarios que no se conectan hace x meses" 
+		echo "\t\t\t s - Salir y regresar al menu anterior " 
+		read opcion  
+		case $opcion in 
+		1) echo "\t\t\t Ingrese el nombre del usuario: \c"
+			read nombre
+			LINEA=`grep $nombre $DATOS`
+			if [ $? != 0 ] 
+				then 
+				echo "Error , ingrese un nombre por favor "
+					sleep 1 
+			fi 
+			dia=`echo $LINEA |awk -F "-" '{ print $3 }'|awk '{ print $1}'`
+			mes=`echo $LINEA |awk -F "-" '{print $2}'`
+			ano=`echo $LINEA |awk -F "-" '{print $1}'`
+			apellido=`echo $LINEA |awk '{print $2}'`
+			clear
+			echo "\t\t\t Ultimo Login 		Usuario"
+			echo "\t\t\t ************ 		*******" 
+			echo ""
+			echo "\t\t\t $dia/$mes/$ano 		$apellido"
+			echo ""
+			echo ""
+			echo ""
+			echo "\t\t\t <ENTER> VOLVER AL MENU ANTERIOR"
+			read nada
+			;;
+		2)	clear	
+			echo "\t\t\t Ultimo Login 		Usuarios" >$LUGAR/borraR
+			echo "\t\t\t ************ 		********" >>$LUGAR/borraR
+			echo ""
+			echo ""
+			echo ""
+			cat $DATOS | grep -Ev "$DENEGADOS" |while read LINEA NOMBRE
+				do 
+			dia=`echo $LINEA |awk -F"-" '{print $3}'`
+			mes=`echo $LINEA |awk -F"-" '{print $2}'`
+			ano=`echo $LINEA |awk -F"-" '{print $1}'`
+			apellido=`echo $NOMBRE`
+			echo "\t\t\t $dia/$mes/$ano		$apellido" >>$LUGAR/borraR
+				done
+			more -d $LUGAR/borraR
+			rm -f borraR
+			echo "<ENTER> VOLVER AL MENU ANTERIOR"
+			read nada
+			;;
+		3)	clear	
+			ultimo
+			clear
+			echo " Esta buscando.............."
+			sleep 2
+			grep "^$buscadox" $DATOS |more -d
+			sleep 5
+			echo "Presione una tecla para seguir .."
+			sleep 2
+			;;
+
+		"S|s") exit 
+ 			;;
+
+		*) clear 
+		   echo " \n\n\n\n\t\tOpcion incorrecta .............."
+	   	   echo " \t\t< ENTER > Continuar............."
+			;;
+		esac
+	done

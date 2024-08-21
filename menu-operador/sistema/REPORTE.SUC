@@ -1,0 +1,22 @@
+# =====================================================================
+#  Reporte de Errores de Hardware en SUCURSALES - 01092000
+#  Daniel Goras -    
+#  Recolecta datos y lo envia por mail 
+# ======================================================================
+#  Formato de fecha : mmddhhMMyy
+
+LISTA="clarrosa@coto.com.ar"
+HORAMM="0000"
+FECHA=`date +%m%d$HORAMM%y`
+{
+echo "     Reporte de errores de Hardware       "   
+echo "=========================================="
+
+for i in `cat /etc/listasuc`
+do
+	echo "Sucursal :      $i     "
+	echo "=======================" 
+	rsh suc$i errpt -s $FECHA -d H,U  
+	echo
+done
+} | mail -s "Reporte Errores de HW de Sucursales dia `date +"%d/%m/%y"`" $LISTA

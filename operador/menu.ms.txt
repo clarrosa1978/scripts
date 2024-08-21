@@ -1,0 +1,4 @@
+MENU MULTISTORE
+Chequear jobs de venta (Debe haber 119);queryms.sh;
+Arrancar jobs de venta;startms.sh;
+Parar jobs de venta;stopms.sh;

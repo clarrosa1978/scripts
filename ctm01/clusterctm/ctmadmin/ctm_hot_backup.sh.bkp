@@ -1,0 +1,39 @@
+#!/bin/ksh -x
+#DEFINICION DE VARIABLES
+BKPDIR=/backups/
+NUMBER_OF_BKPS=2
+ARCHIVE_DIR=$BKPDIR/archives
+ARCHIVE_FILE=NO
+#Carga de Funciones
+. $MENU_CTM/funciones/funciones.lib
+#Eliminado el anteultimo resguardo 
+rm -f /backups/coldbkp.prev/*
+test_status $? rm
+#Moviendo el ultimo resguardo 
+mv /backups/coldbkp/*  /backups/coldbkp.prev/
+test_status $? mv
+#Eliminando los archives que no sean del ultimo resguardo
+CURRENT_BACKUPS=`ls ${ARCHIVE_DIR}/*.backup | wc -l | sed s/" "/""/g`
+echo ${CURRENT_BACKUPS}
+while  [ ${NUMBER_OF_BKPS} -le ${CURRENT_BACKUPS} ] 
+do
+	ARCHIVE_LIST=`ls ${ARCHIVE_DIR}/ | grep -v archive_ `
+	for i in `echo ${ARCHIVE_LIST}` 
+	do
+	read a
+			
+		if [ -z `echo $i | grep .backup` ]
+		then
+			rm ${ARCHIVE_DIR}/$i
+		else
+			CURRENT_BACKUPS=`expr ${CURRENT_BACKUPS} - 1`
+			rm ${ARCHIVE_DIR}/$i
+			break
+		fi
+		read b
+	done
+done
+ctmdbbck -f$HOME/.controlm2 -d/backups/coldbkp -mH
+test_status $? ctmdbbck
+rm -f /backups/coldbkp.prev/*
+test_status $? rm

@@ -1,0 +1,71 @@
+#
+#Variables de Servidores
+#
+#Variable de Nombre de Servidor
+export SERVER=em02
+#Nombre del otro Nodo
+export MIRROR_NODE=em02c
+#Nombre del servidor Primario
+export NODO_1=${SERVER}
+#Nombre del servidor Secundario
+export NODO_2=em02
+#Nombre de Servidores de EM
+export ECS_SERVERS="$NODO_1 $NODO_2"
+#Funcion del Servidor
+export FUNCION=STANDALONE
+#Nombre Original del SERVIDOR
+export ORIGINAL_SERVER=em02c
+#SERVIDOR DE RECOVERY
+export RECOVERY_SERVER=NONE 
+#
+#Variables de SO
+#
+#Mensaje de SO para eliminar
+export SU_MSG="Microsystems|mail."
+#Mensaje de SO para eliminar en SSH
+export SSH_MSG="/usr/lib/gss/gl/mech_krb5.so"
+#Directorio de Trabajo
+export WRK_DIR=${MENU_CTM}/funciones
+#Usuario de SO de Control-M Server
+export CTM_USR=ctmsrv
+#HOME del USUARIO CTM_USR
+export CTM_USR_HOME=`su - $CTM_USR  -c 'echo $HOME'  | egrep -v $SU_MSG `
+#Usuario de SO de Control-M Enterprise Manager
+export ECS_USR=ecs
+#HOME DEL ECS_USR
+export ECS_USR_HOME=`su - $ECS_USR  -c 'echo $HOME'  | egrep -v $SU_MSG `
+#Usuario de SO de Control-M AgentS
+export AGT_USR=ctmsrv
+#Usuario de SO de Control-M AgentS
+export AGT_USR_HOME=`su - $AGT_USR  -c 'echo $HOME'  | egrep -v $SU_MSG `/ctm_agent
+
+#
+#Variables de Base de Datos
+#
+#Tipo de Base de Datos de Control-M EM
+export ECS_DATABASE=ORACLE
+#Tipo de Base de Datos de Control-M CTMSRV
+export CTM_DATABASE=ORACLE
+#Usuario de BD de EM
+export ECS_DB_USR=emuser
+#Password de Usuario $ECS_DB_USR
+export ECSPAS=`su - $ECS_USR -c "cat .controlm2 " | egrep -v $SU_MSG `
+#Tipo de base de CTM EM
+export ECS_DB_TYPE=E
+#Tipo de base de CTM CTMSRV
+export CTM_DB_TYPE=E
+#
+#Variables de Control-M
+#
+#Nombre de Datacenter 
+export DATACENTER=ctm01
+#Export Nombre del recurso 
+export RESOURCE=CTM01
+#export Nombre del NODEGRP SECUNDARIO
+CTMSRV_NODE_PRI=CTMSRV
+CTMSRV_NODE_SEC=CTMSRVCTG
+CTMEMS_NODE_PRI=CTMEM
+CTMEMS_NODE_SEC=CTMEMCTG
+#Archivo de LOG
+LOG_FILE=${MENU_CTM}/log/menu_ctm.log
+ECS_BKP_FILE=ECS_USR_HOME/export_ecs_cont.exp

@@ -1,0 +1,69 @@
+#################################################################################################
+#  Seccion:             INCIDENTES (logs para la operacion)                                     #
+#  Actualizado por:     Cristian Larrosa                Fecha:          26/08/2005              #
+#  Tabla en ECS:        STS-XXX                         Aplicacion:     STS                     #
+#  Nombre del Job:      PTES0110                        Grupo:          GEN-INTERFASE-STS-PS    #
+#################################################################################################
+#  Descripcion del Job: Genera interfases de movimientos y cierre de caja.                      #
+#################################################################################################
+#  Exit  1:                                                                                     #
+#       Error: Error en la contidad de parametros pasados al script.                            #
+#                                                                                               #
+#       Accion: Chequear en Control-M los parametros que le esta pasando al script.             #
+#                                                                                               #
+#       Recuperacion: Modificar los parametros en Control-M y rearrancar.                       #
+#                                                                                               #
+#  Exit  2:                                                                                     #
+#       Error: Error al intentar acceder a un directorio.                                       #
+#                                                                                               #
+#       Accion: Llamar a la guardia de Administracion AIX.                                      #
+#                                                                                               #
+#       Recuperacion: Lo que indique la persona que este de guardia.                            #
+#                                                                                               #
+#  Exit  3:                                                                                     #
+#       Error: Error al tratar de grabar en el archivo /sfctrl/sts/log/ptes0110.FECHA.log.      # 
+#                                                                                               #
+#       Accion: Chequear si se lleno el filesystem.                                             #
+#                                                                                               #
+#       Recuperacion: Liberar espacio en el filesystem y dar RERUN al job.                      #
+#                                                                                               #
+#  Exit  5:                                                                                     #
+#       Error: Fallo la ejecucion del SQL.                                                      #
+#                                                                                               #
+#       Accion: Ver el sysout para detectar el error, llamar a la guardia de Administracion AIX #
+#                                                                                               #
+#       Recuperacion: Lo que indique la persona que este de guardia.                            #
+#                                                                                               #
+#  Exit  7:                                                                                     #
+#       Error: Errores de Oracle durante la ejecucion.                                          #
+#                                                                                               #
+#       Accion: Llamar a la guardia de People Soft o DBA, segun corresponda con el error del    # 
+#               sysout.                                                                         #
+#                                                                                               #
+#       Recuperacion: Lo que indique la persona que este de guardia.                            #
+#                                                                                               #
+#  Exit  9:                                                                                     #
+#       Error: No se genero el archivo de spool del sql.                                        #
+#                                                                                               #
+#       Accion: Ver el sysout del job para ver porque fallo y llamar a la guardia de            #
+#               Administracion AIX.                                                             #
+#                                                                                               #
+#       Recuperacion: Lo que indique la guardia de Administracion AIX.                          #
+#                                                                                               #
+#  Exit  77:                                                                                    #
+#       Error: Sin permisos de lectura sobre el archivo ptes0110.sql.                           #
+#                                                                                               #
+#       Accion: Chequear si el usuario de ejecucion tien permisos de lectura sobre el sql       #
+#                                                                                               #
+#       Recuperacion: Dar permiso de lectura al archivo sql para ese usuario y dar RERUN al job #
+#                                                                                               #
+#  Exit  88:                                                                                    #
+#       Error: Sin permisos de ejecucion para el comando sqlplus.                               #
+#                                                                                               #
+#       Accion: Chequear si el usuario con que se ejecuta el script tiene permisos para         #
+#               ejecutar el comando sqlplus.                                                    #
+#                                                                                               #
+#       Recuperacion: Si el usuario no tiene permisos para ejeuctar ese comando, llamar a la    #
+#                     guardia de Administracion AIX.                                            #
+#                                                                                               #
+#################################################################################################

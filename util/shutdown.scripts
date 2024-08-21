@@ -1,0 +1,54 @@
+#############################################################################
+#									    #
+# Agregados al comando 'shutdown' , para Sucursales			    #
+#									    #
+#############################################################################
+set -x
+
+export SUC=`hostname | cut -c4- `
+
+if [ $SUC -lt 100 ]
+then
+        export SUC="0$SUC"
+else
+        export SUC="$SUC"
+fi
+
+echo "\n\nBajando el Listener de SF"
+su - oracle -c "lsnrctl stop"
+
+echo "\n\nBajando el Listener de Control-M"
+su - oracle -c "lsnrctl stop LCTRLM${SUC}"
+
+echo "Bajando Agente de Control-M"
+/home/ctmagt/ctm/scripts/shut-ag -u ctmagt -p ALL
+
+echo "\n\nBajando Control-M..."
+su - ctmsrv -c shut_ctm
+
+echo "\n\nBajando demonios de Venta x reserva..."
+for i in `ps -fu vprctrl | awk '{ print $2}'`
+do
+        kill -9 $i 2>/dev/null
+done
+
+echo "\n\nBajando StoreFlow..."
+for i in `ps -fu sfctrl | awk '{ print $2}'`
+do
+        kill -9 $i 2>/dev/null
+done
+
+echo "\n\nBajando conexiones locales a base de datos"
+for i in `ps -fu oracle | grep "LOCAL=NO" |  awk '{print $2}'`
+do
+        kill -9 $i
+done
+
+echo "Bajando bases ORACLE" 
+su - oracle -c "dbshut"
+
+echo "Matando procesos Oracle restantes"
+for i in `ps -fu oracle | awk '{print $2}'`
+do
+        kill -9 $i
+done

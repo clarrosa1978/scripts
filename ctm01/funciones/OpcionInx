@@ -1,0 +1,9 @@
+function OpcionInx {
+         clear
+         echo "\n\n\n\n\n\n\n\n\n\n\n"
+         echo "\t                             ************************"
+         echo "\t                             *  OPCIÓN INEXISTENTE  *"
+         echo "\t                             ************************"
+         echo "\n\n\n\n\n"
+         PTecla
+}

@@ -1,0 +1,25 @@
+#!/usr/bin/expect
+set timeout 10 
+
+if $argc<1 {    
+  send_user "$argv0: falta IP\n"   
+  send_user "\n"    
+  send_user " IP: \n"   
+  exit 1    
+}   
+
+set IP  [lindex $argv 0]   
+
+spawn -noecho ssh USERID@${IP}
+
+expect  "Password:"   
+send "VruPSan7b\r"
+
+expect  "system>"
+send "storage -list volumes\r"
+#log_file -noappend "./status_raid"   
+
+expect  "system>"
+send "exit\r"
+
+expect eof

@@ -1,0 +1,184 @@
+#! /bin/zsh
+
+#######################################################################################
+#                                                     Fernandez Garay Jorge  02/2002
+# envios_daemons_action
+#
+# Procedimiento de action de la alarma AIXChkEnviosDaemons.cfg.
+# Cuando este procedimiento de action recibe del Alarm Daemon, status DOWN para el pro-
+# ceso cuyo parametro de ejecucion es pasado en el parametro #2, intenta restartearlo;
+# si no puede, reporta con etsalarm.
+# Recibe como parametros el nombre del server local en $1, el nombre del parametro de
+# ejecucion con que se lanza el proceso vpr_daemon.sh a restartear en $2, y el inter-
+# valo entre ciclos del loop del proceso.
+#
+#######################################################################################
+
+
+restart_process()
+{
+
+      set -x
+
+      # En $1 la funcion recibe el nombre del parametro de ejecucion del proceso vpr_daemon.sh a restartear
+      # En $2 la funcion recibe el intervalo entre ciclos del loop
+
+      PROC_TO_RESTART="vpr_daemon.sh"
+      PROC_PATH="/vtareserva/daemon"
+      CMDLINE_ARG="$1"
+      LOOP_INTERVAL="$2"
+      export PROC_TO_RESTART PROC_PATH CMDLINE_ARG LOOP_INTERVAL
+
+      # Variables de Control del Loop
+
+      PROC_STARTUP_RETRIES="0"
+      MATCH_EXEC_ARG=''
+      PROCESS_STAT=''
+      export PROC_STARTUP_RETRIES MATCH_EXEC_ARG PROCESS_STAT
+
+      while [ "$PROC_STARTUP_RETRIES" -le 3 ]
+      do
+               # Control de la existencia del proceso a restartear
+               # Trata de encontrar en la lista de procesos, un proceso vpr_daemon.sh, con un
+               # Argumento pasado en la linea de comando que matchee EXEC_ARG
+
+               MATCH_EXEC_ARG=''
+               MATCH_EXEC_ARG=`ps -e -o args|cut -f 1-8 -d " "\
+                               |awk ' { if ( $1 ~ /sh/ || $1 ~ /ksh/ ) { i = 2; while ( ( $i ~ /^-/ ) && ( i < NF ) ) { $i = ""; i++ }; $1 = ""; print $0 }
+                                        else { print $0 } } '\
+                               |awk ' $1 ~ /vpr_daemon/ && $3 == "'$CMDLINE_ARG'" { print $3 } '`
+
+               PROCESS_STAT=`[ "$MATCH_EXEC_ARG" = "$CMDLINE_ARG" ] && echo "UP"`
+      
+               if [ "$PROCESS_STAT" = "UP" ]
+               then
+                      [ "$PROC_STARTUP_RETRIES" -gt 0 ] && /sn/lib/ets/bin/etsalarm ws001 7 3.6 "VENTAxRESERVA $HOSTNAME Proceso $PROC_TO_RESTART $CMDLINE_ARG Intento DE RESTART EXITOSO No $PROC_STARTUP_RETRIES"
+                      break
+               else
+                      [ "$PROC_STARTUP_RETRIES" -gt 0 ] && /sn/lib/ets/bin/etsalarm ws001 7 3.6 "VENTAxRESERVA $HOSTNAME Proceso $PROC_TO_RESTART $CMDLINE_ARG Intento DE RESTART FALLIDO No $PROC_STARTUP_RETRIES"
+                      if [ "$PROC_STARTUP_RETRIES" -eq 3 ]
+                      then
+                             /sn/lib/ets/bin/etsalarm ws001 4 3.6 "VENTAxRESERVA $HOSTNAME Proceso $PROC_TO_RESTART $CMDLINE_ARG Imposible Restartearlo Automaticamente RESTARTEARLO MANUALMENTE"
+
+                             echo "Proceso $PROC_TO_RESTART $LOOP_INTERVAL $CMDLINE_ARG CAIDO - Imposible Restartearlo Automaticamente - RESTARTEARLO MANUALMENTE"|\
+                             /usr/bin/mutt -s "Server $HOSTNAME - VENTA por RESERVA - Control de los Daemons de Envios a Domicilio" novmesa@redcoto.com.ar
+
+                             echo "Proceso $PROC_TO_RESTART $LOOP_INTERVAL $CMDLINE_ARG CAIDO - Imposible Restartearlo Automaticamente - RESTARTEARLO MANUALMENTE"|\
+                             /usr/bin/mutt -s "Server $HOSTNAME - VENTA por RESERVA - Control de los Daemons de Envios a Domicilio" operaciones@redcoto.com.ar
+
+                             echo "Proceso $PROC_TO_RESTART $LOOP_INTERVAL $CMDLINE_ARG CAIDO - Imposible Restartearlo Automaticamente - RESTARTEARLO MANUALMENTE"|\
+                             /usr/bin/mutt -s "Server $HOSTNAME - VENTA por RESERVA - Control de los Daemons de Envios a Domicilio" CBURHARDT@redcoto.com.ar
+
+
+                             #rsh ecs -l pager /opt/epage/bin/epage HelpDesk "'$HOSTNAME Proceso PROC_TO_RESTART $CMDLINE_ARG Caido - Levantarlo'"
+                             #rsh ecs -l pager /opt/epage/bin/epage Operaciones "'$HOSTNAME Proceso PROC_TO_RESTART $CMDLINE_ARG Caido - Levantarlo'"
+                             return
+
+                      fi
+
+               fi
+
+               # Se reintenta restartear el proceso caido
+               PROC_STARTUP_RETRIES=`expr "$PROC_STARTUP_RETRIES" + 1`
+
+               su - vprctrl "-c nohup $PROC_PATH/$PROC_TO_RESTART $LOOP_INTERVAL $CMDLINE_ARG &"
+
+               sleep 30 
+
+               PROCESS_STAT='' 
+
+      done
+
+}
+
+
+################################# MAIN PROGRAM ##################################
+
+set -x
+
+export HOSTNAME=`uname -n`
+export DOWN_DAEMONS_LIST=''
+
+#ARGS="$*"
+#export ARGS
+
+#ARGS=`set -- $ARGS`
+
+#HOSTNAME="$1"
+#EXEC_ARG="$2"
+#INTERVAL="$3"
+export HOSTNAME EXEC_ARG INTERVAL
+
+###########################################################################################
+# Lista de Procesos a controlar
+# Se obtiene del archivo de configuracion vpr_daemon.cfg, ubicado
+# en el home dir. del usuario vprctrl, en c/sucursal.
+# Este archivo posee 2 campos: 1 - Argumento a pasar al programa vpr_daemon.sh
+#                              2 - Tiempo en sec. entre ciclos del loop de
+#                                  este programa
+#
+# El procedimiento que sigue, genera la Lista de Daemons caidos
+#
+###########################################################################################
+
+if [ -f /vtareserva/daemon/vpr_daemon.cfg ]
+then
+         PROCESSES_LIST=`cat /vtareserva/daemon/vpr_daemon.cfg`
+else
+         # No existe el archivo de config., o se ha renombrado administrativamente
+         echo "No existe el archivo de config. vpr_daemon.cfg"|mutt -s "Sistema de VENTAxRESERVA $HOSTNAME" operaciones@redcoto.com.ar
+         /sn/lib/ets/bin/etsalarm ws001 7 3.6 "VENTAxRESERVA $HOSTNAME No existe el archivo de config. vpr_daemon.cfg"
+         exit 2
+fi
+
+PROCESSES_PATH="/vtareserva/daemon"
+export PROCESSES_LIST PROCESSES_PATH
+
+#Loop de control
+
+PROCESS_IS_UP=''
+INTERVAL=''
+EXEC_ARG=''
+MATCH_EXEC_ARG=''
+export PROCESS_IS_UP INTERVAL EXEC_ARG MATCH_EXEC_ARG
+
+echo "$PROCESSES_LIST"|while read EXEC_ARG INTERVAL
+do
+        # Trata de encontrar en la lista de procesos, un proceso vpr_daemon.sh, con un
+        # Argumento pasado en la linea de comando que matchee EXEC_ARG
+
+        MATCH_EXEC_ARG=''
+        MATCH_EXEC_ARG=`ps -e -o args|cut -f 1-8 -d " "\
+                        |awk ' { if ( $1 ~ /sh/ || $1 ~ /ksh/ ) { i = 2; while ( ( $i ~ /^-/ ) && ( i < NF ) ) { $i = ""; i++ }; $1 = ""; print $0 }
+                                 else { print $0 } } '\
+                        |awk ' $1 ~ /vpr_daemon/ && $3 == "'$EXEC_ARG'" { print $3 } '|uniq`
+
+       PROCESS_IS_UP=`[ "$MATCH_EXEC_ARG" = "$EXEC_ARG" ] && echo "TRUE"`
+
+       if [ "$PROCESS_IS_UP" = "TRUE" ]
+       then
+               #echo "$EXEC_ARG UP $INTERVAL"       # Proceso levantado
+               continue
+       else
+               # Proceso Caido
+               # se genera una lista de daemons caidos. 
+               # Cada Iteracion del loop, carga los args de un daemon caido
+               DOWN_DAEMONS_LIST=`echo "$DOWN_DAEMONS_LIST"|\
+                                  awk ' $0 != "" { print $0 }
+                                             END { print "'$EXEC_ARG'", "'$INTERVAL'" }
+                                      '`
+       fi
+
+done
+
+
+# En DOWN_DAEMONS_LIST queda la lista de daemons caidos
+EXEC_ARG=''
+INTERVAL=''
+
+echo "$DOWN_DAEMONS_LIST"|\
+while read EXEC_ARG INTERVAL
+do
+        restart_process "$EXEC_ARG" "$INTERVAL"
+done
+exit 0

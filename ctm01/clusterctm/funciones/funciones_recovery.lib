@@ -1,0 +1,97 @@
+#Carga variables de Control-M
+. /home2/scripts/funciones/dynamic_menu.var
+set_hostname()
+{
+if [ "#""$SERVER" = "#ctmmd" ]
+then
+	hostname ctmrc
+	export SERVER=ctmrc
+fi
+}
+configura_nodo()
+{
+#Cambia el TNSNAMES y LISTENER de EM
+su - $ECS_USR -c "cp $ECS_ORACLE_HOME/network/admin/tnsnames.ora.$SERVER $ECS_ORACLE_HOME/network/admin/tnsnames.ora"
+su - $ECS_USR -c "cp $ECS_ORACLE_HOME/network/admin/listener.ora.$SERVER $ECS_ORACLE_HOME/network/admin/listener.ora"
+#Cambia el TNSNAMES de CTM
+su - $CTM_USR -c "cp $CTM_ORACLE_HOME/network/admin/tnsnames.ora.$SERVER $CTM_ORACLE_HOME/network/admin/tnsnames.ora"
+#CAMBIA EL NOMBRE DE SERVIDOR INTERNO DE CTM-SERVER
+su - $CTM_USR -c "cp $CTM_USR_HOME/ctm_server/data/config.dat.$SERVER $CTM_USR_HOME/ctm_server/data/config.dat"
+#CAMBIA LA CONFIGURACION DE TAO DE CTMEM
+su - $ECS_USR -c "cp $ECS_USR_HOME/etc/domains/config.xml.$SERVER $ECS_USR_HOME/etc/domains/config.xml"
+}
+
+start_database_ecs_recovery()
+{
+if [ "$1""#" != "#" ]
+then
+        ECS_DB_TYPE=$1
+fi
+if [ "$2""#" != "#" ]
+then
+        ECS_USR=$2
+fi
+if [ "#""$ECS_DB_TYPE" = "#D" ]
+then
+        check_local_database_ecs >> /dev/null
+        STATUS="$?"
+        if [ "#""$STATUS" = "#1" ]
+        then
+                echo "Activando Base de Datos $DATABASE...."
+                echo "Aguarde unos instantes..."
+                su - $ECS_USR -c "start_server_recovery >>/dev/null" >> /dev/null
+                check_local_database_ecs
+                STATUS="$?"
+                if [ "#""$STATUS" = "#0" ]
+                then
+                        echo "Se ha levantado exitosamente la BD $DATABASE en `hostname`"
+                        return 0
+                else
+                        echo "No ha podido levantarse la BD $DATABASE en `hostname`"
+                        return 30
+                fi
+        else
+                echo "La base de datos se encuentra ACTIVA en `hostname`"
+                echo "No es necesario levantarla"
+                return 1
+        fi
+else
+        echo "Base de Datos de Control-M EM NO SE ACTIVA DESDE ESTE MENU"
+        return 2
+fi
+}
+
+configura_nodo_db()
+{
+#Si el servidor es el de recovery deshabilita el mirror
+if [ "#""$SERVER" = "#$RECOVERY_SERVER" ]
+then
+	su - $CTM_USR -c "disable_mirror_recovery"
+fi
+#Si el servidor es el primario habilita el mirror
+if [ "#""$SERVER" = "#$NODO_1" ]
+then
+	ESTADO_DEL_MIRROR=`su - $CTM_USR -c "check_mirror" `
+	if [ "#""$ESTADO_DEL_MIRROR" != "#Mirroring is enabled" ]
+	then
+		echo "Reinicializando el Mirror"
+        	su - $CTM_USR -c "copy_mirror -n"
+	fi
+fi
+#CAMBIA EL HOST DEL DATACENTER
+if [ "#""$SERVER" = "#$RECOVERY_SERVER" ]
+then
+	#Si el server es de RECOVERY
+	su - $ECS_USR -c "cambia_datacenter.sh $DATACENTER $ORIGINAL_SERVER $SERVER"
+else
+	#Si el server es PRIMARIO O MIRROR
+	su - $ECS_USR -c "cambia_datacenter.sh $DATACENTER $RECOVERY_SERVER $SERVER"
+fi
+#CAMBIA EL HOST DE LOS PROCESOS DE EM
+if [ "#""$SERVER" = "#$RECOVERY_SERVER" ]
+then
+	su - $ECS_USR -c "${MENU_CTM}/funciones/reset_ports.sh $ORIGINAL_SERVER $SERVER"
+else
+	su - $ECS_USR -c "${MENU_CTM}/funciones/reset_ports.sh $RECOVERY_SERVER $SERVER"
+fi
+}

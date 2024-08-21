@@ -1,0 +1,28 @@
+###############################################################################
+# Nombre.............: Descomprimir                                           #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Descomprimir un archivo con el comando zip.            #
+# Descripcion........: Recibe como parametro el archivo con el path absoluto  #
+#                      del archivo a descomprimir.                            #
+# Valores de Retorno.: 0 - La funcion termino ok.                             #
+#                      1 - La funcion fallo.                                  #
+# Modificacion.......: 2005/04/25                                             #
+###############################################################################
+function Descomprimir
+{
+	set -x
+        typeset ARCHIVO_ORI=$1
+        typeset ARCHIVO_DES=$2
+        typeset EXIT="1"
+	autoload Check_Par
+	Check_Par 2 "$@"
+	if [ $? = 0 ] 
+	then
+		if [ -s ${ARCHIVO_ORI} ]
+		then
+        		/usr/bin/unzip -p ${ARCHIVO_ORI} >${ARCHIVO_DES} 
+        		[ $? = 0 ] && EXIT="0"
+		fi
+	fi
+        return ${EXIT}
+}

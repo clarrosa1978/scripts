@@ -1,0 +1,79 @@
+#!/usr/bin/ksh
+###############################################################################
+# Aplicacion.........: PRECIOS-GDM-TEST                                       #
+# Grupo..............: TRANSFERENCIA                                          #   
+# Autor..............: Gustavo Alonso                                         #
+# Objetivo...........: COPIA NOVEDADES DE PRECIOS A TESTING                   #
+# Nombre del programa: scp_nov_test.sh                                        #
+# Nombre del JOB.....: SCPNOVXXX                                              #
+# Solicitado por.....:                                                        #
+# Descripcion........:                                                        #
+# Creacion...........: 24/07/2018                                             #
+# Modificacion.......: 24/07/2018                                             #
+###############################################################################
+
+set -x
+
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+
+export ARCHIVO=$1
+export SOURCE_ORI=$2
+export HOST_ORI=$3
+export SOURCE_DES=$4
+export HOST_DES=$5
+
+###############################################################################
+###                            Funciones                                    ###
+###############################################################################
+autoload Borrar
+autoload Check_Par
+autoload Enviar_A_Log
+
+###############################################################################
+###                            Principal                                    ###
+###############################################################################
+Check_Par 5 $@
+if [ $? != 0 ]
+then
+        echo "Falta ingresar uno o mas parametros de ejecucion."
+        exit 1
+fi
+
+	ssh ${HOST_ORI} "cd ${SOURCE_ORI}"
+	if [ $? != 0 ]
+	then
+       		echo "No se pudo acceder al directorio ${SOURCE_ORI}"
+        else
+        	SOURCE_FILE="$(ssh ${HOST_ORI} "cd ${SOURCE_ORI} ; ls -1rt ${ARCHIVO}")"
+        if [ ! "${SOURCE_FILE}" ]
+        then
+                echo "No hay archivos para transferir."
+                exit 4
+        else
+		for ARCH in ${SOURCE_FILE}
+		do
+                scp -pr ${HOST_ORI}:${SOURCE_ORI}/${ARCH} ${SOURCE_DES}
+                if [ $? = 0 ]
+                then
+			export CHECK_ARCH_ORI="$(ssh ${HOST_ORI} "sum ${SOURCE_ORI}/${ARCH} | cut -d' ' -f1")"
+                        export CHECK_ARCH_DES="$(sum ${SOURCE_DES}/${ARCH} | cut -d' ' -f1)"
+                        if [ "$CHECK_ARCH_ORI" = "$CHECK_ARCH_DES" ];
+                        then
+                                echo  "La copia se realizo con exito."
+                        else
+                                echo  "Verificar !!! el archivo ${ARCH} no se copio correctamente."
+                                exit 1
+                        fi
+                else
+                        echo  "No termino de realizarse la copia al servidor ${HOST_DES}, verificar!."
+                        exit 1
+                fi
+		done
+
+		#find ${SOURCE_DIR}/procesados -name "GM03250_*" -mtime +30 -exec rm -f {} \;
+         fi
+
+fi
+

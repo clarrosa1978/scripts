@@ -1,0 +1,76 @@
+#! /bin/sh
+
+#########################################################################
+#                                      Jorge Fernandez Garay - 04/2007
+# chk_tick_nacion
+#
+# Programa lanzado por el Job CKTKNACION, de la cadena 'TICKETS' NACION
+# que determina si el Operador de Turno ha puesto en linea el Boletin
+# de Ticket Nacion, para transmitirlo a las suc.
+#
+#########################################################################
+
+set -x
+
+notify_by_mail()
+{
+        set -x
+
+        # Notifica el incidente por mail
+        # En $1 recibe El mensaje a notificar
+
+        echo "$1"|/usr/bin/mhmail -s "Server $HOSTNAME - CADENA DE TRANSMISION DE TICKETS NACION" operacionesaix@coto.com.ar
+
+}
+
+##################### MAIN PROGRAM ###########################
+
+# Recibe 3 Parametros del JOB
+export PLANIF_DATE="$1"
+export TICK_BOL_DIR="$2"
+export TICK_BOL_NAME="$3"
+
+export MAIL_BODY=''
+export BOL_HEADER=''
+export BOL_HEADER_DATE=''
+export EXIT_STAT=''
+
+if [ -f "$TICK_BOL_DIR/$TICK_BOL_NAME" ]
+then
+         # El operador lo puso en linea deszipeado
+         # Se verifica que sea el de la fecha
+         BOL_HEADER=`head -1 "$TICK_BOL_DIR/$TICK_BOL_NAME"`
+         BOL_HEADER_DATE=`expr "$BOL_HEADER" : '\([0-9]\{8\}\).*$'`
+
+         if [ "$BOL_HEADER_DATE" != "$PLANIF_DATE" ]
+         then
+                    # El Boletin no esta en linea
+                    echo "El Boletin de Ticket Nacion puesto en linea para transmitir, NO ES DE HOY (Ver header).\nBoletin RENOMBRADO como $TICK_BOL_NAME.$PLANIF_DATE.novalid.\nPROHIBIDO DAR FORCE OK a este JOB."
+                    mv "$TICK_BOL_DIR/$TICK_BOL_NAME" "$TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.novalid"
+                    exit 10
+         fi
+
+         # Boletin en Linea
+         # Si no se esta preprocesando otro Boletin en $TICK_BOL_DIR/preproceso, 
+         # lo mueve alli, para verificarlo y renombrarlo
+         if [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+         then
+                    echo "Aun se esta procesando un Boletin PREVIO.\n REEJECUTE este JOB dentro de 1 hora, para el ultimo Boletin.\nPROHIBIDO DAR FORCE OK a este JOB."
+                    exit 20
+         else
+                    # Mueve el Bol al  Dir. de preproceso, para evitar que lo pise otro Bol nuevo.
+                    mv "$TICK_BOL_DIR/$TICK_BOL_NAME" "$TICK_BOL_DIR/preproceso"
+                    EXIT_STAT="$?"
+                    if [ "$EXIT_STAT" -ne 0 ] || [ ! -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+                    then
+                              echo "ERROR AL MOVER EL BOLETIN de Nacion al Dir preproceso.\nPROHIBIDO DAR FORCE OK a este JOB."
+                              exit 25
+                    else
+                              exit 0
+                    fi
+         fi
+else
+         # El Boletin no esta en linea
+         echo "El Boletin de Ticket Nacion de la fecha, no se\n ha puesto aun en linea para transmitir.\nPROHIBIDO DAR FORCE OK a este JOB."
+         exit 10
+fi

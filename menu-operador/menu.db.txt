@@ -1,0 +1,7 @@
+MENU BASE DE DATOS
+Levantar Listener LCTRLMSP9_(Server Primario);lsnr.sh;UPCTM
+Bajar Listener LCTRLMSP9____(Server Primario);lsnr.sh;DOWNCTM
+Chequear Listener LCTRLMSP9_(Server Primario);chklsnr.sh;LCTRLM
+Levantar base CTRLMSP9_____(Server Primario);ejecutasql.sh;updbctrlm
+Bajar base CTRLMSP9________(Server Primario);ejecutasql.sh;downdbctrlm
+Chequear Base de CTRLSP9___(Server Primario);chkdb.sh;CTRLM

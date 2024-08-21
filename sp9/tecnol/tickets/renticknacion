@@ -1,0 +1,67 @@
+#! /bin/sh
+
+#########################################################################
+#                                      Jorge Fernandez Garay - 04/2007
+# renticknacion 
+#
+# Programa lanzado por el Job RENTKNAC, de la cadena 'TICKETS' NACION.
+# Toma el Boletin ya descomprimido y verificado en Dir 'preproceso', y
+# lo renombre con extension '.fecha.hora' ($ODATE.HHMM), copiandolo al
+# directorio definitivo '$TICK_BOL_DIR', desde donde sera transmitido y
+# guardado al menos 18 meses.
+# Por ultimo, se limpia el Boletin original del Dir. 'preproceso'.
+#
+#########################################################################
+
+set -x
+
+##################### MAIN PROGRAM ###########################
+
+# Recibe 3 Parametros del JOB
+export PLANIF_DATE="$1"
+export TICK_BOL_DIR="$2"
+export TICK_BOL_NAME="$3"
+
+export TEMP_FILE="temp_bol.$$"
+export OS_TIME=''
+export BOLNAME_EXTENT=''
+export EXIT_STAT=''
+
+if [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+then
+         # Boletin ya descomprimido y Verificado
+         # Se confecciona la extension para el Nombre del Bol.
+         BOLNAME_EXTENT="$PLANIF_DATE.$OS_TIME"
+
+         # Se copia El Boletin, del Dir de preproceso al Dir definitivo, renombrandolo.
+         cp -p "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" "$TICK_BOL_DIR/$TICK_BOL_NAME.${PLANIF_DATE}"
+
+         if [ -f "$TICK_BOL_DIR/$TICK_BOL_NAME.${PLANIF_DATE}" ]
+         then
+                    diff "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" "$TICK_BOL_DIR/$TICK_BOL_NAME.${PLANIF_DATE}"
+                    EXIT_STAT="$?"
+                    if [ "$EXIT_STAT" -eq 0 ]
+                    then
+                              # Borra el Bol original del Dir de preproceso
+                              rm "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME"
+                              exit 0
+                    else
+                              echo "El Boletin $TICK_BOL_NAME.${PLANIF_DATE}, copiado a $TICK_BOL_DIR,\nDIFIERE del original en el Dir preproceso."
+                              exit 50
+                    fi
+         else
+                    echo "El Boletin $TICK_BOL_NAME.${PLANIF_DATE}, copiado a $TICK_BOL_DIR,\nNO EXISTE en el Dir de destino."
+                    exit 60
+         fi
+
+elif [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.same" ]
+then
+         # El Boletin a transmitir es igual al Boletin previo. 
+         # Se le agrega la fecha y la extension '.same' para evitar que se transmita
+         mv "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.same" "$TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.same"
+         exit 40
+else
+         # El Boletin no esta en linea
+         echo "El Boletin de la fecha,NO EXISTE $TICK_BOL_DIR/preproceso, PARA RENOMBRAR."
+         exit 20
+fi

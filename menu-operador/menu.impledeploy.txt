@@ -1,0 +1,3 @@
+IMPLEMENTAR DEPLOY COTODIGITAL_STORE
+- VER ARCHIVOS A IMPLEMENTAR;admimpleatg_adm01.sh;VER_DEPLOY_IMPLE
+- Copiar Carpeta COTODIGITAL_STORE a scdigi01 para implementar;admimpleatg_adm01.sh;SCP_DEPLOY_IMPLE

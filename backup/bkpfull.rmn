@@ -1,0 +1,16 @@
+run {
+configure device type disk parallelism 4;
+#backup the whole db
+BACKUP AS BACKUPSET DATABASE FORMAT '/rman/df_%d_%u_%T' tag 'whole_database_open';
+#switch out of the current logfile 
+sql 'alter system archive log current';
+#Se verifica el estado de los archiveslog
+crosscheck archivelog all;
+#backup the archived logs
+BACKUP ARCHIVELOG ALL NOT BACKED UP 1 TIMES  FORMAT '/rman/al_%d_%u_%S_%T';
+# backup del controlfile y el spfile
+BACKUP CURRENT CONTROLFILE FORMAT '/rman/cf_%d_%u_%T';
+BACKUP SPFILE FORMAT              '/rman/sp_%d_%u_%T';
+crosscheck archivelog all;
+delete noprompt archivelog until time "sysdate -2";
+}

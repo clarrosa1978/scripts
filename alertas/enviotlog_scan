@@ -1,0 +1,131 @@
+#!/bin/ksh
+set -x
+
+############################################################################
+#                                                                          #
+# Script que verifica que el proceso enviotlog no este colgado en base     #
+# al monitoreo de sus logs                                                 #
+#      ~                                                                   #
+#     . .     Demian Barlaro                                               #
+#     /V\     Administrador UNIX                                           #
+#    // \\    COTO C.I.C.S.A.                Version: Feb 2008             #
+#   /(   )\   dbarlaro@coto.com.ar                                         #
+#    ^ ~ ^    int. 5462                                                    #
+#                                                                          #
+############################################################################
+
+echo 'Status:0' 
+export ENVIOTLOG_STAT_REC=''
+ENVIOTLOG_STAT_REC=`/tecnol/alertas/chkproc_tlog`
+echo "$ENVIOTLOG_STAT_REC"
+export ENVIOTLOG_STAT
+ENVIOTLOG_STAT=`echo "$ENVIOTLOG_STAT_REC"`
+ENVIOTLOG_FILE="/sfctrl/tmp/enviotlog`date +%d`.log"
+export ENVIOTLOG_FILE
+export HOSTNAME=$(uname -n)
+FILELOG="/tecnol/alertas/log/enviotlog.log"
+DATE=$(date +%H%M%S-%d%m%Y)
+
+echo "###################################################################################\n\
+Verificacion de Enviotlog $(date)" >> $FILELOG
+SUC_STATE=`su - sfctrl "/tecnol/alertas/sendSQL.sh"|awk '{print $1}'|sort -u|head -3|tail -1`
+if [ $SUC_STATE -eq 1 ]
+then
+	echo " SUCURSAL ABIERTA " >>$FILELOG
+	# La sucursal esta abierta, pasamos al chequeo de logs
+	if [ "$ENVIOTLOG_STAT" = "UP" ]
+	then
+		# Se controla el crecimiento del log del proceso enviotlog,
+		# en caso que el proceso este levantado, pero colgado.
+		if [ -f "$ENVIOTLOG_FILE" ]
+		then
+			PREVIOUS_REC_COUNT=''
+			CURRENT_REC_COUNT=''
+			REC_COUNT_GROWTH=''
+			PREVIOUS_OFFSET=''
+			CURRENT_OFFSET=''
+			OFFSET_COUNT_GROWTH=''
+			#
+			export PREVIOUS_REC_COUNT CURRENT_REC_COUNT REC_COUNT_GROWTH PREVIOUS_OFFSET CURRENT_OFFSET OFFSET_COUNT_GROWTH
+			# Proceso de inicializacion del archivo de count de
+			# registros del log, para controlar su crecimiento
+			if [ ! -f /tecnol/alertas/etc/enviotlog_log.count ]
+			then
+				CURRENT_REC_COUNT=`wc -l "$ENVIOTLOG_FILE"|awk ' { print $1 } '`
+				echo "$CURRENT_REC_COUNT" > /tecnol/alertas/etc/enviotlog_log.count
+				echo " PRIMERA CORRIDA LOG: $CURRENT_REC_COUNT " >>$FILELOG
+				CURRENT_OFFSET=`tail -3 "$ENVIOTLOG_FILE" |grep Offset -m1|awk ' { print $6 } '`
+				echo " PRIMERA CORRIDA OFFSET: $CURRENT_OFFSET " >>$FILELOG
+				echo "$CURRENT_OFFSET" > /tecnol/alertas/etc/offset_log.count
+				# Si recien se genera el archivo de record count del log, no se
+				# controla crecimiento del log, hasta la siguiente corrida
+				exit 0
+			fi
+			# Si existe el archivo de record count del log, se controla crecimiento del log.
+			PREVIOUS_REC_COUNT=`cat /tecnol/alertas/etc/enviotlog_log.count`
+			CURRENT_REC_COUNT=`wc -l "$ENVIOTLOG_FILE"|awk ' { print $1 } '`
+			REC_COUNT_GROWTH=`expr "$CURRENT_REC_COUNT" - "$PREVIOUS_REC_COUNT"`
+			PREVIOUS_OFFSET=`cat /tecnol/alertas/etc/offset_log.count`
+			CURRENT_OFFSET=`tail -3 "$ENVIOTLOG_FILE" |grep Offset -m1|awk ' { print $6 } '`
+			OFFSET_COUNT_GROWTH=`expr "$CURRENT_OFFSET" - "$PREVIOUS_OFFSET"`
+			if [ "$REC_COUNT_GROWTH" -lt 0 ]
+			then
+				# Este valor debe ser >= 0. Si es < 0, el valor corresponde a una
+				# exepcion, posiblemente una depuracion del log, que deja incon-
+				# sistente el record count previo. Debe repararse el problema, y
+				# resignar el control hasta la proxima corrida.
+				echo "$CURRENT_REC_COUNT" > /tecnol/alertas/etc/enviotlog_log.count
+				echo " REINICIO COUNT LOG: $CURRENT_REC_COUNT " >>$FILELOG
+				echo "$CURRENT_OFFSET" > /tecnol/alertas/etc/offset_log.count
+				echo " REINICIO COUNT OFFSET: $CURRENT_OFFSET " >>$FILELOG
+				exit 0
+			fi
+			if [ "$REC_COUNT_GROWTH" -gt 0 ]
+			then
+				# Se detecta crecimiento del log, y el status del enviotlog es:ACTIVO
+				# Se actualiza el enviotlog_log.count
+				echo "$CURRENT_REC_COUNT" > /tecnol/alertas/etc/enviotlog_log.count
+				echo " COUNT LOG: $CURRENT_REC_COUNT " >>$FILELOG
+                                # Ahora hay que verificar que el offset este creciendo
+				if [ "$OFFSET_COUNT_GROWTH" -gt 0 ]
+				then
+					# Se detecta crecimiento del offset, entonces esta ok.
+					# Se actualiza el offset_log.count
+					echo "$CURRENT_OFFSET" > /tecnol/alertas/etc/offset_log.count
+					echo " COUNT OFFSET: $CURRENT_OFFSET " >>$FILELOG
+					exit 0
+				else
+					# En este punto, OFFSET_COUNT_GROWTH = 0, y no se detecta crecimiento del log.
+					# El Status del enviotlog es: HUNG_UP, y se notifica via mail 
+					echo "$CURRENT_OFFSET" > /tecnol/alertas/etc/offset_log.count
+					echo " COUNT OFFSET: $CURRENT_OFFSET " >>$FILELOG
+					echo " El offset no crece " >>$FILELOG
+					echo "Proceso ENVIOTLOG OK, Pero No procesa. Revisar /sfctrl/tmp/enviotlog`date +%d`.log"|\
+					/bin/mailx -s "Server $HOSTNAME - Control del Proceso enviotlog" operaciones@redcoto.com.ar
+					exit 0
+				fi
+			fi
+			# En este punto, REC_COUNT_GROWTH = 0, y no se detecta crecimiento del log.
+			# El Status del enviotlog es: HUNG_UP, y se notifica via mail 
+			echo " COUNT LOG: $CURRENT_REC_COUNT " >>$FILELOG
+			echo " El log no crece " >>$FILELOG
+			echo "Proceso ENVIOTLOG COLGADO No procesa. Revisar /sfctrl/tmp/enviotlog`date +%d`.log"|\
+			/bin/mailx -s "Server $HOSTNAME - Control del Proceso enviotlog" operaciones@redcoto.com.ar
+			exit 0
+		else
+			# Si no existe el log, se notifica por mail
+			echo " No existe el log " >>$FILELOG
+			echo "El log no existe, revisar"|\
+			/bin/mailx -s "Server $HOSTNAME - Control del Proceso enviotlog" operaciones@redcoto.com.ar
+			exit 0
+		fi
+	else
+		# Si la sucursal esta abierta,el enviotlog no esta arriba
+		/tecnol/alertas/enviotlog_action DOWN `uname -n`
+		echo "Proceso ENVIOTLOG CAIDO Levantarlo."|\
+		/bin/mailx -s "Server $HOSTNAME - Control del Proceso enviotlog" operaciones@redcoto.com.ar
+		exit 0
+	fi
+# Si la sucursal esta cerrada, no controla nada y termina
+fi
+exit 0

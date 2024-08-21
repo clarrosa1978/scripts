@@ -1,0 +1,74 @@
+check_agent()
+{
+if [ "$1""#" != "#" ]
+then
+        AGT_USR=$1
+fi
+AGT_PROC=`su - $AGT_USR -c "shagent" | egrep -v $SU_MSG | grep -v p_ctmatw | wc -l | sed s/" "//g`
+if [ "#""$AGT_PROC" = "#2" ]
+then
+	echo "Control-M Agent esta ACTIVO"
+	return 0
+else
+	echo "Control-M Agent esta INACTIVO"
+	return 1
+fi
+}
+
+	
+start_agent()
+{
+if [ "$1""#" != "#" ]
+then
+        AGT_USR=$1
+fi
+check_agent $AGT_USR >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+	echo "Control-M Agent YA se encontraba ACTIVO"
+	return 0
+else
+        CONFIG_LINES=`wc -l ${AGT_USR_HOME}/ctm/data/CONFIG.dat | awk ' { print $1 } '`
+        if [ ${CONFIG_LINES} -lt 10 ]
+        then
+                cp $AGT_USR_HOME/ctm/data/cfg_backup/CONFIG.bak ${AGT_USR_HOME}/ctm/data/CONFIG.dat
+        fi
+	$AGT_USR_HOME/ctm/scripts/start-ag -u $AGT_USR -p ALL >> /dev/null
+	check_agent $AGT_USR
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		return 0
+	else
+		echo "PROBLEMAS activando el Control-M Agent"
+		return 1
+	fi
+fi
+}
+
+stop_agent()
+{
+if [ "$1""#" != "#" ]
+then
+        AGT_USR=$1
+fi
+check_agent $AGT_USR >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+	$AGT_USR_HOME/ctm/scripts/shut-ag -u $AGT_USR -p ALL >> /dev/null
+	check_agent $AGT_USR
+	STATUS=$?
+        if [ "#""$STATUS" = "#1" ]
+        then
+                return 0
+        else
+                echo "PROBLEMAS inactivando el Control-M Agent"
+                return 1
+        fi
+else
+	echo "El control-M Agent YA se encontraba INACTIVO"
+	return 0
+fi
+}

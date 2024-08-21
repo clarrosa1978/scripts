@@ -1,0 +1,9 @@
+%%PARM1=P
+%%PARM2=/trntcierre/suc24
+%%PARM3=zeta.%%ODAY.%%OMONTH
+%%PARM4=amscentral
+%%PARM5=/sfctrl/data/fromsucursal/suc24
+%%PARM6=zeta.%%ODAY.%%OMONTH
+%%PARM7=sfctrl
+%%PARM8=sfsw
+%%PARM9=640

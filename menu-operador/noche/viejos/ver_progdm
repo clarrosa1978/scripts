@@ -1,0 +1,37 @@
+#set -x
+LISTASUC_GDM="/home/root/operador/andres/lis_suc_gdm"
+clear
+for i in `cat $LISTASUC_GDM`
+#for i in 56 87
+do
+    ping -c 2 suc"$i" >/dev/null 2>&1
+    if [ $? = 0 ]; then
+       	echo "SUC. $i: Precios GDM \c"
+       	rsh suc$i "ls -l /sfctrl/tmp/procesa_suc.log  2>/dev/null" |  awk '{ printf "del %s / %s [%shs] ",$7,$6,$8 }' 
+	rsh suc$i "tail /sfctrl/tmp/procesa_suc.log 2>/dev/null" >/tmp/$$.log
+
+	FSize=`ls -l /tmp/$$.log | awk '{print $5}' `
+	if [ "$FSize" = "0" ]
+	then
+		echo " => Log de precios vacio"
+	else
+		CPROCS=` grep "Procesados" /tmp/$$.log `
+		STATPROCS=` grep "FIN" /tmp/$$.log `
+		if [ "$CPROCS" = "" ]
+		then
+			echo " => Carga de precios incompleta"
+		else
+			echo $STATPROCS | grep "0" 1>/dev/null
+			if [ $? = 0 ]
+			then
+				echo " => $CPROCS [OK]"
+			else
+				echo " => $STATPROCS [ERROR]"
+			fi
+		fi
+	fi
+    else
+       echo "SUC. $i: No hay comunicacion."
+    fi
+done
+rm /tmp/$$.log

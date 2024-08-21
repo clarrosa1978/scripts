@@ -1,0 +1,9 @@
+%%PARM1=G
+%%PARM2=/sfctrl/data/descarga
+%%PARM3=zeta.%%ODAY.%%OMONTH
+%%PARM4=suc110
+%%PARM5=/trntcierre/suc110
+%%PARM6=zeta.%%ODAY.%%OMONTH
+%%PARM7=root
+%%PARM8=system
+%%PARM9=700

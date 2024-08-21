@@ -1,0 +1,1096 @@
+#!/usr/bin/ksh
+################################################################################
+# Nombre de la funcion : cero_size                                             #
+# Parametros que recibe :                                                      #
+#       SOURCE_FILE = Nombre del archivo a verificar el tamanio                #
+# Descripcion del funcionamiento : Verifica si un archivo tiene tamanio 0(cero)#
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       9  = El archivo no esta vacio                                          #
+#       10 = El archivo no existe                                              #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+cero_size()
+{
+  SOURCE_FILE="$1"
+  if [ "$#" != "1" ]
+  then
+     echo "Usage cero_size archivo"
+     exit 32
+  fi
+  if [ ! -f $SOURCE_FILE ]
+  then
+     echo "Error. El archivo $SOURCE_FILE no existe"
+     exit 10
+  fi
+  if [ -s $SOURCE_FILE ]
+  then
+     echo "Error. El archivo $SOURCE_FILE no esta vacio"
+     exit 9
+  else
+     echo "El archivo $SOURCE_FILE esta vacio"
+  fi
+}
+
+
+################################################################################
+# Nombre de la funcion : file_verify                                           #
+# Parametros que recibe :                                                      #
+#       SOURCE_FILE = Nombre del archivo a verificar                           #
+#       PERMISO     = Permiso a verificar                                      #
+#                     n - verifica solamente la existencia del archivo         #
+#                     r - Verifica permiso de lectura                          #
+#                     w - Verifica permiso de escritura                        #
+#                     x - Verifica permiso de ejecucion                        #
+# Descripcion del funcionamiento : Verifica si existe un archivo y si tiene    #
+# permiso                                                                      #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       10 = El archivo no existe                                              #
+#       14 = El archivo no tiene permiso de escritura                          #
+#       15 = El archivo no tiene permiso de lectura                            #
+#       21 = El archivo no tiene permiso de ejecucion                          #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+file_verify()
+{
+  SOURCE_FILE="$1"
+  PERMISO=$2
+  if [ "$#" != "2" ]
+  then
+     echo "Usage file_verify archivo permiso"
+     exit 32
+  fi
+  if [ ! -f $SOURCE_FILE ] 
+  then
+     if [ $PERMISO = h ]
+     then
+        echo "El archivo $SOURCE_FILE no existe"
+     else
+        echo "Error. El archivo $SOURCE_FILE no existe"
+        exit 10
+     fi
+  else
+     case $PERMISO in
+     n) echo "El archivo $SOURCE_FILE existe"
+        ;;
+     r) if [ ! -r "$SOURCE_FILE" ]
+        then
+           echo "Error. El archivo $SOURCE_FILE no tiene permiso de lectura"
+           exit 15
+        else
+           echo "El archivo $SOURCE_FILE tiene permiso de lectura"
+        fi
+        ;;
+#     w,h) if [ ! -w "$SOURCE_FILE" ]
+#        then
+#           echo "Error. El archivo $SOURCE_FILE no tiene permiso de escritura"
+#           exit 14
+#        else
+#           echo "El archivo $SOURCE_FILE tiene permiso de escritura"
+#        fi
+#        ;;
+###############################################################################
+##### ESTE BLOQUE REEMPLAZA EL ANTERIOR (a pedido de D.Barea de Collection#####
+###############################################################################
+     w) if [ ! -w "$SOURCE_FILE" ]
+        then
+           echo "Error. El archivo $SOURCE_FILE no tiene permiso de escritura"
+           exit 14
+        else
+           echo "El archivo $SOURCE_FILE tiene permiso de escritura"
+        fi
+        ;;
+     h) if [ ! -w "$SOURCE_FILE" ]
+        then
+           echo "Error. El archivo $SOURCE_FILE no tiene permiso de escritura"
+           exit 14
+        else
+           echo "El archivo $SOURCE_FILE tiene permiso de escritura"
+        fi
+        ;;
+##############################################################################
+     x) if [ ! -x "$SOURCE_FILE" ]
+        then
+           echo "Error. El archivo $SOURCE_FILE no tiene permiso de ejecucion"
+           exit 21
+        else
+           echo "El archivo $SOURCE_FILE tiene permiso de ejecucion"
+        fi
+        ;;
+     esac
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : path_verify                                           #
+# Parametros que recibe :                                                      #
+#       SOURCE_PATH = Path completo donde recide el directorio a verificar     #
+# Descripcion del funcionamiento : Verifica la existencia de un directorio.    #
+# Plataformas soportadas : Solaris                                             #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       12 = El directorio no existe                                           #
+#       14 = El directorio no tiene permiso de escritura                       #
+#       15 = El directorio no tiene permiso de lectura                         #
+#       21 = El directorio no tiene permiso de ejecucion                       #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+path_verify()
+{
+  SOURCE_PATH=$1
+  PERMISO=$2
+  if [ "$#" != "2" ]
+  then
+     echo "Usage path_verify directorio permiso"
+     exit 32
+  fi
+  if [ ! -d $SOURCE_PATH ]
+  then
+     echo "Error. El directorio $SOURCE_PATH no existe"
+     exit 12
+  else
+     case $PERMISO in
+     n) echo "El directorio $SOURCE_PATH existe"
+        ;;
+     r) if [ ! -r "$SOURCE_PATH" ]
+        then
+           echo "Error. El directorio $SOURCE_PATH no tiene permiso de lectura"
+           exit 15
+        else
+           echo "El directorio $SOURCE_PATH tiene permiso de lectura"
+        fi
+        ;;
+     w) if [ ! -w "$SOURCE_PATH" ]
+        then
+           echo "Error. El directorio $SOURCE_PATH no tiene permiso de escritura"
+           exit 14
+        else
+           echo "El directorio $SOURCE_PATH tiene permiso de escritura"
+        fi
+        ;;
+     x) if [ ! -x "$SOURCE_PATH" ]
+        then
+           echo "Error. El directorio $SOURCE_PATH no tiene permiso de ejecucion"
+           exit 21
+        else
+           echo "El directorio $SOURCE_PATH tiene permiso de ejecucion"
+        fi
+        ;;
+     esac
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : directory_change                                      #
+# Parametros que recibe :                                                      #
+#       TARGET_PATH = Nombre del directorio destino                            #
+# Descripcion del funcionamiento : Permite cambiar de directorio               #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       12 = El directorio no existe                                           #
+#       15 = El directorio no tiene permiso de lectura                         #
+#       18 = No se pudo cambiar de directorio                                  #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+directory_change() 
+{
+  TARGET_PATH="$1"
+  if [ "$#" != "1" ]
+  then
+     echo "Usage directory_change directorio"
+     exit 32
+  fi
+  path_verify $TARGET_PATH "r"
+  if [ ! -r "$TARGET_PATH" ]
+  then
+     echo "Error. EL directorio $TARGET_PATH no tiene permiso de lectura"
+     exit 15
+  fi
+  cd $TARGET_PATH
+  status="$?"
+  if [ "$status" != "0" ]
+  then
+     echo "Error. No se pudo cambiar de directorio"
+     exit 18
+  else
+     echo "Posicionado en el Directorio $TARGET_PATH"
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : file_remove                                           #
+# Parametros que recibe :                                                      #
+#       SOURCE_FILE = Nombre del archivo a borrar                              #
+# Descripcion del funcionamiento : Permite borrar un archivo                   #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       14 = El archivo/directorio no tiene permiso de escritura               #
+#       19 = No se pudo borrar el archivo                                      #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+file_remove() 
+{
+  SOURCE_FILE="$1"
+  if [ "$#" != "1" ]
+  then
+     echo "Usage file_remove archivo"
+     exit 32
+  fi
+  file_verify "$SOURCE_FILE" "w"
+  rm $SOURCE_FILE
+  status="$?"
+  if [ "$status" != "0" ]
+  then
+     echo "Error. No se pudo borrar el archivo $SOURCE_FILE"
+     exit 19
+  else 
+     echo "Archivo $SOURCE_FILE borrado"
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : file_move                                             #
+# Parametros que recibe :                                                      #
+#       SOUR_PATH = Camino o ruta origen del archivo a mover                   #
+#       SOUR_FILE = Nombre del archivo a mover                                 #
+#       TARG_PATH = Camino o ruta destino del archivo a mover                  #
+#       TARG_FILE = Nombre del archivo a mover                                 #
+# Descripcion del funcionamiento : Permite mover un archivo                    #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       10 = El archivo no existe                                              #
+#       14 = El archivo/directorio no tiene permiso de escritura               #
+#       16 = No se pudo mover el archivo                                       #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+file_move() 
+{
+  SOUR_PATH="$1"
+  SOUR_FILE="$2"
+  TARG_PATH="$3"
+  TARG_FILE="$4"
+  if [ "$#" != "4" ]
+  then
+     echo "Usage file_move path_origen archivo_origen path_destino archivo_destino"
+     exit 32
+  fi
+  path_verify $SOUR_PATH "w"
+
+  file_verify "$SOUR_PATH/$SOUR_FILE" "w"
+  
+  path_verify "$TARG_PATH" "w"
+
+  mv $SOUR_PATH/$SOUR_FILE $TARG_PATH/$TARG_FILE
+  status="$?"
+  if [ "$status" != 0 ]
+  then
+     echo "Error. No se pudo mover el archivo $SOUR_PATH/$SOUR_FILE a $TARG_PATH/$TARG_FILE"
+     exit 16
+  else 
+     echo "Archivo $SOUR_PATH/$SOUR_FILE movido a $TARG_PATH/$TARG_FILE"
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : file_copy                                             #
+# Parametros que recibe :                                                      #
+#       SOUR_PATH = Directorio origen del archivo a copiar                     #
+#       SOUR_FILE = Nombre del archivo origen                                  #
+#       TARG_PATH = Directorio destino del archivo a copiar                    #
+#       TARG_FILE = Nombre del archivo destino                                 #
+# Descripcion del funcionamiento : Permite copiar un archivo                   #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       10 = El archivo no existe                                              #
+#       15 = El archivo no tiene permiso de lectura                            #
+#       20 = No se pudo copiar el archivo                                      #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+file_copy() 
+{
+  SOUR_PATH="$1"
+  SOUR_FILE="$2"
+  TARG_PATH="$3"
+  TARG_FILE="$4"
+  export SOUR_PATH SOUR_FILE TARG_PATH TARG_FILE
+  if [ "$#" != "4" ]
+  then
+     echo "Usage file_copy path_origen archivo_origen path_destino archivo_destino"
+     exit 32
+  fi
+
+  path_verify $SOUR_PATH "r"
+
+  file_verify "$SOUR_PATH/$SOUR_FILE" "r"
+
+  path_verify $TARG_PATH "w"
+
+  cp $SOUR_PATH/$SOUR_FILE $TARG_PATH/$TARG_FILE
+  status="$?"
+  if [ "$status" != 0 ]
+  then
+     echo "Error. No se pudo copiar el archivo $SOUR_PATH/$SOUR_FILE a $TARG_PATH/$TARG_FILE"
+     exit 20
+  else 
+     echo "Archivo $SOUR_FILE copiado a $TARG_FILE"
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : free_disk                                             #
+# Parametros que recibe :                                                      #
+#       FILE_SYSTEM = Nombre del filesystem a verificar espacio                #
+#       TAMANIO = Tamanio del filesystem en Kilo Bytes necesario               #
+# Descripcion del funcionamiento : Controla si existe espacio requerido en un  #
+# filesystem                                                                   #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       30 = No hay espacio suficiente en el filesystem                        #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+#       33 = No existe el filesystem                                           #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+free_disk()
+{
+  FILE_SYSTEM=$1
+  TAMANIO=$2
+  TAMANIO_LIBRE=0
+  status=127
+  if [ "$#" != "2" ]
+  then
+     echo "Usage free_disk filesystem espacio_requerido"
+     exit 32
+  fi
+  df -k $FILE_SYSTEM >> /dev/null
+  status="$?"
+  if [ $status != 0 ]
+  then
+     echo "Error filesystem inexistente"
+     exit 33
+  fi
+  TAMANIO_LIBRE=`df -k $FILE_SYSTEM | tail -1 | awk ' {print $4} ' | sed s/" "//g`
+  if [ $TAMANIO_LIBRE -lt $TAMANIO ]
+  then
+     echo "No hay espacio suficiente en el Filesystem $FILE_SYSTEM"
+     exit 30
+  else
+     echo "Tamanio requerido verificado"
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : out_view                                              #
+# Parametros que recibe :                                                      #
+#       CADENA = Cadena de caracteres que sera displayada                      #
+#       TMPLOG = Nombre del archivo donde se direccionara la salida            #
+# Descripcion del funcionamiento : Displaya la fecha y hora del sistema seguida#
+# de una cadena de caracteres y lo redirecciona a un archivo                   #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+out_view()
+{
+  CADENA=$1
+  TMPLOG=$2
+  echo "`date +%d/%m/%y-%T`:$CADENA" >> $TMPLOG
+}
+
+
+
+################################################################################
+# Nombre de la funcion : test_status                                           #
+# Parametros que recibe :                                                      #
+#       status  = Estado que retorna el procedimiento a testear                #
+#       PROCESS = Nombre del proceso a testear                                 #
+# Descripcion del funcionamiento : Verifica si la cantidad de parametros pasa- #
+# dos es igual a la cantidad de parametros esperados                           #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+test_status()
+{
+  test_param "$#" "2"
+  status=$1
+  PROCESS=$2
+  if [ $status != 0 ]
+  then
+     echo "Error. Se ha producido un error en la ejecucion de $PROCESS"
+     exit $status
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : test_param                                            #
+# Parametros que recibe :                                                      #
+#       CPP = Cantidad de parametros pasados                                   #
+#       CPE = Cantidad de parametros esperados                                 #
+# Descripcion del funcionamiento : Verifica si la cantidad de parametros pasa- #
+# dos es igual a la cantidad de parametros esperados                           #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+test_param()
+{
+  CPP="$1"
+  CPE="$2"
+  if [ "$CPP" != "$CPE" ]
+  then
+     echo "Error. La cantidad de parametros no es la esperada"
+     exit 32
+  fi
+}
+
+
+################################################################################
+# Nombre de la funcion : list_file                                             #
+# Parametros que recibe :                                                      #
+#       SW = Nombre del archivo                                                #
+#       EXT = Extension del archivo                                            #
+# Descripcion del funcionamiento : Verifica cual es el ultimo archivo generado #
+# o modificado en un directorio especifico                                     #
+# dos es igual a la cantidad de parametros esperados                           #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+list_file()
+{
+if [ "#$1" != "#" ]
+then
+        SW=$1
+else
+        SW=""
+fi
+if [ "#$2" != "#" ]
+then
+        EXT=$2
+else
+        EXT=""
+fi
+   if [ "#$3" = "#" ]
+   then
+      ls -1t $SW*$EXT | tail -1
+   else 
+      CANT=$3
+      ls -1tr $SW*$EXT | head -$CANT
+   fi
+}
+
+################################################################################
+# Nombre de la funcion : chk_size                                              #
+# Parametros que recibe :                                                      #
+#       FILE = Nombre del archivo                                              #
+#       TRY  = Cantidad de intentos                                            #
+#       TIME = Tiempo de espera entre intentos                                 #
+# Descripcion del funcionamiento : Verifica si un archivo esta siendo modifica-#
+# do                                                                           #
+# dos es igual a la cantidad de parametros esperados                           #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+chk_size()
+{
+   FILE=$1
+   TRY=$2
+   TIME=$3
+   CANT=0
+   if [ "$#" != "3" ]
+   then
+       echo "Usage chk_size archivo intentos intervalo"
+       exit 32
+   fi
+   TINI=0
+   while [ $TRY -gt $CANT ]
+   do
+      TACT=`ls -l $FILE | awk '{ print $5 }'`
+      if [ "#""$TACT" = "#" ]
+      then
+                echo "No se ha encontrado el archivo $FILE"
+                exit 30
+      fi
+      if [ $TINI != $TACT ]
+      then
+          TINI=$TACT
+          CANT=0
+      else
+          CANT=`echo $CANT | awk '{ RES=$1 + 1 ; print RES }'`
+          if [ $TRY -gt $CANT ]
+          then
+                sleep $TIME
+          fi
+      fi
+   done
+   echo "Verificada la llegada del archivo $FILE"
+}
+
+
+################################################################################
+# Nombre de la funcion : log_verify                                            #
+# Parametros que recibe :                                                      #
+#       FILE    = Nombre del archivo                                           #
+#       STRING  = Cadena de caracteres                                         #
+#       PROGRAM = Programa que genero el archivo                               #
+# Descripcion del funcionamiento : Verifica que se encuentre un string en un   #
+# archivo                                                                      #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       31 = Finalizado con errores                                            #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+log_verify()
+{
+   test_param "$#" "3"
+   FILE=$1
+   STRING=$2
+   PROGRAM=$3
+   grep "$STRING" $FILE
+   status="$?"
+   if [ $status != 1 ]
+   then
+       echo "Error. Se ha producido un error en la ejecucion del programa $PROGRAM"
+       exit 31
+   fi
+}
+
+
+################################################################################
+# Nombre de la funcion : get_dir_entrada                                       #
+# Parametros que recibe :                                                      #
+#       DBUSER   = Nombre del usuario de la Base de Datos                      #
+#       DBPASSWD = Password del usuario de la Base de Datos                    #
+# Descripcion del funcionamiento :  Obtiene el valor de la variable DIR_ENTRADA#
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       31 = Finalizado con errores                                            #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+get_dir_entrada()
+{
+set -x
+  test_param "$#" "3"
+  DBUSER="$1"
+  DBPASSWD="$2"
+  ORACLE_SID="$3"
+  PATH_TMP=/tmp
+  PID="$$"
+  TMP_FILE="$PATH_TMP"/direntradavar.tmp."$PID"
+  PATH_SQL=/home/controlm/PREFACTURACION/jea/sql
+  SQL_SCRIPT=get_dir_entrada.sql
+  if [ !-r "$PATH_SQL"/"$SQL_SCRIPT" ]
+  then
+        echo "No hay permiso de lectura sobre el archivo"
+        exit 31
+  fi
+  sqlplus "$DBUSER"/"$DBPASSWD"@"$ORACLE_SID" @"$PATH_SQL"/"$SQL_SCRIPT" > $TMP_FILE
+  grep "ORA-" $TEMP_FILE >> /dev/null
+  status="$?"
+  if [ $status != 1 ]
+  then
+        echo "Error Ejecutando SQL"
+        exit 31
+  else
+        cat $TMP_FILE | grep -v "selected" $TEMP_FILE
+        rm $TMP_FILE >> /dev/null
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : get_dir_salida                                        #
+# Parametros que recibe :                                                      #
+#       DBUSER   = Nombre del usuario de la Base de Datos                      #
+#       DBPASSWD = Password del usuario de la Base de Datos                    #
+# Descripcion del funcionamiento : Obtiene el valor de la variavle DIR_SALIDA  #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       31 = Finalizado con errores                                            #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+get_dir_salida()
+{
+  test_param "$#" "3"
+  DBUSER="$1"
+  DBPASSWD="$2"
+  ORACLE_SID="$3"
+  PATH_TMP=/tmp
+  PID="$$"
+  TMP_FILE="$PATH_TMP"/dirsalidavar.tmp."$PID"
+  PATH_SQL=/home/controlm/PREFACTURACION/jea/sql
+  SQL_SCRIPT=get_dir_salida.sql
+  if [ !-r "$PATH_SQL"/"$SQL_SCRIPT" ]
+  then
+        echo "No hay permiso de lectura sobre el archivo"
+        exit 31
+  fi
+  sqlplus "$DBUSER"/"$DBPASSWD"@"$ORACLE_SID" @"$PATH_SQL"/"$SQL_SCRIPT" > $TMP_FILE
+  grep "ORA-" $TEMP_FILE >> /dev/null
+  status="$?"
+  if [ $status != 1 ]
+  then
+        echo "Error Ejecutando SQL"
+        exit 31
+  else
+        cat $TMP_FILE | grep -v "selected" $TEMP_FILE
+        rm $TMP_FILE >> /dev/null
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : get_work                                              #
+# Parametros que recibe :                                                      #
+#       DBUSER   = Nombre del usuario de la Base de Datos                      #
+#       DBPASSWD = Password del usuario de la Base de Datos                    #
+# Descripcion del funcionamiento : Obtiene el valor de la variavle WORK        #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       31 = Finalizado con errores                                            #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+#get_work()
+#{
+  #test_param "$#" "2"
+  #BDUSER="$1"
+  #DBPASSWD="$2"
+  #PATH_TMP=/tmp
+  #PID="$$"
+  #TMP_FILE="$PATH_TMP"/workvar.tmp."$PID"
+  #PATH_SQL=/home/controlm/PREFACTURACION/jea/scripts
+  #SQL_SCRIPT=get_work.sql
+  #if [ !-r "$PATH_SQL"/"$SQL_SCRIPT" ]
+  #then
+        #echo "No hay permiso de lectura sobre el archivo"
+        #exit 31
+  #fi
+  #sqlplus $DBUSER/$DBPASSWD @"$PATH_SQL"/"$SQL_SCRIPT" > $TMP_FILE
+  #grep "ORA-" $TEMP_FILE >> /dev/null
+  #status="$?"
+  #if [ $status != 1 ]
+  #then
+        #echo "Error conectando a la BD"
+        #exit 31
+  #else
+        #cat $TMP_FILE | grep -v "selected" $TEMP_FILE
+        #rm $TMP_FILE >> /dev/null
+  #fi
+#}
+################################################################################
+# Nombre de la funcion : get_ciclo                                             #
+# Parametros que recibe :                                                      #
+#       DIA = FECHA PARA DETERMINAR CICLO                                      #
+# Descripcion del funcionamiento : Obtiene el valor de la variavle CICLO       #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       31 = Finalizado con errores                                            #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 23/01/2001                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+get_ciclo()
+{
+set -x
+  test_param "$#" "1"
+  DIA=$1
+  if [ $DIA -lt 1 ] || [ $DIA -gt 32 ] 
+  then
+        echo "Error dia no valido"
+        exit 31
+  else
+      if [ $DIA -lt 8 ] 
+      then
+          echo "01"
+      else
+          if [ $DIA -lt 15 ] 
+          then
+              echo "02"
+          else
+              if [ $DIA -lt 22 ] 
+              then
+                  echo "03"
+              else
+                  if [ $DIA -lt 29 ]
+                  then
+                      echo "04"
+                  fi
+              fi
+          fi
+      fi
+  fi
+}
+
+
+################################################################################
+# Nombre de la funcion : chk_connect_db                                        #
+# Parametros que recibe :                                                      #
+#       DBUSER   = Nombre del usuario de la Base de Datos                      #
+#       DBPASSWD = Password del usuario de la Base de Datos                    #
+# Descripcion del funcionamiento : Verifica conexion a la BD                     #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       31 = Finalizado con errores                                            #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 29/03/2001                                               #
+# Autor :  Belen Penesi - TP                                                               #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+chk_connect_db()
+{
+#set -x
+  test_param "$#" "5"
+  DBUSER="$1"
+  DBPASSWD=$2
+  ORACLE_SID="$3"
+  SQL_FILE="$4"
+  LOG_FILE="$5"
+
+  sqlplus "$DBUSER"/"$DBPASSWD"@"$ORACLE_SID" "@$SQL_FILE" > $LOG_FILE
+
+  grep "ORA-" $LOG_FILE >> /dev/null
+  status="$?"
+  if [ $status != 1 ]
+  then
+        echo "Error conectando a la BD"
+        exit 31
+  fi
+}
+
+################################################################################
+# Nombre de la funcion : get_password                                          #
+# Parametros que recibe :                                                      #
+#       DBUSER   = Nombre del usuario de la Base de Datos                      #
+#       DBPASSWD = Password del usuario de la Base de Datos                    #
+# Descripcion del funcionamiento : Verifica conexion a la BD                     #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       31 = Finalizado con errores                                            #
+#       32 = Cantidad de parametros no esperada                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 29/03/2001                                               #
+# Autor :  Jorge Espa#a y Asoc.                                                #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+get_password()
+{
+  test_param "3" "$#"
+  DBUSER=$1
+  PASS_FILE=$2
+  TYPE=$3
+  case $TYPE in
+     1) DBPASSWD=`grep "^$DBUSER " "$PASS_FILE" | awk '{ print $2}'` ;;
+     2) DBPASSWD=`grep "PassWord=" "$PASS_FILE" | sed 's/=/ /' | awk '{ print $2}'`;;
+  esac
+  echo $DBPASSWD
+}
+
+
+get_passwordtip()
+{
+  test_param "2" "$#"
+  TIPO=$1
+  PASS_FILE=$2
+  
+    DBPASSWD=`grep "^$TIPO " "$PASS_FILE" | awk '{ print $2}'`
+    echo $DBPASSWD
+}
+
+
+################################################################################
+# Nombre de la funcion : file_verify_prov                                       #
+# Parametros que recibe :                                                      #
+#       SOURCE_FILE = Nombre del archivo a verificar                           #
+#       PERMISO     = Permiso a verificar                                      #
+#                     n - verifica solamente la existencia del archivo         #
+#                     r - Verifica permiso de lectura                          #
+#                     w - Verifica permiso de escritura                        #
+#                     x - Verifica permiso de ejecucion                        #
+# Descripcion del funcionamiento : Verifica si existe un archivo y si tiene    #
+# permiso                                                                      #
+# Plataformas soportadas : Solaris - AIX                                       #
+# Perfil de usuario requerido para la ejecucion : root                         #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       10 = El archivo no existe                                              #
+#       14 = El archivo no tiene permiso de escritura                          #
+#       15 = El archivo no tiene permiso de lectura                            #
+#       21 = El archivo no tiene permiso de ejecucion                          #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 04/09/2000                                               #
+# Autor :  Jorge Espa#a y Asociados - Sistemas Distribuidos                    #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :  RETORNA UN VALOR SIN SALIR DEL PROGRAMA      #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+file_verify_prov()
+{
+  SOURCE_FILE="$1"
+  PERMISO=$2
+  if [ "$#" != "2" ]
+  then
+     echo "Usage file_verify archivo permiso"
+     return 32
+  fi
+  if [ ! -f $SOURCE_FILE ]
+  then
+     if [ $PERMISO = h ]
+     then
+        echo "El archivo $SOURCE_FILE no existe"
+     else
+        echo "Error. El archivo $SOURCE_FILE no existe"
+        return 10
+     fi
+  else
+     case $PERMISO in
+     n) echo "El archivo $SOURCE_FILE existe"
+        ;;
+     r) if [ ! -r "$SOURCE_FILE" ]
+        then
+           echo "Error. El archivo $SOURCE_FILE no tiene permiso de lectura"
+           return 15
+        else
+           echo "El archivo $SOURCE_FILE tiene permiso de lectura"
+        fi
+        ;;
+     w,h) if [ ! -w "$SOURCE_FILE" ]
+        then
+           echo "Error. El archivo $SOURCE_FILE no tiene permiso de escritura"
+           return 14
+        else
+           echo "El archivo $SOURCE_FILE tiene permiso de escritura"
+        fi
+        ;;
+     x) if [ ! -x "$SOURCE_FILE" ]
+        then
+           echo "Error. El archivo $SOURCE_FILE no tiene permiso de ejecucion"
+           return 21
+        else
+           echo "El archivo $SOURCE_FILE tiene permiso de ejecucion"
+        fi
+        ;;
+     esac
+  fi
+}
+
+#########################################################################
+################################################################################
+# Nombre de la funcion : contar_registros                                        #
+# Parametros que recibe :                                                      #
+#       SOURCE_FILE = Nombre del archivo a contar registros                    #
+# Descripcion del funcionamiento : toma el 1er registro y calcula cant reg     #
+# Plataformas soportadas : Digital                                             #
+# Perfil de usuario requerido para la ejecucion :                              #
+# Exit status utilizados :                                                     #
+#       0  = Finalizacion OK                                                   #
+#       22 = El archivo no es regular                                          #
+#       32 = Menor cantidad de parametros que los requeridos                   #
+# ---------------------------------------------------------------------------- #
+# Fecha de creacion : 07/12/2001                                               #
+# Autor :  Fernando Daniel Gonzalez                                            #
+# ---------------------------------------------------------------------------- #
+# Fecha de ultima modificacion :                                               #
+# Modificado por :                                                             #
+# Motivo y descripcion de la modificacion :                                    #
+################################################################################
+contar_registros()
+{
+set -x
+  ARCHING=$1
+  if [ "#$1" = "#" ]
+  then
+     echo "Usage contar_registros archivo "
+     exit 32
+  fi
+  if [ "#$2" = "#" ]
+  then
+     largo=`head -1 $ARCHING | awk '{a=int(length)+1;print a}'`
+  else
+     largo=$2
+  fi
+
+  tamano=`ls -l $ARCHING | awk '{print $5}'`
+  if [ $tamano = "0" ]
+  then
+      registros=`echo 0|awk '{printf("%10.10d",$1) }'`
+      echo $registros
+      exit
+  fi
+  registros=`echo $tamano / $largo | bc |awk '{printf("%10.10d",$1) }'`
+  tamano1=`echo $registros \* $largo | bc `
+  if [ $tamano != $tamano1 ]
+  then
+      echo "El archivo no es regular"
+      exit 22
+  fi
+echo $registros
+}

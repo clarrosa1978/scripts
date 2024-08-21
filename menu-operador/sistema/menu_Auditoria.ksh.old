@@ -1,0 +1,59 @@
+#!/usr/bin/ksh
+###############################################################################
+# Autor..............: C.A.S                                                  #
+# Usuario ...........: root                                                   #
+# Objetivo...........: Concentrar las tareas de operaciones en un menu        #
+# Nombre del programa: menu_Usuarios.ksh                                      #
+# Descripcion........: Menu de auditoria de usuarios                          #
+# Modificacion.......: 17/10/2001                                             #
+###############################################################################
+
+###############################################################################
+#			 Definicion de variables                              #
+###############################################################################
+
+NOMB_PROG=`basename $0 | awk -F "_" '{ print $2 }'`
+NAME_PROG=${NOMB_PROG%%.ksh}
+
+###############################################################################
+#			       Principal                                      #
+###############################################################################
+
+while true 
+do 
+ $OPERADOR_WRK/encabezado.ksh
+ echo "\t                       *** Menu $NAME_PROG ***              "
+ echo ""
+ echo "\t            1. - Usuarios lockeados                           " 
+ echo ""
+ echo "\t            2. - Intentos fallidos                            " 
+ echo ""
+ echo "\t            3. - Ultimo login del usuario                     " 
+ echo ""
+ echo "\t            4. - Cantidad de conecciones                      " 
+ echo ""
+ echo "\t            s. - Volver al Menu anterior                      " 
+ echo ""
+ echo " Ingrese su opcion : \c                                       " 
+ read opcion
+ case $opcion in 
+     1)  
+         ;; 
+     2) 
+         ;; 
+     3)
+         ;; 
+     4)  clear 
+         /usr/bin/ksh  
+         ;; 
+     s)  clear
+         exit
+         ;; 
+     S)  clear
+         exit
+         ;; 
+     *)  echo "Opcion Incorrecta - < Pulse una tecla para continua >"
+         read nada 
+         ;; 
+ esac
+done

@@ -1,0 +1,10 @@
+export NAPA_HOME=$HOME
+export NAPA_NAMES=./etc/names.cfg
+
+export ORACLE_SID=SF002
+export ORACLE_HOME=/u011/app/oracle/product/11.2.0
+export TNS_ADMIN=$ORACLE_HOME/network/admin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib:$ORACLE_HOME/ctx/lib
+export CLASSPATH=$ORACLE_HOME/jre:$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib:$ORACLE_HOME/network/jlib
+export PATH=$PATH:$ORACLE_HOME/bin:$LD_LIBRARY_PATH:$HOME/bin
+export NLS_LANG=AMERICAN_AMERICA.WE8DEC

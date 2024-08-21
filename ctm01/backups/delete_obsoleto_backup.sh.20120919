@@ -1,0 +1,79 @@
+#!/usr/bin/ksh
+###############################################################################
+# Grupo..............: BACKUP                                                 #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Borrar backups expirados.                              #
+# Nombre del programa: delete_obsoleto_backup.sh                              #
+# Nombre del JOB.....: DELETEEM62                                             #
+# Solicitado por.....:                                                        #
+# Descripcion........: Me crea el archivo en delete_obsoleto_backup.rmn en    #
+#                      /tmp para luego se ejecutado por rman.                 #
+# Modificacion.......: 06/06/2012                                             #
+# Tipo de errores de salida :                                                 #
+#                          4 y 8 : Warning.                                   #
+#                             12 : Critico.                                   #
+###############################################################################
+
+set -x
+
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+
+export FECHA=${1}
+export ORACLE_SID=${2}
+export HORA=`date +'%H:%M'`
+export NOMBRE="delete_obsoleto_backup"
+export PATHAPL="/tecnol/backups"
+export PATHLOG="${PATHAPL}/log"
+export RMAN="/tmp/delete_obsoleto_backup.rmn"
+export LOGSCRIPT="${PATHLOG}/${NOMBRE}.${FECHA}.${HORA}.log"
+export LOGRMAN="${PATHLOG}/${NOMBRE}.${FECHA}.${HORA}.rman.log"
+
+###############################################################################
+###                            Funciones                                    ###
+###############################################################################
+autoload Borrar
+autoload Check_Par
+autoload Enviar_A_Log
+
+###############################################################################
+###                            Principal                                    ###
+###############################################################################
+Check_Par 2 $@
+[ $? != 0 ] && exit 1
+Enviar_A_Log "INICIO - Comienza la ejecucion del delete tape." ${LOGSCRIPT}
+[ $? != 0 ] && exit 3
+if [ -x ${ORACLE_HOME}/bin/rman ]
+then
+#
+# Creo el archivo delete_obsoleto_backup.rmn en /tmp
+#
+cat > ${RMAN} << EOF
+
+        allocate channel for maintenance device type 'sbt_tape' parms 'ENV=(TDPO_OPTFILE=/usr/tivoli/tsm/client/oracle/bin64/em01/tdpo_em01.opt)';
+
+        crosscheck backup;
+        delete noprompt obsolete ;
+        crosscheck archivelog all;
+        delete noprompt expired archivelog all;
+EOF
+
+
+                $ORACLE_HOME/bin/rman target / nocatalog @${RMAN} log=${LOGRMAN}
+                RESUL=$?
+                if [ $RESUL != 0 ]
+                then
+                    Enviar_A_Log "ERROR - Fallo la ejecucion del delete tape." ${LOGSCRIPT}
+                    Enviar_A_Log "FINALIZACION - CON ERROR ($RESUL)." ${LOGSCRIPT}
+                    exit $RESUL
+                else
+                   Enviar_A_Log "FINALIZACION - OK." ${LOGSCRIPT}
+                   find ${PATHLOG} -name "${NOMBRE}.*.log" -mtime +2 -exec rm {} \;
+                   exit 0
+                fi
+else
+        Enviar_A_Log "ERROR - No hay permisos de ejecucion para el comando rman." ${LOGSCRIPT}
+        Enviar_A_Log "FINALIZACION - CON ERRORES." ${LOGSCRIPT}
+        exit 88
+fi

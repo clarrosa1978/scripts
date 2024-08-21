@@ -1,0 +1,28 @@
+###############################################################################
+# Nombre.............: Enviar_Mail                                            #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Envia un mail a un alias o una direccion STMP.         #
+# Nombre.............: Enviar_Mail                                            #
+# Descripcion........: Recibe como parametro el destiantario, el asunto y el  #
+#                      mensaje del mail.                                      #
+# Valores de Retorno.: 0 - La funcion termino ok.                             #
+#                      1 - La funcion fallo.                                  #
+# Modificacion.......: 2005/07/15                                             #
+###############################################################################
+function Enviar_Mail
+{
+set -x
+        typeset DESTINATARIO=$1
+        typeset ASUNTO="${2}"
+	typeset MENSAJE="${3}"
+        typeset HORA=`date '+%H:%M:%S'`
+        typeset EXIT="1"
+        autoload Check_Par
+        Check_Par 3 "$@"
+        if [ $? = 0 ] 
+        then
+		mhmail ${DESTINATARIO} -from jgposse@gmail.com -subject "${ASUNTO}" -body "${MENSAJE}"
+                [ $? = 0 ] && EXIT="0"
+        fi
+        return ${EXIT}
+}

@@ -1,0 +1,96 @@
+#! /bin/sh
+
+############################################################################
+#                                      Jorge Fernandez Garay - 04/2007
+# chk_tick_master
+#
+# Programa lanzado por el Job CKTKMASTER, de la cadena 'TICKETS' MASTERCARD
+# que determina si el Operador de Turno ha puesto en linea el Boletin de
+# Ticket Total, para transmitirlo a las suc.
+#
+############################################################################
+
+set -x
+
+notify_by_mail()
+{
+        set -x
+
+        # Notifica el incidente por mail
+        # En $1 recibe El mensaje a notificar
+
+        echo "$1"|/usr/bin/mhmail -s "Server $HOSTNAME - CADENA DE TRANSMISION DE TICKETS MASTERCARD" operacionesaix@coto.com.ar
+
+}
+
+##################### MAIN PROGRAM ###########################
+
+# Recibe 3 Parametros del JOB
+export PLANIF_DATE="$1"
+export TICK_BOL_DIR="$2"
+# Nombre del Boletin recibido, sin extencion '.zip'
+export TICK_BOL_NAME="$3"
+
+export MAIL_BODY=''
+export BOL_HEADER=''
+export BOL_HEADER_DATE=''
+export EXIT_STAT=''
+
+if [ -f "$TICK_BOL_DIR/$TICK_BOL_NAME.zip" ]
+then
+         # Boletin en Linea
+         # Si no se esta preprocesando otro Boletin en $TICK_BOL_DIR/preproceso,
+         # lo mueve alli, para verificarlo y renombrarlo
+         if [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip" -o -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+         then
+                    MAIL_BODY="Job CKTKMASTER: Aun se esta procesando un Boletin PREVIO.\n REEJECUTE este JOB dentro de 1 hora, para el ultimo Boletin.\nNO DE FORCE OK a este JOB."
+                    notify_by_mail "$MAIL_BODY"
+                    exit 20
+         else
+                    # Mueve el Bol al  Dir. de preproceso, para evitar que lo pise otro Bol nuevo.
+                    mv "$TICK_BOL_DIR/$TICK_BOL_NAME.zip" "$TICK_BOL_DIR/preproceso"
+                    EXIT_STAT="$?"
+                    if [ "$EXIT_STAT" -ne 0 ] || [ ! -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip" ]
+                    then
+                              MAIL_BODY="Job CKTKMASTER: ERROR AL MOVER EL BOLETIN de Nacion al Dir preproceso.\nPROHIBIDO DAR FORCE OK a este JOB."
+                              notify_by_mail "$MAIL_BODY"
+                              exit 25
+                    else
+                              exit 0
+                    fi
+         fi
+                              
+elif [ -f "$TICK_BOL_DIR/$TICK_BOL_NAME" ]
+then
+         # El operador lo puso en linea deszipeado
+         # Boletin en Linea
+         # Si no se esta preprocesando otro Boletin en $TICK_BOL_DIR/preproceso, 
+         # lo mueve alli, para verificarlo y renombrarlo
+         if [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip" -o -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+         then
+                    MAIL_BODY="Job CKTKMASTER: Aun se esta procesando un Boletin PREVIO.\n REEJECUTE este JOB dentro de 1 hora, para el ultimo Boletin.\nPROHIBIDO DAR FORCE OK a este JOB."
+                    notify_by_mail "$MAIL_BODY"
+                    exit 20
+         else
+                    # Mueve el Bol al  Dir. de preproceso, para evitar que lo pise otro Bol nuevo.
+                    mv "$TICK_BOL_DIR/$TICK_BOL_NAME" "$TICK_BOL_DIR/preproceso"
+                    EXIT_STAT="$?"
+                    if [ "$EXIT_STAT" -ne 0 ] || [ ! -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+                    then
+                              MAIL_BODY="Job CKTKMASTER: ERROR AL MOVER EL BOLETIN de Nacion al Dir preproceso.\nPROHIBIDO DAR FORCE OK a este JOB."
+                              notify_by_mail "$MAIL_BODY"
+                              exit 25
+                    else
+                              exit 0
+                    fi
+         fi
+
+
+
+
+else
+         # El Boletin no esta en linea
+         MAIL_BODY="Job CKTKMASTER: El Boletin de Ticket Nacion de la fecha, no se\n ha puesto aun en linea para transmitir.\nPROHIBIDO DAR FORCE OK a este JOB."
+         notify_by_mail "$MAIL_BODY"
+         exit 10
+fi

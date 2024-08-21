@@ -1,0 +1,93 @@
+#!/usr/bin/ksh
+###############################################################################
+# Aplicacion.........: NTCIERRE                                               #
+# Grupo..............: PRECADENA                                              #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Realiza export de la base de datos de SF.              #
+# Nombre del programa: expantca.sh                                            #
+# Nombre del JOB.....: EXPANTCA                                               #
+# Descripcion........:                                                        #
+# Modificacion.......: 15/03/2006                                             #
+###############################################################################
+
+set -x
+
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+
+FECHA=${1}
+NOMBRE="expantca"
+PATHAPL="/expora"
+PATHLOG="/tecnol/ntcierre/log"
+LOGSCRIPT="${PATHLOG}/${NOMBRE}.${FECHA}.log"
+ARCHDMP="${PATHAPL}/${NOMBRE}.${FECHA}.dmp"
+ARCHFIFO="${PATHAPL}/fifo.dmp"
+LOGDMP="${ARCHDMP}.log"
+
+###############################################################################
+###                            Funciones                                    ###
+###############################################################################
+autoload Enviar_A_Log
+autoload Check_Par
+autoload Borrar
+
+###############################################################################
+###                            Principal                                    ###
+###############################################################################
+Check_Par 9 $@
+[ $? != 0 ] && exit 1
+Enviar_A_Log "INICIO - Comienza la ejecucion." ${LOGSCRIPT}
+[ $? != 0 ] && exit 3
+Borrar ${LOGDMP}
+find ${PATHAPL} -name "${NOMBRE}.*.dmp.bzip2" -exec rm {} \;
+find ${PATHAPL} -name "${NOMBRE}.*.dmp.log" -exec rm {} \;
+if [ -x ${ORACLE_HOME}/bin/exp ]
+then
+	if [ -f ${ARCHFIFO} ]
+	then
+		rm -f ${ARCHFIFO}
+	fi
+        mknod ${ARCHFIFO} p
+        chmod +rw ${ARCHFIFO}
+        chown oracle.dba ${ARCHFIFO}
+        nohup cat ${ARCHFIFO} | bzip2 > ${ARCHDMP}.bzip2 &
+	exp userid=/ log=${LOGDMP} file=${ARCHFIFO} buffer=16777216 full=y consistent=y statistics=none
+	if [ $? != 0 ]
+	then
+		 Enviar_A_Log "ERROR - Fallo la ejecucion del export." ${LOGSCRIPT}
+                 Enviar_A_Log "FINALIZACION - CON ERRORES." ${LOGSCRIPT}
+                 exit 5
+	else
+		if [ -s ${LOGDMP} ]
+		then
+			grep "Export terminated successfully without warnings" ${LOGDMP}
+                        if [ $? = 0 ]  
+                        then
+				Enviar_A_Log "AVISO - Export ${ARCHDMP} generado OK." ${LOGSCRIPT}
+                        	Enviar_A_Log "FINALIZACION - OK." ${LOGSCRIPT}
+                                exit 0
+                        else
+				grep "Export terminated successfully with warnings" ${LOGDMP}
+				if [ $? = 0 ]
+                        	then
+                                	Enviar_A_Log "AVISO - Export ${ARCHDMP} generado OK." ${LOGSCRIPT}
+                                	Enviar_A_Log "FINALIZACION - OK." ${LOGSCRIPT}
+                                	exit 0
+				else
+			 		Enviar_A_Log "ERROR - Error de Oracle durante la ejecucion." ${LOGSCRIPT}
+                                	Enviar_A_Log "FINALIZACION - CON ERRORES." ${LOGSCRIPT}
+                                	exit 7
+				fi
+                        fi
+		else
+			Enviar_A_Log "ERROR - No se genero el archivo de log del export" ${LOGSCRIPT}
+                        Enviar_A_Log "FINALIZACION - CON ERRORES." ${LOGSCRIPT}
+                        exit 9
+		fi
+	fi
+else
+        Enviar_A_Log "ERROR - No hay permisos de ejecucion para el comando exp." ${LOGSCRIPT}
+        Enviar_A_Log "FINALIZACION - CON ERRORES." ${LOGSCRIPT}
+        exit 88
+fi

@@ -1,0 +1,36 @@
+#########################################################
+#							# 
+#	ARCHIVO PROFILE DE USUARIO STOREFLOW		#
+#	POR FAVOR COMENTAR LAS MODIFICACIONES		#
+#							#
+#########################################################
+
+####### VARIABLES GENERALES DEL ENTORNO STOREFLOW #########
+export BIN=/sfctrl/bin
+export LIBPATH=/usr/lib
+export BASEBIN=/sfctrl/sfgv
+export PATH=/bin:/usr/bin:/usr/sbin:/usr/ucb:$HOME/bin:$BIN:$ETC:$HOME/util:.:$HOME/bin/scripts:$PATH_SF
+export PS1='`hostname`@$USER:$PWD> '
+export VISUAL=vi
+export HISTSIZE=250
+export EXINIT="set dir=/sfctrl/tmp"
+alias l="ls -l"
+
+####### VARIABLE DE ARCHIVO DE CATALOGO ########
+export NLSPATH=/sfctrl/etc/%N:/sfctrl/etc/%N.cat
+
+####### VARIABLES ESPECIFICAS DE LA APLICACION ###########
+. .entorno
+
+###### VARIABLES DE BASE DE DATOS #######
+. .cronentorno
+
+######### OTRAS VARIABLES GENERALES DEL ENTORNO ###########
+ulimit -u 4096
+stty erase 
+export TERM=vt220
+
+####### VARIABLES DE MAN ##########
+MANPATH=/usr/local/man:/usr/share/man:/usr/X11R6/man:/opt/gnome/share/man
+export PAGER=/bin/more
+export FPATH=/tecnol/funciones

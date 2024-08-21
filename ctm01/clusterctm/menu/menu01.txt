@@ -1,0 +1,6 @@
+0:0:Menu Principal de Control-M:../funciones/funciones.lib
+1:1:Control-M Enterprise Manager:exec ./dynamic_menu.sh menu/menu02.txt
+2:2:Control-M Server Produccion:exec ./dynamic_menu.sh menu/menu03.txt
+3:3:Control-M Agent:exec ./dynamic_menu.sh menu/menu04.txt
+4:4:Control-M Stop/Start Masivo:exec ./dynamic_menu.sh menu/menu05.txt
+s:S:Salir:exit 0

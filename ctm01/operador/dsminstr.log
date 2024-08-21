@@ -1,0 +1,144 @@
+
+PROCESS[21366646] Starting TSM Instrumentation Report: Thu Sep 14 23:29:10 2023
+
+========================>PROCESS[21366646] NEW COMMENCE REPORT<========================
+
+-----------------------------------------------------------------------------------
+PROCESS[21366646] TSM Client final instrumentation statistics: Thu Sep 14 23:29:10 2023
+
+Instrumentation class: Client detail
+Completion status: Success
+
+-----------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------
+No instrumented activity reported for thread 1
+
+-----------------------------------------------------------------------------------
+No instrumented class associated with thread 258
+Current command:
+
+
+IBM Tivoli Storage Manager
+Command Line Backup-Archive Client Interface
+  Client Version 7, Release 1, Level 6.0 
+  Client date/time: 09/14/23   23:29:09
+Session established with server TSM01: AIX
+  Server Version 8, Release 1, Level 13.0
+  Server date/time: 09/14/23   23:29:09  Last access: 09/14/23   19:11:59
+
+
+Options settings:
+                BACKUPREGISTRY: YES
+               CHANGINGRETRIES: 4
+           COLLOCATEBYFILESPEC: NO
+                    COMMMETHOD: TCP/IP
+                COMPRESSALWAYS: YES
+                   COMPRESSION: NO
+                DEDUPCACHEPATH: /usr/tivoli/tsm/client/ba/bin64
+                DEDUPCACHESIZE: 256
+                 DEDUPLICATION: NO
+                  DISKBUFFSIZE: 256
+              ENABLEDEDUPCACHE: YES
+                 ENABLELANFREE: NO
+                ENCRYPTIONTYPE: AES128
+                FOLLOWSYMBOLIC: CLC
+                  IMAGEGAPSIZE: 32
+             LANFREECOMMMETHOD: SHARED MEMORY
+                MAKESPARSEFILE: YES
+                 MAXCMDRETRIES: 2
+         MEMORYEFFICIENTBACKUP: NO
+                      NODENAME: EM02
+                PASSWORDACCESS: TRUE
+        PRESERVELASTACCESSDATE: NO
+          PROCESSORUTILIZATION: 0
+                       REPLACE: TRUE
+           RESOURCEUTILIZATION: 2
+                  SKIPMIGRATED: NO
+             SKIPNTPERMISSIONS: NO
+             SKIPNTSECURITYCRC: NO
+             SNAPSHOTCACHESIZE: 100
+                        SUBDIR: CLC
+                 SUBFILEBACKUP: NO
+              SUBFILECACHESIZE: 10 MB
+                    TAPEPROMPT: NO
+                   TCPBUFFSIZE: 32 KB
+                    TCPNODELAY: YES
+               TCPSENDBUFFSIZE: 0 KB
+                 TCPWINDOWSIZE: 63 KB
+                  TXNBYTELIMIT: 25600K
+                       VERBOSE: VERBOSE
+
+-------------------------
+
+
+PROCESS[21366646] Ended TSM Instrumentation Report: Thu Sep 14 23:29:10 2023
+
+-----------------------------------------------------------------------------------
+
+PROCESS[21366646] Starting TSM Instrumentation Report: Fri Sep 15 00:16:32 2023
+
+========================>PROCESS[21366646] NEW COMMENCE REPORT<========================
+
+-----------------------------------------------------------------------------------
+PROCESS[21366646] TSM Client final instrumentation statistics: Fri Sep 15 00:16:32 2023
+
+Instrumentation class: Client detail
+Completion status: Success
+
+-----------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------
+No instrumented activity reported for thread 1
+
+-----------------------------------------------------------------------------------
+Current command:
+quit
+
+Options settings:
+                BACKUPREGISTRY: YES
+               CHANGINGRETRIES: 4
+           COLLOCATEBYFILESPEC: NO
+                    COMMMETHOD: TCP/IP
+                COMPRESSALWAYS: YES
+                   COMPRESSION: NO
+                DEDUPCACHEPATH: /usr/tivoli/tsm/client/ba/bin64
+                DEDUPCACHESIZE: 256
+                 DEDUPLICATION: NO
+                  DISKBUFFSIZE: 256
+              ENABLEDEDUPCACHE: YES
+                 ENABLELANFREE: NO
+                ENCRYPTIONTYPE: AES128
+                FOLLOWSYMBOLIC: CLC
+                  IMAGEGAPSIZE: 32
+             LANFREECOMMMETHOD: SHARED MEMORY
+                MAKESPARSEFILE: YES
+                 MAXCMDRETRIES: 2
+         MEMORYEFFICIENTBACKUP: NO
+                      NODENAME: EM02
+                PASSWORDACCESS: TRUE
+        PRESERVELASTACCESSDATE: NO
+          PROCESSORUTILIZATION: 0
+                       REPLACE: TRUE
+           RESOURCEUTILIZATION: 2
+                  SKIPMIGRATED: NO
+             SKIPNTPERMISSIONS: NO
+             SKIPNTSECURITYCRC: NO
+             SNAPSHOTCACHESIZE: 100
+                        SUBDIR: CLC
+                 SUBFILEBACKUP: NO
+              SUBFILECACHESIZE: 10 MB
+                    TAPEPROMPT: NO
+                   TCPBUFFSIZE: 32 KB
+                    TCPNODELAY: YES
+               TCPSENDBUFFSIZE: 0 KB
+                 TCPWINDOWSIZE: 63 KB
+                  TXNBYTELIMIT: 25600K
+                       VERBOSE: VERBOSE
+
+-------------------------
+
+
+PROCESS[21366646] Ended TSM Instrumentation Report: Fri Sep 15 00:16:32 2023
+
+-----------------------------------------------------------------------------------

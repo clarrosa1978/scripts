@@ -1,0 +1,3 @@
+MENU IMPRESION SUCURSAL
+Ver|Activar|Desactivar colas de impresion definidas;vercolasimpsuc.sh
+Ver tipo de cola de impresion;vertipoimpsuc.sh

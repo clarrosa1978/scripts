@@ -1,0 +1,17 @@
+set -o vi
+export SUC="`uname -n | sed 's/suc//g'`"
+if [ $SUC -lt 100 ]
+then
+	export ORACLE_SID=SF0$SUC
+else
+	export ORACLE_SID=SF$SUC
+fi
+export ORACLE_BASE=/u011/app/oracle
+export ORACLE_HOME=$ORACLE_BASE/product/11.2.0
+export PATH=$ORACLE_HOME/bin:$PATH:/usr/X11R6/bin:/bin:/usr/bin:/usr/local/bin:/etc:/usr/sbin:/usr/ucb:$HOME/bin:/usr/bin/X11:/sbin:$ORACLE_HOME/lib.
+export CLASSPATH=.:$ORACLE_HOME/jdbc/lib/classes111.zip
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib
+export NLS_LANG=AMERICAN_AMERICA.WE8DEC
+export TNS_ADMIN=/u011/app/oracle/product/11.2.0/network/admin
+export PS1='$ '`hostname`'|$ORACLE_SID:$PWD>'
+export FPATH=/tecnol/funciones

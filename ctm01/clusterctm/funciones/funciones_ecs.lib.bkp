@@ -1,0 +1,855 @@
+titulo ()
+{
+MENSAJE=$1
+echo "-------------------------------------------------------------------------------"
+echo "$MENSAJE"
+echo "-------------------------------------------------------------------------------"
+}
+
+ping_node()
+{
+titulo "Controlando la conexion con el $nodo"
+if [ "#${FUNCION}" = "#STANDALONE" ]
+then
+	return 1
+else
+	nodo=$1
+	/usr/sbin/ping -c 1 $nodo >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" != "#0" ]
+	then
+        	echo "No hay conexion con el servidor $nodo" 
+        	return 1
+	else
+        	echo "Nodo $nodo ACTIVO"
+        	return 0
+	fi
+fi
+}
+
+
+check_local_ecs()
+{
+titulo "Controlando Global Condition Server, Batch Impact Manager Server, Forecast Server"
+GTWS=`ps -ef | grep ${ECS_USR} | grep -v grep | grep emgtw | grep -v appl | wc -l | sed s/" "//g`
+GUI=`ps -ef | grep ${ECS_USR} | grep -v grep | grep emguisrv | grep -v appl | wc -l | sed s/" "//g`
+GCS=`ps -ef | grep ${ECS_USR} | grep -v grep | grep emgcs | grep -v appl |wc -l | sed s/" "//g`
+BIM=`ps -ef | grep ${ECS_USR} | grep -v grep | grep embimsrv | grep -v appl |wc -l | sed s/" "//g`
+FOR=`ps -ef | grep ${ECS_USR} | grep -v grep | grep emforecastsrv | grep -v appl |wc -l | sed s/" "//g`
+echo "Estan activados $GUI Gui Servers"
+echo "Estan activados $GTWS Gateways"
+if [ "#"$GCS = "#"1 ]
+then
+	echo "Esta ACTIVO el Global Condition Server"
+else
+	echo "Esta INACTIVO el Global Condition Server"
+fi
+if [ "#"$BIM = "#"1 ]
+then
+	echo "Esta ACTIVO el Batch Impact Manager Server"
+else
+	echo "Esta INACTIVO el Batch Impact Manager Server"
+fi
+if [ "#"$FOR = "#"1 ]
+then
+	echo "Esta ACTIVO el Forecast Server"
+else
+	echo "Esta INACTIVO el Forecast Server"
+fi
+if  [ "#""$GTWS" = "#0" ] && [ "#""$GUI" = "#0" ] && [ "#""$GCS" = "#0" ] 
+then
+        return 1
+else
+        return 0
+fi
+}
+
+check_local_corba()
+{
+titulo "Controlando Naming Service"
+ORBACT=`su - $ECS_USR -c "em check_ns_daemon " | egrep -v "$SU_MSG" | grep Running` 
+if [ "#""$ORBACT" != "#" ]
+then
+        echo "Naming Service ACTIVO en ${SERVER}"
+        return 0
+else
+        echo "Naming Server INACTIVO en ${SERVER}"
+        return 1
+fi
+}
+
+
+check_local_ws()
+{
+titulo "Controlando WEB Server"
+WSACT=`su - $ECS_USR -c "emweb_status" | egrep -v "$SU_MSG" | grep running | grep -v "not running"`
+if [ "#""$WSACT" != "#" ]
+then
+        echo "WEB Server ACTIVO en ${SERVER}"
+        return 0
+else
+        echo "WEB Server INACTIVO en ${SERVER}"
+        return 1
+fi
+}
+
+
+check_remote_corba()
+{
+titulo "Controlando Naming Service en $MIRROR_NODE"
+if [ "#${FUNCION}" = "#STANDALONE" ]
+then
+        return 50
+else
+	ping_node $MIRROR_NODE >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		ORBACT=`su - $ECS_USR -c "setenv LIBPATH; ssh $MIRROR_NODE 'em check_ns_daemon'" | egrep -v $SU_MSG | grep Running | grep -v $SSH_MSG`
+        	if [ "#""$ORBACT" != "#" ]
+        	then
+        		echo "Naming Service ACTIVO en $MIRROR_NODE"
+                	return 0
+        	else
+        		echo "Naming Server INACTIVO en $MIRROR_NODE"
+                	return 1
+        	fi
+	else
+		echo "no hay conexion con el servidor $MIRROR_NODE"
+		return 50
+	fi
+fi
+}
+
+
+start_local_corba()
+{
+titulo "Levantando Naming Service en $SERVER"
+check_local_database_ecs
+STATUS=$?
+if [ "#""$STATUS" != "#0" ]
+then
+	echo "La base de Datos esta INACTIVA. Debe activarla antes de activar los componentes"
+	return 1
+fi
+check_local_corba 
+STATUS=$?
+if [ "#""$STATUS" != "#0" ]
+then
+	check_remote_corba 
+	STATUS=$?
+	if [ "#""$STATUS" = "#1" ] || [ "#""$STATUS" = "#50" ]
+	then
+		su - $ECS_USR -c 'nohup start_ns_daemon &' >> /dev/null
+		sleep 10
+		check_local_corba
+		STATUS=$?
+		if [ "#""$STATUS" = "#0" ]
+		then
+			return 0
+		else
+			echo "No se puede levantar el Naming Service en $SERVER"
+			return 1
+		fi
+	else
+		echo "No es posible levantar el Naming Sever en $SERVER"
+		return 1
+	fi
+else
+	echo "El Naming Service ya se encontraba ACTIVO"
+	return 0
+fi
+}
+
+
+start_local_ws()
+{
+titulo "Controlando WEB Server en $SERVER"
+check_local_ws
+STATUS=$?
+if [ "#""$STATUS" != "#0" ]
+then
+        check_remote_ws
+        STATUS=$?
+        if [ "#""$STATUS" = "#1" ] || [ "#""$STATUS" = "#50" ]
+        then
+                su - $ECS_USR -c 'nohup start_web_server &' >> /dev/null
+                sleep 10
+                check_local_ws
+                STATUS=$?
+                if [ "#""$STATUS" = "#0" ]
+                then
+                        return 0
+                else
+                        echo "No se puede levantar el WEB Server en $SERVER"
+                        return 1
+                fi
+        else
+                echo "No es posible levantar el WEB Server en $SERVER"
+                return 1
+        fi
+else
+        echo "El WEB Server ya se encontraba ACTIVO"
+        return 0
+fi
+}
+
+
+stop_local_corba()
+{
+titulo "Deteniendo Naming Service en ${SERVER}"
+check_local_corba  >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+	su - $ECS_USR -c stop_ns_daemon >> /dev/null
+	check_local_corba 
+	STATUS=$?
+	if [ "#""$STATUS" = "#1" ]
+	then
+		return 0
+	else
+		echo "PROBLEMAS desactivando Naming Service en ${SERVER}"
+	return 1
+	fi
+fi
+}
+
+stop_local_ws()
+{
+titulo "Deteniendo el WEB Server en ${SERVER}"
+check_local_ws  >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+        su - $ECS_USR -c stop_web_server >> /dev/null
+        check_local_ws
+        STATUS=$?
+        if [ "#""$STATUS" = "#1" ]
+        then
+                return 0
+        else
+                echo "PROBLEMAS desactivando el WEB Server en ${SERVER}"
+        return 1
+        fi
+fi
+}
+
+check_local_conf_server()
+{
+titulo "Controlando Configuration Server en ${SERVER}"
+ADMACT=`su - $ECS_USR -c check_cms | egrep -v $SU_MSG | grep running `
+if [ "#""$ADMACT" != "#" ]
+then
+        echo "Configuration Server ACTIVO en ${SERVER}"
+        return 0
+else
+        echo "Configuration Server INACTIVO en ${SERVER}"
+        return 1
+fi
+}
+
+
+check_remote_conf_server()
+{
+titulo "Controlando Configuration Server en $MIRROR_NODE"
+if [ "#${FUNCION}" = "#STANDALONE" ]
+then
+        return 50
+else
+	ping_node $MIRROR_NODE >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		ORBACT=`su - $ECS_USR -c "setenv LIBPATH;ssh $MIRROR_NODE check_cms" | egrep -v $SU_MSG | grep running | grep -v $SSH_MSG`
+		if [ "#""$ORBACT" != "#" ]
+        	then
+        		echo "Configuration Server ACTIVO en $MIRROR_NODE"
+                	return 0
+        	else
+        		echo "Configuration Server INACTIVO en $MIRROR_NODE"
+                	return 1
+        	fi
+	else
+		echo "no hay conexion con el servidor $MIRROR_NODE"
+        	return 50
+	fi
+fi
+}
+
+
+check_remote_ws()
+{
+titulo "Controlando WEB Server en $MIRROR_NODE"
+if [ "#${FUNCION}" = "#STANDALONE" ]
+then
+        return 50
+else
+	ping_node $MIRROR_NODE >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+        	ORBACT=`su - $ECS_USR -c "setenv LIBPATH; ssh $MIRROR_NODE 'em emweb_status'" | egrep -v $SU_MSG | grep running | grep -v $SSH_MSG | grep -v "not running"`
+        	if [ "#""$ORBACT" != "#" ]
+        	then
+                	echo "WEB Server ACTIVO en $MIRROR_NODE"
+                	return 0
+        	else
+                	echo "WEB Server INACTIVO en $MIRROR_NODE"
+                	return 1
+        	fi
+	else
+        	echo "no hay conexion con el servidor $MIRROR_NODE"
+        	return 50
+	fi
+fi
+}
+
+
+start_local_conf_server()
+{
+titulo "Levantando Configuration server en $SERVER"
+check_local_conf_server >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" != "#0" ]
+then
+	check_local_corba >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		check_remote_conf_server 
+		STATUS=$?
+		if [ "#""$STATUS" = "#1" ] || [ "#""$STATUS" = "#50" ]
+		then
+			su - $ECS_USR -c "nohup start_cms &" >> /dev/null
+			sleep 10
+			check_local_conf_server
+			STATUS=$?
+			if [ "#""$STATUS" = "#0" ]
+			then
+				return 0
+			else
+				return 1
+			fi
+		else
+			echo "No puede levantarse el Configuration server en $SERVER"
+			return 1
+		fi
+		
+	else
+		echo "Naming Service INACTIVO en $SERVER"
+		echo "No se puede levantar el Configuration Server"
+		return 1
+	fi
+else
+	echo "el Configuration Server ya se encontraba ACTIVO"
+	return 0
+fi
+}
+
+
+stop_local_conf_server()
+{
+titulo "Deteniendo el Configuration Server"
+check_local_conf_server  >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+	su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C CMS -cmd stop -all"  >> /dev/null
+	sleep 15
+	check_local_conf_server 
+	STATUS=$?
+	if [ "#""$STATUS" = "#1" ]
+	then
+		return 0
+	else
+                PROCESS_ID=`ps -ef | awk '{if($1 == "'$ECS_USR'") print $0}' | grep emcms | grep  -v "grep emcms" | awk '{print $2}'`
+                if [ "#$PROCESS_ID" != "#" ]
+                then
+                        kill -9 ${PROCESS_ID}
+                fi
+                sleep 5
+		check_local_conf_server
+		STATUS=$?
+		if [ "#""$STATUS" = "#1" ]
+		then
+			return 0
+		else
+			echo "PROBLEMAS desactivando el Configuration Server"
+			return 1
+		fi
+	fi
+fi
+}
+
+
+check_local_admin_agent()
+{
+titulo "Controlando Admin Agent en ${SERVER}"
+ADMACT=`su - $ECS_USR -c check_config_agent | egrep -v $SU_MSG | grep running `
+if [ "#""$ADMACT" != "#" ]
+then
+        echo "Admin Agent ACTIVO en ${SERVER}"
+        return 0
+else
+        echo "Admin Agent INACTIVO en ${SERVER}"
+        return 1
+fi
+}
+
+
+check_remote_admin_agent()
+{
+titulo "Controlando Admin Agent en $MIRROR_NODE"
+if [ "#${FUNCION}" = "#STANDALONE" ]
+then
+        return 50
+else
+	ping_node $MIRROR_NODE >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		ADMACT=`su - $ECS_USR -c "setenv LIBPATH; ssh $MIRROR_NODE check_config_agent" | egrep -v $SU_MSG | grep running| grep -v $SSH_MSG`
+		if [ "#""$ADMACT" != "#" ]
+		then
+			echo "Admin Agent ACTIVO en $MIRROR_NODE"
+			return 0
+		else
+			echo "Admin Agent INACTIVO $MIRROR_NODE"
+			return 1
+		fi
+	else
+		echo "No se puede acceder al servidor $nodo"
+		return 50
+	fi
+fi
+}
+
+
+start_local_admin_agent()
+{
+titulo "Levantando Admin Agent en ${SERVER}"
+if [ -f $ECS_BKP_FILE.Z ]
+then
+	echo "Desea importar el ultimo backup de contingencia? S/N"
+	read answer
+	if [ "#""$answer" =  "#s" ] || [ "#""$answer" =  "#S" ]
+	then
+		uncompress -f  $ECS_BKP_FILE.Z
+		su - $ECS_USR -c "ecs util -import -replace  -U $ECS_DB_USR -P $ECSPAS -type all -file $BKPFILE"
+		STATUS=$?
+		if [ $STATUS != 0 ]
+		then
+			echo "Error importando el ultimo export del ECS"
+			compress -f ECS_BKP_FILE
+			return 1
+		else
+			su - $ECS_USR -c "${MENU_CTM}/funciones/reset_ports.sh $MIRROR_NODE $SERVER"  >> /dev/null
+			rm -f $ECS_BKP_FILE
+		fi
+	fi
+fi
+check_local_admin_agent 
+STATUS=$?
+if [ "#""$STATUS" != "#0" ]
+then
+	check_local_conf_server >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		check_remote_admin_agent
+		STATUS=$?
+		if [ "#""$STATUS" = "#1" ] || [ "#""$STATUS" = "#50" ]
+		then
+			if [ "#""$FUNCION" != "#STANDALONE" ]
+			then
+                		su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMEMS_NODE_SEC -APPLTYPE OS -DELETE $SERVER" >> /dev/null
+                		su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMEMS_NODE_SEC -APPLTYPE OS -ADD $MIRROR_NODE" >> /dev/null
+                		su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMEMS_NODE_PRI -APPLTYPE OS -DELETE $MIRROR_NODE" >> /dev/null
+                		su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMEMS_NODE_PRI -APPLTYPE OS -ADD $SERVER" >> /dev/null
+                		su - $CTM_USR -c "ctmvar -action set -var %%\\\\$CTMEMS_NODE_PRI -VAREXPR $SERVER" >> /dev/null
+                		su - $CTM_USR -c "ctmvar -action set -var %%\\\\$CTMEMS_NODE_SEC -VAREXPR $MIRROR_NODE" >> /dev/null
+				check_remote_database_ecs >> /dev/null
+				STATUS=$?
+				if [ $STATUS = 0 ]
+				then
+                        		su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE ctmnodegrp -EDIT -NODEGRP $CTMEMS_NODE_SEC -APPLTYPE OS -ADD $MIRROR_NODE"  >> /dev/null
+                        		su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE ctmnodegrp -EDIT -NODEGRP $CTMEMS_NODE_SEC -APPLTYPE OS -DELETE $SERVER"  >> /dev/null
+                        		su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE ctmnodegrp -EDIT -NODEGRP $CTMEMS_NODE_PRI -APPLTYPE OS -ADD $SERVER"  >> /dev/null
+                        		su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE ctmnodegrp -EDIT -NODEGRP $CTMEMS_NODE_PRI -APPLTYPE OS -DELETE $MIRROR_NODE"  >> /dev/null
+					su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE ctmvar -action set -var %%\\\\\\\\$CTMEMS_NODE_PRI -VAREXPR $SERVER"  >> /dev/null
+                        		su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE ctmvar -action set -var %%\\\\\\\\$CTMEMS_NODE_SEC -VAREXPR $MIRROR_NODE"  >> /dev/null
+					export LIBPATH=${LIBPATHBKP}
+				fi
+				su - $ECS_USR -c "${MENU_CTM}/funciones/reset_ports.sh $MIRROR_NODE $SERVER"  >> /dev/null
+			fi
+			su - $ECS_USR -c "nohup ecs maintag &" >> /dev/null
+			check_local_admin_agent 
+			if [ "#""$STATUS" = "#0" ]
+			then
+				return 0
+			else
+				return 1
+			fi
+				
+		else
+			echo "no puede levantarse el Admin Agent en $SERVER"
+			return 1
+		fi
+	else
+		echo "NO esta activo el Configuration Server en $SERVER"
+		echo "NO puede levantarse el Admin Agent en $SERVER"
+		return 1
+	fi
+else
+	echo "El Admin Agent YA se encontraba ACTIVO en ${SERVER}"
+	return 0
+fi
+}
+
+
+stop_local_admin_agent()
+{
+titulo "Deteniendo Admin Agent en ${SERVER}" 
+check_local_admin_agent  >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+	su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C Config_Agent -cmd shutdown -all" >> /dev/null
+	check_local_admin_agent 
+	if [ "#""$STATUS" = "#1" ]
+	then
+		return 0
+	else
+		return 1
+	fi
+fi
+}
+
+
+start_local_ecs()
+{
+titulo "Levantando Procesos CMEM LEVANTADOS"
+check_local_ecs 
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+        echo "Procesos de CMEM Levantados"
+        return 0
+else
+        echo "No hay procesos de CMEM LEVANTADOS"
+        echo "Verifique el CMEM Configuration Manager"
+        return 1
+fi
+}
+
+
+stop_local_ecs()
+{
+titulo "Deteniendo Procesos CMEM LEVANTADOS"
+check_local_ecs >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#1" ]
+then
+        return 0
+else
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C Gateway -all -cmd stop" >> /dev/null
+	sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C GUI_Server -all -cmd stop" >> /dev/null
+	sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C GAS -all -cmd stop" >> /dev/null
+	sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C GCS -all -cmd stop" >> /dev/null
+	sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C Forecast_Server -all -cmd stop" >> /dev/null
+	sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C BIM -all -cmd stop" >> /dev/null
+	sleep 20
+        check_local_ecs >> /dev/null
+	STATUS=$?
+        if [ "#""$STATUS" = "#1" ]
+        then
+		echo "Procesos de CMEM INACTIVOS"
+                return 0
+        else
+                echo "PROBLEMAS desactivando procesos de CMEM"
+                return 1
+        fi      
+fi
+}
+
+
+stop_local_ecs_cont()
+{
+titulo "Desactivando procesos de CMEM"
+check_local_ecs >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#1" ]
+then
+        return 0
+else
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C Gateway -all -cmd stop" >> /dev/null
+        sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C GUI_Server -all -cmd stop" >> /dev/null
+        sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C GAS -all -cmd stop" >> /dev/null
+        sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C GCS -all -cmd stop" >> /dev/null
+        sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C Forecast_Server -all -cmd stop" >> /dev/null
+        sleep 2
+        su - $ECS_USR -c "ecs ctl -U $ECS_DB_USR -P $ECSPAS -C BIM -all -cmd stop" >> /dev/null
+        sleep 20
+        check_local_ecs >> /dev/null
+        STATUS=$?
+        if [ "#""$STATUS" = "#1" ]
+        then
+                echo "Procesos de CMEM INACTIVOS"
+		echo "Exportando datos al servidor de Contingencia"
+		su - $ECS_USR -c "ecs util -U $ECS_DB_USR -P $ECSPAS -export -type def -type cal -type sys -type dc -type user -type alert -type gc -type maint -type collect -type view -type filter -type report -type hier -type audit -type history -type bim_forecast -type statistics -file $ECS_BKP_FILE" >> /dev/null
+		STATUS=$?
+		if [ $STATUS != 0 ]
+		then
+			echo "Problemas exportando datos de CTMEM"
+			return 1
+		else
+			compress -f $ECS_BKP_FILE
+			scp -p $ECS_BKP_FILE $MIRROR_NODE:$ECS_BKP_FILE.Z
+			STATUS=$?
+			if [ $STATUS != 0 ]
+			then
+				echo "Problemas copiando el archivo de exportacion a $MIRROR_NODE"
+				return 1
+			else
+				echo "Se copiaron los archivos de exportacion a $MIRROR_NODE"
+			fi
+			rm -f $ECS_BKP_FILE
+		fi
+                return 0
+        else
+                echo "PROBLEMAS desactivando procesos de CMEM"
+		echo "Intentelo nuevamente"
+                return 1
+        fi
+fi
+}
+
+check_local_database_ecs()
+{
+titulo "Controlando Base de datos en ${SERVER}"
+if [ "#""$ECS_DATABASE" = "#SYBASE" ] 
+then
+	return=""
+	SYBOK=`su - $ECS_USR -c sybver | egrep -v $SU_MSG`
+	if [ "#""$SYBOK" != "#" ]
+	then
+        	echo "Base Sybase ACTIVA en ${SERVER}"
+	        return 0
+	else
+      		echo "Base Sybase INACTIVA en ${SERVER}"
+        	return 1
+	fi
+fi
+if [ "#""$ECS_DATABASE" = "#ORACLE" ]
+then
+        return=""
+        ORAOK=`su - $ECS_USR -c check_server | egrep -v $SU_MSG`
+        if [ "#""$ORAOK" = "#ok" ]
+        then
+                echo "Base Oracle ACTIVA en ${SERVER}"
+                return 0
+        else
+                echo "Base Oracle INACTIVA en ${SERVER}"
+                return 1
+        fi
+else
+	if [ "#""$ECS_DATABASE" = "#POSTGRE" ]
+	then
+		POSTGREOK=`su - $ECS_USR -c check_server | egrep -v $SU_MSG`
+		if [ "#""$POSTGREOK" = "#ok" ]
+		then
+			echo "Base Postgre ACTIVA en ${SERVER}"
+			return 0
+		else
+			echo "Base Postgre INACTIVA en ${SERVER}"
+			return 1
+		fi
+	else
+		echo "Base de Datos de CTMEM NO DEFINIDA"
+		return 2
+	fi
+fi
+}
+
+check_remote_database_ecs()
+{
+titulo "Controlando Base de Datos  en ${SERVER}"
+if [ "#""$ECS_DATABASE" = "#SYBASE" ]
+then
+        return=""
+        SYBOK=`su - $ECS_USR -c sybver | egrep -v $SU_MSG`
+        if [ "#""$SYBOK" != "#" ]
+        then
+                echo "Base Sybase ACTIVA en ${SERVER}"
+                return 0
+        else
+                echo "Base Sybase INACTIVA en ${SERVER}"
+                return 1
+        fi
+fi
+if [ "#""$ECS_DATABASE" = "#ORACLE" ]
+then
+        return=""
+	LIBPATHBKP=${LIBPATH}
+	LIBPATH=""
+        ORAOK=`su - $ECS_USR -c "setenv LIBPATH;ssh $MIRROR_NODE check_server"  | egrep -v $SU_MSG`
+	export LIBPATH=${LIBPATHBKP}
+        if [ "#""$ORAOK" = "#ok" ]
+        then
+                echo "Base Oracle ACTIVA en $MIRROR_NODE"
+                return 0
+        else
+                echo "Base Oracle INACTIVA en $MIRROR_NODE"
+                return 1
+        fi
+else
+        if [ "#""$ECS_DATABASE" = "#POSTGRE" ]
+        then
+		LIBPATHBKP=${LIBPATH}
+		LIBPATH=""
+                POSTGREOK=`su - $ECS_USR -c "setenv LIBPATH;ssh $MIRROR_NODE check_server" | egrep -v $SU_MSG `
+		export LIBPATH=${LIBPATHBKP}
+                if [ "#""$POSTGREOK" = "#ok" ]
+                then
+                        echo "Base Postgre ACTIVA en ${SERVER}"
+                        return 0
+                else
+                        echo "Base Postgre INACTIVA en ${SERVER}"
+                        return 1
+                fi
+        else
+                echo "Base de Datos de CTMEM NO DEFINIDA"
+                return 2
+        fi
+fi
+}
+
+
+
+
+start_database_ecs()
+{
+titulo "Levantando Base de Datos en ${SERVER}"
+if [ "#""$ECS_DB_TYPE" = "#D" ] 
+then
+	check_local_database_ecs >> /dev/null
+	STATUS="$?"
+	if [ "#""$STATUS" = "#1" ]
+	then
+		echo "Activando Base de Datos $DATABASE...."
+		echo "Aguarde unos instantes..."
+        	su - $ECS_USR -c "start_server >>/dev/null" >> /dev/null
+        	check_local_database_ecs
+        	STATUS="$?"
+        	if [ "#""$STATUS" = "#0" ]
+        	then
+                	echo "Se ha levantado exitosamente la BD $DATABASE en ${SERVER}"
+                	return 0
+        	else
+                	echo "No ha podido levantarse la BD $DATABASE en ${SERVER}"
+                	return 30
+        	fi
+	else
+        	echo "La base de datos se encuentra ACTIVA en ${SERVER}"
+        	echo "No es necesario levantarla"
+        	return 1
+	fi      
+else
+	echo "Base de Datos de Control-M EM NO SE ACTIVA DESDE ESTE MENU"
+	return 2
+fi
+}
+	
+	
+stop_local_database_ecs()
+{
+titulo "Deteniendo Base de Datos en ${SERVER}"
+if [ "#""$ECS_DB_TYPE" = "#D" ]
+then
+	check_local_database_ecs >> /dev/null
+	STATUS="$?"
+	if [ "#""$STATUS" = "#0" ]
+	then
+        	check_local_ecs >> /dev/null
+        	ECS=$?
+        	check_local_admin_agent  >> /dev/null
+        	AA=$?
+        	check_local_conf_server  >> /dev/null
+        	CS=$?
+        	check_local_corba  >> /dev/null
+        	CRB=$?
+        	if [ "#""$ECS" != "#0" ] && [ "#""$AA" != "#0" ]  && [ "#""$CS" != "#0" ] && [ "#""$CRB" != "#0" ]
+        	then
+			if [ "#""$CTM_DB_TYPE" = "#E" ]
+			then
+				. $WRK_DIR/funciones_ctm.lib
+				check_local_ctm $CTM_USR >> /dev/null
+				CTM=$?
+				if [ "#""$CTM" != "#0" ]
+				then
+                			su - $ECS_USR -c "stop_server -U $SA_USR -P $SAPAS >> /dev/null" >> /dev/null
+                			check_local_database_ecs 
+					STATUS=$?
+                			if [ "#""$STATUS" = "#1" ]
+                			then
+						return 0
+                			else
+                       				echo "PROBLEMAS inactivando la base de datos en ${SERVER}"
+                       				return 1
+                			fi
+				else
+					echo "Control-M Server está ACTIVO, Debe desactivarlo primero"
+					echo "Desea desactivarlo ahora? S/N"
+					read a
+                               		if [ "#""$a" = "#S" ] || [ "#""$a" = "#s" ]
+					then
+						stop_local_ctm_ca $CTM_USR
+						stop_local_ctm $CTM_USR
+						STATUS=$?
+						if [ "#""$STATUS" = "#0" ]
+						then
+							stop_local_database_ecs $ECS_DB_TYPE $CTM_DB_TYPE $ECS_USR $CTM_USR
+						else
+							return 32
+						fi
+					else
+						echo "No se desactivará la la base de datos de CTMEM en ${SERVER}"
+						return 32
+					fi
+				fi
+			else
+                                su - $ECS_USR -c "stop_server -U $SA_USR -P $SAPAS >> /dev/null" >> /dev/null
+                                check_local_database_ecs 
+                                STATUS=$?
+                              	if [ "#""$STATUS" = "#1" ]
+                                then
+                               		return 0
+                                else
+                                     	echo "PROBLEMAS inactivando la base de datos en ${SERVER}"
+                                	return 1
+                                fi
+			fi
+
+        	else
+                	echo "Hay procesos ACTIVO de Control-M Enterprise Manager"
+                	return 32
+        	fi
+	else
+        	echo "La base de datos se encontraba Inactiva"
+        	return 0
+	fi
+else 
+        echo "Base de Datos de Control-M EM NO SE DESACTIVA DESDE ESTE MENU"
+        return 2
+fi
+}

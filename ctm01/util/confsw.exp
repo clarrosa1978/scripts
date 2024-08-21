@@ -1,0 +1,49 @@
+#!/usr/bin/expect -d
+
+if $argc<5 {
+  send_user "$argv0: faltan parametros\n"
+  send_user "\n"
+  send_user " Usuario            : Nombre del usuario.\n"
+  send_user " Password           : Password del usuario.\n"
+  send_user " HostSW             : Nombre del switch.\n"
+  send_user " Directorio         : Nombre del directorio remoto donde se resguarda.\n"
+  send_user " HostBackup	 : Direccion IP o nombre del host donde se resguarda el backup.\n"
+  send_user " Fecha		 : Fecha del dia.\n"
+  exit 1
+}
+
+#
+# Obtengo los datos que pasan.
+#
+set USUARIO            [lindex $argv 0]
+set PASSWORD           [lindex $argv 1]
+set HOSTSW             [lindex $argv 2]
+set DIRECTORIO         [lindex $argv 3]
+set HOSTBKP            [lindex $argv 4]
+set FECHA              [lindex $argv 5]
+
+#
+# 
+if { $HOSTSW == "swmediohp" || $HOSTSW == "swarribahp" } { 
+        spawn -noecho rsh ${HOSTSW}
+        expect "login:"
+        send "${USUARIO}\r"
+        expect "Password:"
+        send "${PASSWORD}\r"
+        expect "admin>"
+        send "configupload \"${HOSTBKP}\",\"switch\",\"${DIRECTORIO}/${HOSTSW}.${FECHA}.txt\"\r"
+} else {
+	spawn -noecho ssh admin@${HOSTSW}
+	expect "password:"
+	send "${PASSWORD}\r"
+	expect "Permission denied, please try again." {
+		exit 1 }
+	expect "admin>"
+	send "configupload -p ftp \"${HOSTBKP}\",\"switch\",\"${DIRECTORIO}/${HOSTSW}.${FECHA}.txt\"\r"
+	expect "password:"
+	send "Strike69\r"
+}
+expect "admin>"
+send "exit\r"
+spawn gzip -f ${DIRECTORIO}/${HOSTSW}.${FECHA}.txt
+expect eof

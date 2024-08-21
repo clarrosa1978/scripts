@@ -1,0 +1,6 @@
+MENU PRINCIPAL
+Administracion de SP9 (..);
+Administracion de Procesos (dsmstat, eventos...);menu.operador;menu.proc.txt
+Administracion de Servicios (samba,nagios,apache...) ;menu.operador;menu.serv.txt
+Administracion de Aplicaciones (ControlM...);menu.operador;menu.apli.txt
+Administracion de Base de Datos (CTM7SP9...);menu.operador;menu.db.txt

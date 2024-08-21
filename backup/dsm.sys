@@ -1,0 +1,33 @@
+Servername TSM
+
+TCPSERVERADDRESS 172.16.8.20
+
+nodename SUC33
+
+COMMMETHOD TCPip
+TCPPORT 1500
+ERRORLOGRETENTION 7
+SCHEDLOGRETENTION 7
+passwordaccess generate
+
+* MEMORYEFficientbackup yes
+
+DOMAIN ALL-LOCAL
+
+SCHEDMODE PROMPTED
+RETRYPERIOD 10
+MAXCMDRETRIES 10
+SCHEDLOGNAME /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+ERRORLOGName /opt/tivoli/tsm/client/ba/bin/dsmerror.log
+
+* Configuracion Lan Free
+*enablelanfree              yes
+*lanfreetcpserveraddress    172.16.8.17
+*lanfreecommmethod          tcpip
+*lanfreetcpport             1500
+
+*Exclusiones
+exclude.fs /boot
+exclude.fs /dev/shm
+exclude.fs /u02/oradata/CTRLM033
+exclude.fs /u02/oradata/SF033

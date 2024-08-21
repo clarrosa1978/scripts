@@ -1,0 +1,9 @@
+%%PARM1=P
+%%PARM2=/trntcierre/suc50
+%%PARM3=ts03020F.%%ODAY.%%OMONTH
+%%PARM4=amscentral
+%%PARM5=/sfctrl/data/fromsucursal/suc50
+%%PARM6=tc03020F.%%ODAY.%%OMONTH
+%%PARM7=sfctrl
+%%PARM8=sfsw
+%%PARM9=640

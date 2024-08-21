@@ -1,0 +1,4 @@
+MENU COTODIGITAL
+Reiniciar nodos ATG;/tecnol/operador/reinicia_digital.sh
+Poner pagina de Mantenimiento Cotodigital;/tecnol/operador/poner_mantenimiento_digital.sh
+Sacar pagina de Mantenimiento Cotodigital;/tecnol/operador/sacar_mantenimiento_digital.sh

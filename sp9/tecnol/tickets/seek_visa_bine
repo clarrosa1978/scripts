@@ -1,0 +1,44 @@
+#!/bin/sh
+
+############################################################################
+#                                   Fernandez Garay Jorge - 11/2001
+# seek_visa_bine
+#
+# Ejecuta el programa detect_visabine, que inspecciona el directorio
+# /tickets/visa, para detectar si ha llegado el visabine de la fecha.
+# Corresponde al job SEEK_BINE de la cadena DISTRIB_VISABINE
+#
+############################################################################
+
+set -x
+
+LOG_DIR="/tecnol/tickets/log"
+export LOG_DIR
+
+if [ "$#" -ne 1 ]
+then
+         echo "\n\n`date +"%d/%m/%Y"` $0: Error en la cantidad de parametros recibida"|tee -a "$LOG_DIR"/errlog
+
+         exit 32
+fi
+
+EXIT_STAT=''
+export EXIT_STAT
+
+if [ -f /tecnol/tickets/detect_visabine -a -x /tecnol/tickets/detect_visabine ]
+then
+         /tecnol/tickets/detect_visabine
+         EXIT_STAT="$?"
+
+         if [ "$EXIT_STAT" -ne 0 ] && [ "$EXIT_STAT" -ne 10 ]
+         then
+                  echo "\n\n$0: LOs errores de cancelacion del prog. detect_visabine $CRED_ENTITY,"
+                  echo "hay buscarlos en el log /tecnol/tickets/log"
+         fi
+
+else
+         echo "\n\n`date +"%d/%m/%Y"` $0: el script detect_visabine no existe o no posee permiso de ejecucion"|tee -a "$LOG_DIR"/errlog
+         exit 31
+fi
+
+exit "$EXIT_STAT"

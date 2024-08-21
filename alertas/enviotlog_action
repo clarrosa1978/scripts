@@ -1,0 +1,77 @@
+#!/bin/sh
+
+############################################################################
+#                                                                          #
+# Script que intenta reiniciar el proceso enviotlog cuando se encuentra    #
+# caido                                                                    #
+#      ~                                                                   #
+#     . .     Demian Barlaro                                               #
+#     /V\     Administrador UNIX                                           #
+#    // \\    COTO C.I.C.S.A.                Version: Mar 2008             #
+#   /(   )\   dbarlaro@redcoto.com.ar                                         #
+#    ^ ~ ^    int. 5462                                                    #
+#                                                                          #
+############################################################################
+
+
+restart_ENVTL()
+{
+
+      #set -x
+
+      # Control de la existencia del proceso enviotlog
+
+      ENVTL_STARTUP_RETRIES="0"
+      ENVIOTLOG_STAT=''
+      export ENVTL_STARTUP_RETRIES ENVIOTLOG_STAT
+
+      while [ "$ENVTL_STARTUP_RETRIES" -le 3 ]
+      do
+
+               ENVIOTLOG_STAT=$(/tecnol/alertas/chkproc_tlog)
+
+               if [ "$ENVIOTLOG_STAT" = "UP" ]
+               then
+                      #[ "$ENVTL_STARTUP_RETRIES" -gt 0 ] && /sn/lib/ets/bin/etsalarm ws001 7 3.6 "PROC_STOREFLOW $HOSTNAME Proceso ENVIOTLOG Intento DE RESTART EXITOSO No $ENVTL_STARTUP_RETRIES"
+                      break
+               else
+                      #[ "$ENVTL_STARTUP_RETRIES" -gt 0 ] && /sn/lib/ets/bin/etsalarm ws001 7 3.6 "PROC_STOREFLOW $HOSTNAME Proceso ENVIOTLOG Intento DE RESTART FALLIDO No $ENVTL_STARTUP_RETRIES"
+                      if [ "$ENVTL_STARTUP_RETRIES" -eq 3 ]
+                      then
+                                #/sn/lib/ets/bin/etsalarm ws001 7 3.6 "PROC_STOREFLOW $HOSTNAME Proceso ENVIOTLOG Imposible Restartearlo Automaticamente RESTARTEARLO MANUALMENTE"
+                                echo "Proceso ENVIOTLOG Imposible Restartearlo Automaticamente RESTARTEARLO MANUALMENTE"|\
+                                /bin/mailx -s "Server $HOSTNAME - Control del Proceso enviotlog" operaciones@redcoto.com.ar
+                                break
+                      fi
+               fi
+
+               # Se reintenta restartear el proceso enviotlog
+               ENVTL_STARTUP_RETRIES=`expr "$ENVTL_STARTUP_RETRIES" + 1`
+
+               # Se provee un profile alternativo para sfctrl
+               export ENV="/sfctrl/sfctrl_env"
+
+               su sfctrl "-c /sfctrl/sfgv/bin/enviotlog >> /sfctrl/tmp/enviotlog.log  &"
+               sleep 60
+
+               ENVIOTLOG_STAT=''
+
+      done
+
+}
+
+
+################################# MAIN PROGRAM ##################################
+
+set -x
+
+ARGS="$*"
+export ARGS
+
+ARGS=`set -- $ARGS`
+
+ENVIOTLOG_STAT="$1"
+HOSTNAME="$2"
+export ENVIOTLOG_STAT QMANGR_STAT CTM_STAT HOSTNAME
+
+[ "$ENVIOTLOG_STAT" = "DOWN" ] && restart_ENVTL

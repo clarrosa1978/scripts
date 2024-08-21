@@ -1,0 +1,615 @@
+titulo ()
+{
+MENSAJE=$1
+echo "-------------------------------------------------------------------------------"
+echo "$MENSAJE"
+echo "-------------------------------------------------------------------------------"
+}
+
+ping_node()
+{
+set -x
+titulo "Controlando Conexion con el servidor $nodo"
+nodo=$1
+/usr/sbin/ping -c 1 $nodo >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" != "#0" ]
+then
+        echo "No hay conexion con el servidor $nodo" 
+        return 1
+else
+        echo "Nodo $nodo ACTIVO"
+        return 0
+fi
+}
+
+
+check_local_ctm()
+{
+set -x
+titulo " Controlando Procesos de CTM en ${SERVER}"
+PROC_CTM=`su - $CTM_USR -c shctm | wc -l | sed s/" "//g`
+if [ "#""$PROC_CTM" != "#0" ]
+then
+	echo "Procesos de CTM ACTIVOS en ${SERVER}"
+	return 0
+else 
+	echo "Procesos de CTM INACTIVOS en ${SERVER}"
+	return 1
+fi
+}
+
+
+check_remote_ctm()
+{
+set -x
+titulo "Controlando Procesos de CTM en $MIRROR_NODE"
+ping_node $MIRROR_NODE >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+	PROC_CTM=`su - $CTM_USR -c "setenv LIBPATH ; ssh $MIRROR_NODE shctm" | wc -l | sed s/" "//g| grep -v $SSH_MSG`
+	if [ "#""$PROC_CTM" != "#0" ]
+	then
+		echo "Procesos de CTM ACTIVOS en $MIRROR_NODE"
+		return 0
+	else 
+		echo "Procesos de CTM INACTIVOS en $MIRROR_NODE"
+		return 1
+	fi
+else
+        echo "no hay conexion con el servidor $MIRROR_NODE"
+        return 50
+fi
+}
+
+
+check_local_ctm_ca()
+{
+set -x
+titulo "Controlando Control-M Configuration Agent en ${SERVER} "
+su - $CTM_USR -c show_ca  >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" = "#0" ]
+then
+        echo "Control-M Configuration Agent ACTIVO en ${SERVER} "
+        return 0
+else
+        echo "Control-M Configuration Agent INACTIVO en ${SERVER} "
+        return 1
+fi
+}
+
+
+check_local_database_ctm()
+{
+set -x
+titulo "Controlando Base de Datos en ${SERVER}"
+return=""
+if [ "#""$CTM_DATABASE" = "#SYBASE" ] 
+then
+	SYBOK=`su - $CTM_USR -c sybver | egrep -v $SU_MSG`
+	if [ "#""$SYBOK" != "#" ]
+	then
+        	echo "Base Sybase ACTIVA en ${SERVER}"
+        	return 0
+	else
+        	echo "Base Sybase INACTIVA en ${SERVER}"
+        	return 1
+	fi
+fi
+if [ "#""$CTM_DATABASE" = "#ORACLE" ] 
+then
+	ORAOK=`su - $CTM_USR -c dbversion | egrep -v $SU_MSG`
+	if [ "#""$ORAOK" != "#" ]
+	then
+        	echo "Base Oracle ACTIVA en ${SERVER}"
+        	return 0
+	else
+        	echo "Base Oracle INACTIVA en ${SERVER}"
+        	return 1
+	fi
+else
+	if [ "#""$CTM_DATABASE" = "#POSTGRE" ]
+	then
+		POSTGREOK=`su - $CTM_USR -c dbversion | egrep -v $SU_MSG | grep PostgreSQL`
+		if [ "#""$POSTGREOK" != "#" ]
+		then	
+			echo "Base Postgre ACTIVA en ${SERVER}"
+	                return 0
+		else
+			echo "Base Postgre INACTIVA en ${SERVER}"
+                	return 1
+		fi
+	else
+		echo "Base de Datos de CTM NO DEFINIDA"
+		return 2
+	fi
+fi
+}
+
+start_local_database_ctm()
+{
+set -x
+titulo "Levantando Base de Datos $CTM_DATABASE en ${SERVER}"
+if [ "#""$CTM_DB_TYPE" = "#D" ] 
+then
+	check_local_database_ctm >> /dev/null
+	STATUS="$?"
+	if [ "#""$STATUS" = "#1" ]
+	then
+	        echo "Activando Base de Datos $CTM_DATABASE...."
+	        echo "Aguarde unos instantes..."
+	        su - $CTM_USR -c "startdb > /dev/null" > /dev/null
+		check_local_database_ctm 
+        	STATUS="$?"
+        	if [ "#""$STATUS" = "#0" ]
+        	then
+                	echo "Se ha levantado exitosamente la BD $DATABASE en ${SERVER}"
+                	return 0
+        	else
+                	echo "No ha podido levantarse la BD $DATABASE en ${SERVER}"
+                	return 30
+        	fi
+	else
+        	echo "La base de datos se encuentra ACTIVA en ${SERVER}"
+        	echo "No es necesario levantarla"
+        	return 1
+	fi
+else
+	echo "Base de Datos de Control-M Server NO SE ACTIVA DESDE ESTE MENU"
+	return 2
+fi
+}
+
+
+start_local_ctm()
+{
+set -x
+titulo "Levantando ControlM Server en ${SERVER}"
+check_local_ctm >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" != "#0" ]
+then
+	check_local_database_ctm  >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		if [ "#""$FUNCION" = "#""STANDALONE" ]
+		then
+			su - $CTM_USR -c "start_ctm"  >> /dev/null
+			check_local_ctm 
+			STATUS=$?
+			if [ "#""$STATUS" = "#0" ]
+			then
+				return 0
+			else
+				echo "Problemas activando Control-M Server"
+				return 1
+			fi
+		fi
+		check_remote_ctm $CTM_USR $MIRROR_NODE
+		STATUS=$?
+		if [ "#""$STATUS" = "#1" ] || [ "#""$STATUS" = "#50" ] 
+		then	
+			if [ "#""$FUNCION" = "#""PRIMARIO" ]
+			then
+				su - $CTM_USR -c "test -f contingencia_activada" >> /dev/null
+				CONT_LOCAL=$?
+				ping_node $MIRROR_NODE >> /dev/null
+				STATUS=$?
+				if [ "#""$STATUS" = "#0" ]
+				then
+					su - $CTM_USR -c "setenv LIBPATH; ssh $MIRROR_NODE 'test -f contingencia_activada'" >> /dev/null
+					CONT_REMOTE=?
+				else
+					CONT_REMOTE=1
+				fi
+				if [ "#""$CONT_LOCAL" != "#0" ] && [ "#""$CONT_REMOTE" != "#0" ] 
+				then
+					su - $CTM_USR -c "start_ctm"  >> /dev/null
+					check_local_ctm 
+					STATUS=$?	
+					if [ "#""$STATUS" = "#0" ]
+					then
+						return 0
+					else
+						echo "Problemas activando Control-M Server"
+						return 1
+					fi
+				else
+				 	echo "Se activo la contingencia en el servidor  $MIRROR_NODE"
+					echo "Debe restaurar la Base de Datos desde el Mirror para poder volver a activar el control-M Server en este Servidor"
+					if [[ ${AUTORESPONSE} = YES ]]
+					then
+						a=s
+					else
+						echo "Desea Restaurarla ahora? S/N "
+						read a
+					fi
+                                	if [ "#""$a" = "#S" ] || [ "#""$a" = "#s" ]
+                                	then
+						copy_from_db_mirror 
+						STATUS=$?
+						if [ "#""$STATUS" = "#0" ] 
+						then
+							echo "Se restauraron los datos del servidor Mirror"
+							su - $CTM_USR -c "ecaqrtab UPDATE $RESOURCE 9999" >> /dev/null
+							su - $CTM_USR -c "reset_ecs" >> /dev/null
+							su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMSRV_NODE_SEC -APPLTYPE OS -DELETE $NODO_1" >> /dev/null
+                                                	su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMSRV_NODE_SEC -APPLTYPE OS -ADD $NODO_2" >> /dev/null
+							su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMSRV_NODE_PRI -APPLTYPE OS -DELETE $NODO_2" >> /dev/null
+                                                	su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMSRV_NODE_PRI -APPLTYPE OS -ADD $NODO_1" >> /dev/null
+							
+                                                	su - $CTM_USR -c "ctmvar -action update -var %%\\\\$CTMSRV_NODE_PRI $NODO_1" >> /dev/null
+                                                	su - $CTM_USR -c "ctmvar -action update -var %%\\\\$CTMSRV_NODE_SEC $NODO_2" >> /dev/null
+							start_local_ctm
+						else
+							return 1
+						fi
+					else
+						echo "NO se ACTIVA el Control-M Server"
+						return 1
+					fi
+				fi 
+			else
+                                su - $CTM_USR -c "test -f contingencia_activada" >> /dev/null
+                                CONT_LOCAL=$?
+				ping_node $MIRROR_NODE >> /dev/null
+				STATUS=$?
+				if [ "#""$STATUS" = "#0" ]
+				then	
+                                	su - $CTM_USR -c "setenv LIBPATH; ssh $MIRROR_NODE 'test -f contingencia_activada'" >> /dev/null
+                                	CONT_REMOTE=$?
+				else	
+					CONT_REMOTE=1
+				fi
+                                if [ "#""$CONT_LOCAL" = "#0" ] || [ "#""$CONT_REMOTE" = "#0" ]
+				then
+					su - $CTM_USR -c "start_ctm" >> /dev/null
+                                        check_local_ctm
+					return 0
+				fi
+				if [ "#""$SERVER" != "#$RECOVERY_SERVER" ] 
+				then
+					echo "Esta por ACTIVAR la contingencia de Control-M SERVER de $NODO_1"
+					if [[ ${AUTORESPONSE} = YES ]]
+					then
+						a=s
+					else
+						echo "Esta seguro que desea realizar esta accion S/N?"
+						read a
+					fi
+				else
+					a=S
+				fi
+				if [ "#""$a" = "#S" ] || [ "#""$a" = "#s" ]
+				then
+					su - $CTM_USR -c "reset_ecs" >> /dev/null
+					su - $CTM_USR -c "start_ctm" >> /dev/null
+					su - $CTM_USR -c "start_ca" >> /dev/null
+					check_local_ctm 
+					STATUS=$?
+					if [ "#""$STATUS" = "#0" ]
+					then
+						su - $CTM_USR -c "ecaqrtab UPDATE $RESOURCE 0" >> /dev/null
+						su - $CTM_USR -c "touch contingencia_activada"
+						su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMSRV_NODE_PRI -APPLTYPE OS -DELETE $NODO_1" >> /dev/null
+                                                su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMSRV_NODE_PRI -APPLTYPE OS -ADD $NODO_2" >> /dev/null 
+						su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMSRV_NODE_SEC -APPLTYPE OS -DELETE $NODO_2" >> /dev/null
+                                                su - $CTM_USR -c "ctmnodegrp -EDIT -NODEGRP $CTMSRV_NODE_SEC -APPLTYPE OS -ADD $NODO_1" >> /dev/null
+                                                su - $CTM_USR -c "ctmvar -action update -var %%\\\\$CTMSRV_NODE_SEC $NODO_1" >> /dev/null
+                                                su - $CTM_USR -c "ctmvar -action update -var %%\\\\$CTMSRV_NODE_PRI $NODO_2" >> /dev/null
+						ping_node $MIRROR_NODE >> /dev/null
+						STATUS=$?
+						if [ "#""$STATUS" = "#""0" ]
+						then
+							su - $CTM_USR -c "setenv LIBPATH; ssh $MIRROR_NODE touch contingencia_activada"
+						fi
+						for i in $ECS_SERVERS
+						do
+							if [ "#""$i" = "#""$SERVER" ] 
+							then
+								su - $ECS_USR -c "$MENU_CTM/funciones/cambia_datacenter.sh $DATACENTER $NODO_1 $NODO_2" >> /dev/null
+							else
+								ping_node $i >> /dev/null
+								STATUS=$?
+								if [ "#""$STATUS" = "#0" ]
+								then
+									su - $ECS_USR -c "setenv LIBPATH;ssh $i $MENU_CTM/funciones/cambia_datacenter.sh $DATACENTER $NODO_1 $NODO_2" >> /dev/null
+							 	fi
+							fi
+						done
+						return 0
+					else
+						echo "Problemas activando Control-M Server"
+						return 1
+					fi
+				else
+					echo "No se ha levantado Control-M Server en $SERVER"
+					return 1
+				fi
+			fi
+		else
+			echo "No es Posible levantar Controlm-M en $SERVER"
+			return 1
+		fi
+	fi
+else
+	echo "Control-M Server YA se encuentra ACTIVO"
+	return 0
+fi
+}
+
+
+start_local_ctm_ca()
+{
+set -x
+titulo " Levantando Control-M Configuration Agent (ca) "
+check_local_ctm  >> /dev/null
+STATUS=$?
+if [ "#$STATUS" = "#0" ]
+then
+	check_local_ctm_ca >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" != "#0" ]
+	then
+		su - $CTM_USR -c "start_ca" >> /dev/null
+		sleep 5
+		check_local_ctm_ca 
+		STATUS=$?
+		if [ "#""$STATUS" = "#0" ]
+		then
+			return 0
+		else
+			echo "Problemas activando Control-M Configuration Agent"
+			return 1
+		fi
+	else
+        	echo "Control-M Configuration Agent  YA se encuentra ACTIVO"
+        	return 0
+	fi
+else
+	echo "Control-M Server esta INACTIVO. No se puede levantar el CONFIGURATION AGENT"
+	return 1
+fi
+}
+
+
+stop_local_ctm_ca()
+{
+set -x
+titulo "Deteniendo Control-M Configuration Agent (ca) "
+check_local_ctm_ca  >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" != "#1" ]
+then
+	su - $CTM_USR -c "shut_ca" >> /dev/nul
+	check_local_ctm_ca 
+	STATUS=$?
+	if [ "#""$STATUS" = "#1" ]
+	then
+		return 0
+	else
+		echo "Problemas inactivando Control-M Configuration Agent"
+		return 1
+	fi
+else
+        echo "Control-M Configuration Agent YA se encuentra INACTIVO"
+        return 0
+fi
+}
+
+
+stop_local_ctm()
+{
+set -x
+titulo "Deteniendo Control-M Server"
+check_local_ctm >> /dev/null
+STATUS=$?
+if [ "#""$STATUS" != "#1" ]
+then
+	su - $CTM_USR -c "shut_ctm" >> /dev/nul
+	check_local_ctm 
+	STATUS=$?
+	if [ "#""$STATUS" = "#1" ]
+	then
+		return 0
+	else
+		echo "PROBLEMAS inactivando Control-M Server"
+		return 1
+	fi
+else
+        echo "Control-M Server YA se encuentra INACTIVO"
+        return 0
+fi
+}
+
+
+stop_local_database_ctm()
+{
+set -x
+titulo "Deteniendo Base de Datos de Control-M Server"
+if [ "#""$CTM_DB_TYPE" = "#D" ]
+then
+	check_local_database_ctm >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		check_local_ctm  >> /dev/null
+		CTMSTAT=$?
+		check_local_ctm_ca >> /dev/null
+		CTMCASTAT=$?
+		if [ "#""$CTMSTAT" = "#1" ] && [ "#""$CTMCASTAT" = "#1" ]
+		then
+			su - $CTM_USR -c "shutdb -p$SAPAS" #  >> /dev/null
+			check_local_database_ctm 
+			STATUS=$?
+			if [ "#""$STATUS" = "#1" ]
+			then
+				return 0
+			else
+				echo "PROBLEMAS inactivando la Base de datos en ${SERVER}"
+				return 1
+			fi
+		else
+			echo "Hay procesos ACTIVOS de Control-M"
+			echo "NO se puede BAJAR la Base de datos"
+			return 1
+		fi
+	else
+		echo "La base de datos YA estaba INACTIVA"
+		return 0
+	fi
+else
+	echo "Base de Datos de Control-M Server NO SE DEACTIVA DESDE ESTE MENU"
+	return 2
+fi
+}
+	
+check_mirror_ctm()
+{
+set -x
+titulo "Controlando Espejado de Base de Control-M Server "
+if [ "#""$FUNCION" = "#PRIMARIO" ]
+then
+	su - $CTM_USR -c check_mirror
+	STATUS=$?
+	if [ "#""$STATUS" = "#0" ]
+	then
+		echo "Espejado de Base de Control-M Server ACTIVO"
+		return 0
+	else
+		echo "El Espejado de las bases de Datos esta INACTIVO"
+		return 1
+	fi
+else
+	echo "Esta comprobacion debe hacerse en el servidor PRIMARIO $NODO_1"
+	return 1
+fi
+}
+
+
+copy_from_db_mirror()
+{
+set -x
+titulo "Copiando el server El servidor ${SERVER} a el servidor SECUNDARIO"
+NODO_2=$MIRROR_NODE
+if [ "#""$FUNCION" = "#PRIMARIO" ]
+then
+	check_local_ctm >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" != "#0" ]
+	then
+		check_remote_ctm $CTM_USR $MIRROR_NODE >> /dev/null
+		STATUS=$?
+		if [ "#""$STATUS" != "#0" ]
+		then
+			su - $CTM_USR -c "test -f contingencia_activada" >> /dev/null
+			CONT_LOCAL=$?
+			su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE 'test -f contingencia_activada'" >> /dev/null
+			CONT_REMOTE=$?
+			if [ "#""$CONT_LOCAL" = "#0" ] || [ "#""$CONT_REMOTE" = "#0" ]
+			then
+				su - $CTM_USR -c "copy_mirror -n1 -R"
+				STATUS=$?
+				if [ "#""$STATUS" = "#0" ]
+				then
+					su - $CTM_USR -c "rm contingencia_activada" >> /dev/null
+					ping_node $MIRROR_NODE >> /dev/null
+					if [ "#""$STATUS" = "#0" ]
+					then	
+						su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE 'rm contingencia_activada' " >> /dev/null
+					fi
+					for i in $ECS_SERVERS
+					do
+						if [ "#""$i" = "#""$SERVER" ] 
+						then
+							su - $ECS_USR -c "$MENU_CTM/funciones/cambia_datacenter.sh $DATACENTER $NODO_2 $NODO_1"  >> /dev/null
+						else
+							ping_node $i >> /dev/null
+							STATUS=$?
+							if [ "#""$STATUS" = "#0" ]
+							then
+								su - $ECS_USR -c "setenv LIBPATH;ssh $i $MENU_CTM/funciones/cambia_datacenter.sh $DATACENTER $NODO_2 $NODO_1" >> /dev/null
+							fi
+						fi
+					done
+					return 0
+				else
+					echo "Problemas restaurando la base de $NODE_2 en $NODE_1"
+					return 1
+				fi
+			else
+				echo "NO se ha utilizado el servidor $MIRROR_NODE como contingencia"
+				echo "NO se reestablecera la base de datos del server $MIRROR_NODE"
+				return 1
+			fi
+		else
+			echo "Control-M Server ACTIVO en $MIRROR_NODE"
+			echo "Desactivarlo antes de reestablecer el espejado"
+			return 1
+		fi
+	else
+		echo "Control-M Server se encuentra ACTIVO. No es necesario reestablecer el espejado"
+		return 1
+	fi 
+else
+	echo "El servidor ${SERVER} es  el servidor SECUNDARIO"
+	echo "Reestablecer el espejado de las bases desde el servidor primario $NODE_1"
+	return 1
+fi
+}
+
+copy_to_mirror()
+{
+set -x
+titulo "Espejado de las Bases de datos desde el servidor PRIMARIO al SECUNDARIO"
+if [ "#""$FUNCION" = "#PRIMARIO" ]
+then
+	check_local_ctm >> /dev/null
+	STATUS=$?
+	if [ "#""$STATUS" != "#0" ]
+	then
+		check_remote_ctm $CTM_USR $MIRROR_NODE>> /dev/null
+		STATUS=$?
+		if [ "#""$STATUS" != "#0" ]
+		then
+			su - $CTM_USR -c "test -f contingencia_activada" >> /dev/null
+			CONT_LOCAL=$?
+			su - $CTM_USR -c "setenv LIBPATH;ssh $MIRROR_NODE 'test -f contingencia_activada'" >> /dev/null
+			CONT_REMOTE=$?
+			if [ "#""$CONT_LOCAL" != "#0" ] && [ "#""$CONT_REMOTE" != "#0" ]
+			then
+				su - $CTM_USR -c "copy_mirror -n1 "
+				STATUS=$?
+				if [ "#""$STATUS" = "#0" ]
+				then
+					echo "El espejado de las bases de control-M en el $MIRROR_NODE se ha reestablecido"
+					return 0
+				else
+					echo "Problema reestableciendo el espejado en el $MIRROR_NODE"
+					echo "Verifique que la Base de Datos del $MIRROR_NODE este activa"
+					return 1
+				fi
+			else
+				echo "Se utilizo el servidor $MIRROR_NODE como servidor de contingencia"
+				echo "Debe restaurar la base de datos del servidor $MIRROR_NODE en este servidor"
+				return 0
+			fi
+		else
+			echo "El servidor de Control-M Server en $MIRROR_NODE esta activo"
+			echo "El server $MIRROR_NODE esta siendo utilizado de contingencia de este SERVER"
+			return 1
+		fi
+	else
+		echo "Control-M esta ACTIVO en este servidor"
+		echo "Debera desactivarlo antes de reestablecer el espejado de Bases de datos"
+		return 1
+	fi
+else
+	echo "El espejado de las Bases de datos se ACTIVA desde el servidor PRIMARIO"
+	return 1
+fi
+}
+

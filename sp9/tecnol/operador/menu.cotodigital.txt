@@ -1,0 +1,4 @@
+MENU COTODIGITAL
+Menu para Implementar un archivo XML;menu.operador;menu.implexml.txt
+Menu para Implementar un Deploy de COTODIGITAL_STORE;menu.operador;menu.impledeploy.txt
+Menu para Implementar un Deploy de WAR para ANDROID;menu.operador;menu.impledeploy_war.txt

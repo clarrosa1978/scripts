@@ -1,0 +1,5 @@
+MENU MESA DE AYUDA 
+Menu de impresion sucursales - NO USAR solo usar el de CENTRAL;
+Menu de impresion Central;menu.hdesk;impresioncen.txt
+Cierre Sucursales;menu.hdesk;cierresf.txt
+Menu Multistore;menu.multistore.sh

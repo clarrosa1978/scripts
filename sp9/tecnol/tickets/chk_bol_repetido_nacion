@@ -1,0 +1,103 @@
+#! /bin/sh
+
+#########################################################################
+#                                      Jorge Fernandez Garay - 04/2007
+# chk_bol_repetido_nacion
+#
+# Programa lanzado por el Job CHKBOLREPE, de la cadena 'TICKETS' NACION.
+# Determina si el Boletin de la fecha en linea es igual al ultimo proce-
+# sado, para no enviarlo a cargar.
+# Tambien determina si el Boletin en linea esta vacio (Solo Header y
+# trailer, en los comienzos de la operacion con este Boletin (01/04/2007)
+#
+#########################################################################
+
+set -x
+
+notify_by_mail()
+{
+        set -x
+
+        # Notifica el incidente por mail
+        # En $1 recibe El mensaje a notificar
+
+        echo "$1"|/usr/bin/mhmail -s "Server $HOSTNAME - CADENA DE TRANSMISION DE TICKETS NACION" operacionesaix@coto.com.ar
+
+}
+
+##################### MAIN PROGRAM ###########################
+
+# Recibe 3 Parametros del JOB
+export PLANIF_DATE="$1"
+export TICK_BOL_DIR="$2"
+# Nombre del Boletin, sin extencion '.zip'
+export TICK_BOL_NAME="$3"
+
+export MAIL_BODY=''
+export BOL_HEADER=''
+export BOL_HEADER_DATE=''
+export BOL_LINES_COUNT=''
+export BOL_RECORD_COUNT=''
+export BOL_TRAILER=''
+export COMPRESS_EXTENT=''
+export TEMP_FILE="temp_bol.$$"
+export CHECK_REC_COUNT=''
+export PREVIOUS_BOL_NAME=''
+export COUNT_UNIQUE_REC=''
+
+if [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+then
+         # Boletin en Linea
+         # Se verifica que el Record Count sea distinto de cero (Boletin vacio)
+         BOL_TRAILER=`tail -1 "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME"`
+         BOL_TRAILER=`expr "$BOL_TRAILER" : '^[^0-9]*[0]*\([0-9][0-9]*\)[^0-9]*$'`
+
+         if [ "$BOL_TRAILER" -eq 0 ]
+         then
+                  MAIL_BODY="JOB CHKBOLREPE: El Boletin de Ticket Nacion de la fecha, en Dir. preproceso, NO CONTIENE DATOS."
+                  notify_by_mail "$MAIL_BODY"
+                  mv "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" "$TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.empty"
+                  exit 10
+         fi
+
+         # En este punto, se verifica que el contenido (excluidos el header con la fecha del dia y el trailer
+         # con el record count) sea distinto del contenido del ultimo Boletin Enviado.
+         PREVIOUS_BOL_NAME=`ls -t "$TICK_BOL_DIR"|eval egrep '${TICK_BOL_NAME}\.[0-9]{8}\.[0-9]{4}'|head -1`
+
+         # Se determina si el Boletin previo esta comprimido
+         COMPRESS_EXTENT=`expr "$PREVIOUS_BOL_NAME" : '^.*\(\.Z\)$'`
+
+         # Se copian los Records de DATA del Bol de la fecha y del Bol previo a un temp file
+         # y se determina que existan Records unicos en el nuevo Bol.
+         if [ "$COMPRESS_EXTENT" = ".Z" ]
+         then
+                   zcat "$TICK_BOL_DIR/$PREVIOUS_BOL_NAME"|awk ' /^[0-9]{9}A[ ][ ]$/ ' > "$TICK_BOL_DIR/preproceso/$TEMP_FILE"
+         else
+                   cat "$TICK_BOL_DIR/$PREVIOUS_BOL_NAME"|awk ' /^[0-9]{9}A[ ][ ]$/ ' > "$TICK_BOL_DIR/preproceso/$TEMP_FILE"
+         fi
+         cat "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME"|awk ' /^[0-9]{9}A[ ][ ]$/ ' >> "$TICK_BOL_DIR/preproceso/$TEMP_FILE"
+
+         COUNT_UNIQUE_REC=`cat "$TICK_BOL_DIR/preproceso/$TEMP_FILE"|sort|uniq -u|wc -l`
+         COUNT_UNIQUE_REC=`expr "$COUNT_UNIQUE_REC" : '^[ ]*\([0-9][0-9]*\)[ ]*$'`
+
+         rm "$TICK_BOL_DIR/preproceso/$TEMP_FILE"
+
+         if [ "$COUNT_UNIQUE_REC" -eq 0 ]
+         then
+                  # No hay Records de Data unicos. Estan todos repetidos.
+                  # El Boletin de la fecha contiene la misma data que el previo, y no se envia
+                  # Se lo marca como '.same', renombrandolo. El JOB de rename posterior le incluira la fecha.
+                  mv "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.same"
+                  MAIL_BODY="JOB CHKBOLREPE: La Data del Boletin de la fecha es igual a la del Bol. Previo.\No se envia."
+                  notify_by_mail "$MAIL_BODY"
+                  exit 20
+         fi 
+
+         # Llegados a este Punto, el Boletin de la fecha contiene nueva Data, y se envia.
+         exit 0         
+else
+         # El Boletin no esta en linea
+         MAIL_BODY="JOB CHKBOLREPE: El Boletin de Ticket Nacion de la fecha, INEXISTENTE EN $TICK_BOL_DIR/preproceso."
+         notify_by_mail "$MAIL_BODY"
+         exit 10
+fi

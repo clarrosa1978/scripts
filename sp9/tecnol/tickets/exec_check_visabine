@@ -1,0 +1,44 @@
+#!/bin/sh
+
+############################################################################
+#                                   Fernandez Garay Jorge - 09/2001
+# exec_check_visabine
+#
+# Ejecuta el programa check_visabine
+# Corresponde al job CTRL_BINE de la cadena DISTRIB_VISABINE
+#
+############################################################################
+
+set -x
+
+LOG_DIR="/tecnol/tickets/log"
+export FECHA="${1}"
+export LOG_DIR
+
+if [ "$#" -ne 1 ]
+then
+         echo "\n\n`date +"%d/%m/%Y"` $0: Error en la cantidad de parametros recibida"|tee -a "$LOG_DIR"/errlog
+
+         exit 32
+fi
+
+EXIT_STAT=''
+export EXIT_STAT
+
+if [ -f /tecnol/tickets/check_visabine -a -x /tecnol/tickets/check_visabine ]
+then
+         /tecnol/tickets/check_visabine ${FECHA}
+         EXIT_STAT="$?"
+
+         if [ "$EXIT_STAT" -ne 0 ]
+         then
+                  echo "\n\n$0: LOs errores de cancelacion del prog. check_visabine, hay que"
+                  echo "buscarlos en el log /tecnol/tickets/log/errlog"
+         fi
+
+else
+         echo "\n\n`date +"%d/%m/%Y"` $0: Este programa no existe o no posee permiso de ejecucion"|tee -a "$LOG_DIR"/errlog
+         exit 31
+fi
+
+exit "$EXIT_STAT"

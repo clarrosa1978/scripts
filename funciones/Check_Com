@@ -1,0 +1,24 @@
+###############################################################################
+# Nombre.............: Check_Com                                              #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Chequea la comunicacion hacia un servidor.             #
+# Descripcion........: Recibe como parametro el host.                         #
+# Valores de Retorno.: 0 - La funcion termino ok.                             #
+#                      1 - La funcion fallo.                                  #
+# Modificacion.......: 01/08/2006                                             #
+###############################################################################
+function Check_Com
+{
+        typeset EXIT="1"
+	typeset HOST=${1}
+        /usr/bin/host ${HOST} 1>/dev/null
+ 	if [ $? = 0 ]
+        then
+		ping -c3 ${HOST} 1>/dev/null
+		if [ $? = 0 ]
+		then
+                	EXIT="0"
+		fi
+        fi
+        return ${EXIT}
+}

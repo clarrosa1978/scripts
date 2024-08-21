@@ -1,0 +1,31 @@
+#!/usr/bin/ksh
+export SFSW_HOME=/tecnol/mayuda
+export SFSW_MENU=$SFSW_HOME
+TERMINAL=`ps -ef | grep ModNomLog.sh | grep -v grep | awk '{print ($6)}'`
+USUARIO=`ps -ef | grep ModNomLog.sh | grep -v grep | awk '{print ($1)}'`
+IP=`who | grep "$TERMINAL" | awk '{print ($6)}'`
+USO=`ps -ef | grep ModNomLog.sh | grep -v grep | wc -l`
+BL="\033[1;37m"
+NO="\033[m"
+V="\033[32m"
+B=$(tput bold)
+N=$(tput sgr0)
+BLINK="\033[1;5m"
+NOBLINK="\033[0;0m"
+    if [ $USO -ne 0 ]
+                        then
+                        $SFSW_MENU/encabezado.ksh
+			echo "\t   *** ARCHIVO DE NOMBRES LOGICOS - Reasignacion de variables ***"
+			echo ""
+                        echo ""   
+                        echo "\t\t\t${B}${V} El MODULO SE ENCUENTRA EN USO"
+                        echo "\t\t\t Usuario:" $USUARIO 
+			echo "\t\t\t IP     :" $IP
+                        echo "${BL}${N}"
+                        echo "\t\t\t Presione <ENTER> para finalizar ...\c"
+                        read a
+                        exit
+                        else
+                      	$SFSW_MENU/ModNomLog.sh  
+                fi
+exit

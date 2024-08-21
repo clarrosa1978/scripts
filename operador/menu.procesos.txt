@@ -1,0 +1,7 @@
+Menu PROCESOS 
+Mostrar procesos SFCLIEND (CotoBeneficio, Join);ver_proceso.sh;sfcliend
+Subir Procesos SFCLIEND;sfc_online.sh;
+Bajar Procesos SFCLIEND;sfc_offline.sh;
+Mostrar procesos SFVCC (Club Nacion, Clarin365);ver_proceso.sh;sfvcc
+Subir Procesos SFVCC;vcc_online.sh;
+Bajar Procesos SFVCC;vcc_offline.sh;

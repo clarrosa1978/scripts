@@ -1,0 +1,3 @@
+IMPLEMENTAR ARCHIVO XML EN TESTING
+- VER ARCHIVOS A IMPLEMENTAR;admimpleatgtest_adm01.sh;VER_XML_IMPLE
+- Copiar XML a scdigitest01 para implementar;admimpleatgtest_adm01.sh;SCP_XML_IMPLE

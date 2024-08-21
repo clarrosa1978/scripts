@@ -1,0 +1,4 @@
+MENU PROCESOS JBOSS
+Levantar Procesos Jboss;admproc_jboss.sh;UPPROC
+Bajar Procesos Jboss;admproc_jboss.sh;DOWNPROC
+Controlar Procesos Jboss;admproc_jboss.sh;VERPROC

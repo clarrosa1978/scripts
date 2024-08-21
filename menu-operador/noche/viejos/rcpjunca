@@ -1,0 +1,61 @@
+#set -x
+
+export HOME_ANDRES="/home/root/operador/andres"
+export HOME_F_JUNCA="$HOME_ANDRES/juncadella"
+export SUCJUNC=`cat $HOME_ANDRES/lis_suc_juncadella` 2> /dev/null
+export FECHA=`cat $PATH_MENU/fecha.dat` 2> /dev/null
+export SUC_ERROR="$HOME_ANDRES/junca_faltante" 2> /dev/null
+if [ "$1" = "R" ]  ### Si se ingrea como parametro R  bla bla bla
+then
+	SUCJUNC=`cat $SUC_ERROR` 2> /dev/null
+	export SUCJUNC ;
+fi
+> $SUC_ERROR 2> /dev/null
+###########################################################################
+
+export RESPUESTA=" ";
+while [ "$RESPUESTA" != "s" -a "$RESPUESTA" != "S" ]
+do
+	echo
+	echo "  Comenzando la transferencia de archivos para juncadella"
+	echo
+	echo "  La fecha de los archivos es $FECHA "
+	echo
+	echo "          Presione:       n --> para cambiar fecha de proceso "
+	echo "                          s --> para volver al menu anterior "
+	echo "                      enter --> para comenzar transferencia "
+	read RESPUESTA;
+	export RESPUESTA
+	if [ "$RESPUESTA" = "n" -o "$RESPUESTA" = "N" ] 
+	then
+		echo
+		echo "		Ingrese la nueva fecha (ddmm): \c"
+		read FECHA
+		export FECHA
+		export RESPUESTA=" ";
+	else
+		if [ "$RESPUESTA" != "s" -a "$RESPUESTA" != "S" ]
+		then
+		echo
+		for i in $SUCJUNC 
+		do
+			echo "Transfiriendo archivo de sucursal $i a $HOME_F_JUNCA"
+			ping -c1 suc$i > /dev/null 2> /dev/null
+			STATUS_PING=$?
+			if [ "$STATUS_PING" = "0" ]
+			then
+				rcp -p suc$i:/sfctrl/data/descarga/$FECHA.*$i $HOME_F_JUNCA 2> /dev/null
+				STATUS_RCP=$?
+				if [ "$STATUS_RCP" != "0" ]
+				then
+					echo "	Error en la transferencia de archivo de suc$i"
+					echo "$i" >> $SUC_ERROR
+				fi 
+			else 
+				echo "		No hay comunicacion con suc$i"
+				echo "$i" >> $SUC_ERROR
+			fi
+		done
+		fi
+	fi
+done;	

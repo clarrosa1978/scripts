@@ -1,0 +1,51 @@
+#!/usr/bin/ksh
+###############################################################################
+# Aplicacion.........: UTIL                                                   #
+# Grupo..............: MULTISTORE                                             #
+# Autor..............: Hugo Messina                                           #
+# Objetivo...........: Sincronizar directorios en forma remota con rsyncd.    #
+# Nombre del programa: rsyncd.sh                                              #
+# Nombre del JOB.....: RSYNCIMGXXX                                            #
+# Solicitado por.....: Jose Chariano - Soporte Storeflow                      #
+# Descripcion........:                                                        #
+# Creacion...........: 15/08/2012                                             #
+# Modificacion.......:                                                        #
+###############################################################################
+
+set -x
+
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+export FECHA=`date +%Y%m%d`
+export DIRORI=/imple_atg/contenidos/sitios
+export SERVDES=repocdigi
+export DIRDES=/contenidos
+export NOMBRE="rsync"
+
+###############################################################################
+###                            Funciones                                    ###
+###############################################################################
+#autoload Check_Par
+
+
+###############################################################################
+###                            Principal                                    ###
+###############################################################################
+
+#Check_Par 4 $@
+#[ $? != 0 ] && exit 1
+if [ -x /usr/bin/rsync ]
+then
+	rsync -r -a -v -e 'ssh -l root'  ${DIRORI} ${SERVDES}:${DIRDES}
+	STATUS=$?
+	if [ $STATUS != 0 ] && [ $STATUS != 25 ] && [ $STATUS != 24 ]
+	then
+    		echo "Error al sincronizar fs al servidor ${SERVDES}"
+    		exit 1
+	fi
+else
+	echo "Error - No hay permisos de ejecucion para el comando /usr/bin/rsync"
+	exit 1
+
+fi

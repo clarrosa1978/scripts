@@ -1,0 +1,9 @@
+MENU PRINCIPAL 
+Menu de Acceso a Servidores;echo "Menu en construccion" ; #menu.operador;menu.ssh.txt
+Menu Desbloqueo de Usuarios;desbloquea_usuario.sh;
+Administracion de Procesos (dsmstat,...);menu.operador;menu.proc.txt
+Administracion de Servicios (samba,nagios) ;menu.operador;menu.serv.txt
+Administracion de Aplicaciones (ControlM...);menu.operador;menu.apli.txt
+Backup SAP1 (Ver cintas);Secuencia_Bkp_Central.ksh
+Servicio RADIUS Primario;servradius.sh;vmcitiixwifi-2
+Servicio RADIUS Secundario;servradius.sh;vmcitiixwifi

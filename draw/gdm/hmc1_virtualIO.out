@@ -1,0 +1,7 @@
+lpar_name=Lpar_DBT01,lpar_id=1,slot_num=3,state=1,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A62649C2E103
+lpar_name=Lpar_Vios,lpar_id=2,slot_num=11,state=1,is_required=0,is_trunk=1,trunk_priority=1,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A62645EA8D0B
+lpar_name=Lpar_EM01C,lpar_id=4,slot_num=2,state=0,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A6264CE59302
+lpar_name=Lpar_DWHC,lpar_id=5,slot_num=2,state=0,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A6264CCC4502
+lpar_name=Lpar_PSC,lpar_id=6,slot_num=2,state=0,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A6264B227802
+lpar_name=Lpar_SF,lpar_id=7,slot_num=2,state=1,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A6264D2E9D02
+lpar_name=Lpar_ADM01,lpar_id=8,slot_num=3,state=1,is_required=0,is_trunk=0,ieee_virtual_eth=0,port_vlan_id=1,vswitch=ETHERNET0,addl_vlan_ids=,mac_addr=A62649949D03

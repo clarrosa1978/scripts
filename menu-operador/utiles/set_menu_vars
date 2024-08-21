@@ -1,0 +1,16 @@
+export PATH_MENU="/tecnica/operador"
+export PATH_MENU_TMP="$PATH_MENU/tmp"
+export PATH_MENU_LOGS="$PATH_MENU/logs"
+export PATH_MENU_VARS="$OPERADOR_UTL"
+export FECHA="`cat $PATH_MENU_VARS/fecha.dat`"
+export FECHA_PROC="$PATH_MENU/fecha.dat"
+Banner()
+{
+clear;
+echo
+echo "          =============================================="
+echo "            $1       "
+echo "          =============================================="
+echo
+}
+     

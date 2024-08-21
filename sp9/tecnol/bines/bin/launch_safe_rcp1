@@ -1,0 +1,83 @@
+#!/bin/sh
+
+############################################################################
+#                                   Fernandez Garay Jorge - 09/2001
+# launch_safe_rcp
+#
+# Ejecuta el programa safe_rcp
+# Corresponde al job LN_NOV_xxx de la cadena de Distribucion de Novvedades
+# de Lista Negra a sucursales.
+# Toma 14 parametros que controlM le pasa desde los archivos de parametros
+# LN_NOV_sucxxx.args, y este programa se los pasa al safe_rcp
+#
+############################################################################
+
+set -x
+
+LOG_DIR="/tecnol/bines/logs"
+export LOG_DIR
+
+if [ "$#" -ne 14 ]
+then
+         echo "\n\n`date +"%d/%m/%Y"` $0: Error en la cantidad de parametros recibida, que debe ser 14"|tee -a "$LOG_DIR"/errlog
+
+         exit 32
+fi
+
+# Recepcion de los parametros
+
+EXEC_FLAG="$1"
+SOURCE_DIR="$2"
+SOURCE_FILENAME="$3"
+TARGET_HOST="$4"
+TARGET_DIR="$5"
+TARGET_FILENAME="$6"
+ALTERN_DIR="$7"
+ALTERN_FILENAME="$8"
+RETRIES="$9"
+shift
+RETRIES_DELAY="$9"
+shift
+REM_USER="$9"
+shift
+TARGET_OWNER="$9"
+shift
+TARGET_GROUP="$9"
+shift
+TARGET_MODE="$9"
+
+export EXEC_FLAG SOURCE_DIR SOURCE_FILENAME TARGET_HOST TARGET_DIR TARGET_FILENAME ALTERN_DIR ALTERN_FILENAME RETRIES RETRIES_DELAY REM_USER TARGET_OWNER TARGET_GROUP TARGET_MODE
+
+
+if [ "$TARGET_HOST" -lt 100 ]
+then
+         TARGET_HOST=`echo "$TARGET_HOST"|awk ' { print sprintf("suc%02d", $1) } '`
+else
+         TARGET_HOST="suc""$TARGET_HOST"
+fi
+
+EXIT_STAT=''
+export EXIT_STAT
+
+if [ -f /tecnol/bin/safe_rcp -a -x /tecnol/bin/safe_rcp ]
+then
+         /tecnol/bin/safe_rcp "$EXEC_FLAG" "$SOURCE_DIR" "$SOURCE_FILENAME" "$TARGET_HOST" "$TARGET_DIR" "$TARGET_FILENAME" "$ALTERN_DIR" "$ALTERN_FILENAME" "$RETRIES" "$RETRIES_DELAY" "$REM_USER" "$TARGET_OWNER" "$TARGET_GROUP" "$TARGET_MODE"
+
+         EXIT_STAT="$?"
+
+         if [ "$EXIT_STAT" -ne 0 ]
+         then
+                  echo "\n\n$0: LOs errores de cancelacion del prog. safe_rcp, hay que"
+                  echo "buscarlos en el log /tarjetas/logs/errlog"
+
+                  echo "`date +"%d/%m/%Y"` $0: La transferencia del visabine.dkt a $TARGET_HOST FALLO con exit_stat $EXIT_STAT"|tee -a "$LOG_DIR"/exec_log
+         else
+                  echo "`date +"%d/%m/%Y"` $0: La transferencia del visabine.dkt a $TARGET_HOST termino CON EXITO"|tee -a "$LOG_DIR"/exec_log
+         fi
+
+else
+         echo "\n\n`date +"%d/%m/%Y"` $0: Este programa no existe o no posee permiso de ejecucion"|tee -a "$LOG_DIR"/errlog
+         exit 31
+fi
+
+exit "$EXIT_STAT"

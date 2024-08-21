@@ -1,0 +1,130 @@
+#! /bin/zsh
+
+####################################################################
+#                                 Jorge Fernandez Garay - 02/2002
+# envios_daemons_scan
+#
+# Procedimiento de scan de la alarma AIXChkEnviosDaemons.cfg
+# Consulta la BD de StoreFlow, en succursales, para determinar:
+#   1 - Si la Base de Datos esta Levantada
+#   2 - Si la sucursal esta abierta y
+#
+# Si el Proceso vpr_daemon.sh, lanzado con cada uno de los sigtes
+# argumentos:
+#            elenv_informa_inci_stf
+#            elenv_desp_conf_local
+#            elenv_reprocesa_error.procesa_error
+#            elenv_mov_compensatorio
+#            elenv_procesa_pago_inst
+#            elenv_procesa_anulman_inst
+#            elenv_anulxtimeout
+#            elenv_procesa_pago
+#            elenv_procesa_anulman
+#            elenv_procesa_inter_stf
+#
+# del Sistema de vtas de electrodomesticos por reservas (Envios),
+# estan caidos, en cuyo caso manda al Alarm Daemon por stdout el 
+# nombre del argumento, status DOWN, y el intervalo en segundos entre
+# ciclos del loop, para que sea procesado por el alarm Daemon.
+#
+# El Alarm Daemon dispara un procedimiento action para levantar el
+# proceso caido.
+#
+####################################################################
+
+set -x
+
+# If exist, we should clear up the off-line queue owned by Fidelizacion client application
+
+[ -e /sfctrl/tmp/FIDELIZA.XTN ] && rm -f /sfctrl/tmp/FIDELIZA.XTN
+
+# First, we must know if Storeflow DB is up
+
+OLD_PATH="$PATH"
+export OLD_PATH
+
+STOREFLOW_INFO=`cat /etc/oratab|sed '/^#.*$/d;/^\*:.*$/d;/^$/d'|awk ' /^.*:.*:.*$/ '\
+                |awk -F: ' ( $3 == "Y" ) { print $1, $2 } '|grep SF`
+set -- $STOREFLOW_INFO
+
+##############################################
+# Usuario u601 deshabilitado sobre Linux
+#ORA_USER="u601"
+#ORA_PASSWD="u601"
+#export ORA_USER ORA_PASSWD
+##############################################
+ 
+DB_CONNECT=`ORACLE_HOME="$2" PATH=$PATH:$ORACLE_HOME:$ORACLE_HOME/bin ORACLE_SID="$1" su - sfctrl "-c sqlplus / << EOF
+quit
+EOF"`
+DB_CONNECT=`echo "$DB_CONNECT"|awk ' /Connected/ { print $1 } '`
+
+[ "$DB_CONNECT" != "Connected" ] && { echo ""; exit 0; }
+
+# Its more confortable tu run the query as root, because the sql script can be installed with the alarm
+#DB_QUERY=`su - sfctrl "-c sqlplus -s u601/u601 @/sfctrl/sfgv/sql/dirvtas.sql" 2>/dev/null|awk ' $1 ~ /^[0-9]/ { print $1 } '`
+
+DB_QUERY=`ORACLE_HOME="$2" PATH=$PATH:$ORACLE_HOME:$ORACLE_HOME/bin ORACLE_SID="$1" su - sfctrl "-c sqlplus / @/tecnol/alertas/dirvtas.sql" 2>/dev/null|awk ' $1 ~ /^[0-9]/ { print $1 } '`
+export DB_QUERY
+
+SUC_IS_OPEN=`echo "$DB_QUERY"|awk ' NR == 2 && $1 == "1" { print "TRUE" } '`
+export SUC_IS_OPEN
+
+[ "$SUC_IS_OPEN" != "TRUE" ] && { echo ""; exit; }        # Suc cerrada; no corresponde controlar el CASucursal
+
+# Lista de Procesos a controlar
+# Se ottiene del archivo de configuracion vpr_daemon.cfg, ubicado
+# en el home dir. del usuario vprctrl, en c/sucursal.
+# Este archivo posee 2 campos: 1 - Argumento a pasar al programa vpr_daemon.sh
+#                              2 - Tiempo en sec. entre ciclos del loop de
+#                                  este programa
+
+export HOSTNAME=`uname -n`
+
+if [ -f /vtareserva/daemon/vpr_daemon.cfg ]
+then
+         PROCESSES_LIST=`cat /vtareserva/daemon/vpr_daemon.cfg`
+else
+         # No existe el archivo de config., o se ha renombrado administrativamente
+         echo "No existe el archivo de config. vpr_daemon.cfg"|mutt -s "Sistema de VENTAxRESERVA $HOSTNAME" operaciones@redcoto.com.ar
+         /sn/lib/ets/bin/etsalarm ws001 7 3.6 "VENTAxRESERVA $HOSTNAME No existe el archivo de config. vpr_daemon.cfg"
+         exit 2
+fi
+
+PROCESSES_PATH="/vtareserva/daemon"
+export PROCESSES_LIST PROCESSES_PATH
+
+#Loop de control
+
+PROCESS_IS_UP=''
+INTERVAL=''
+EXEC_ARG=''
+MATCH_EXEC_ARG=''
+export PROCESS_IS_UP INTERVAL EXEC_ARG MATCH_EXEC_ARG
+
+echo "$PROCESSES_LIST"|while read EXEC_ARG INTERVAL
+do
+        # Trata de encontrar en la lista de procesos, un proceso vpr_daemon.sh, con un
+        # Argumento pasado en la linea de comando que matchee EXEC_ARG
+
+        MATCH_EXEC_ARG=''
+        MATCH_EXEC_ARG=`ps -e -o args|cut -f 1-8 -d " "\
+                        |awk ' { if ( $1 ~ /sh/ || $1 ~ /ksh/ ) { i = 2; while ( ( $i ~ /^-/ ) && ( i < NF ) ) { $i = ""; i++ }; $1 = ""; print $0 }
+                                 else { print $0 } } '\
+                        |awk ' $1 ~ /vpr_daemon/ && $3 == "'$EXEC_ARG'" { print $3 } '|uniq`
+
+       PROCESS_IS_UP=`[ "$MATCH_EXEC_ARG" = "$EXEC_ARG" ] && echo "TRUE"`
+
+       if [ "$PROCESS_IS_UP" = "TRUE" ]
+       then
+               #echo "$EXEC_ARG UP $INTERVAL"       # Proceso levantado
+               continue
+       else
+               # Proceso Caido
+               #echo "$EXEC_ARG DOWN $INTERVAL"
+               exit 30
+       fi
+
+done
+
+exit 0

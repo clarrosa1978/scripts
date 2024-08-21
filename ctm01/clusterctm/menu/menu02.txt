@@ -1,0 +1,9 @@
+0:0:Menu de Control-M Enterprise Manager :../funciones/funciones_ecs.lib
+1:1:Verificar Componentes:check_local_database_ecs;check_local_corba;check_local_conf_server;check_local_admin_agent ;check_local_ws;check_local_ecs
+2:2:Activar Todo Enterprise Manager:start_database_ecs;start_local_corba;start_local_conf_server;start_local_admin_agent;sleep 10;start_local_ws;start_local_ecs
+3:3:Activar Base de Datos:start_database_ecs
+4:4:Activar Componentes:start_local_corba;start_local_conf_server;start_local_admin_agent;sleep 10;start_local_ws;start_local_ecs
+5:5:Desactivar Componentes:stop_local_admin_agent ;stop_local_ecs ;stop_local_conf_server;stop_local_ws;stop_local_corba
+6:6:Desactivar Base de Datos:stop_local_database_ecs
+7:7:Desactivar Todo Enterprise Manager:stop_local_admin_agent ;stop_local_ecs ;stop_local_conf_server;stop_local_ws;stop_local_corba;stop_local_database_ecs
+s:S:Salir:exec ./dynamic_menu.sh menu/menu01.txt

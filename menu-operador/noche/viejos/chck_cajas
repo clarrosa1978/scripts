@@ -1,0 +1,72 @@
+export CHK_NEGATIVO="";
+export CARGA_CAJAS="$PATH_MENU_LOGS/carga_negativos/carga_cajas.$FECHA"
+export RESULTA="$PATH_MENU_TMP/resulta.tmp"
+export SUCS_NEGATIVOS="$PATH_MENU_LOGS/sucs_cajas_negativos"
+export SUCS_NOCOMUNIC="$PATH_MENU_TMP/nega_no_comunic.tmp"
+export TMP_INFO="$PATH_MENU_TMP/negainforme.tmp"
+export CONTADOR="0"
+>$SUCS_NEGATIVOS
+>$SUCS_NOCOMUNIC
+>$TMP_INFO
+
+Informe_negativos ()
+{
+export USER_MAIL="$1"
+export DOMAIN="@coto.com.ar"
+mhmail $USER_MAIL$DOMAIN -subject "Control de cargas de cajas" -body "`cat $TMP_INFO`"
+} 
+
+
+echo " SucNNN...(ok) ---> No hay cajas con cargas en negativo en sucursal NNN"
+echo " SucNNN.-.(X-) ---> Hay X cajas con cargas en negativo en la sucursal NNN"
+echo " SucNNN.?.(NC) ---> No hay comunicacion con la sucursal NNN"
+echo
+echo 
+echo "\t\c" >> $SUCS_NEGATIVOS
+for i in $LISTASUC
+do
+	#echo "Chequeando sucursal $i ..."
+	if [ "$CONTADOR" = "5" ]
+	then
+		CONTADOR="1";
+		echo 
+	else
+		CONTADOR="`expr $CONTADOR + 1`"
+	fi
+	export CONTADOR
+	if [ "`ping -c1 suc$i 1> /dev/null 2> /dev/null ;echo $?`" -eq "0" ] 
+	then 
+		rsh suc$i su - sfctrl -c monmovs > $RESULTA 2> /dev/null
+		echo >> $CARGA_CAJAS
+		echo "------------------------------" >> $CARGA_CAJAS
+		echo >> $CARGA_CAJAS
+		echo "******************************" >> $CARGA_CAJAS
+		echo "******	Sucursal $i   *****	" >> $CARGA_CAJAS
+		echo "******************************" >> $CARGA_CAJAS
+	 	echo >> $CARGA_CAJAS
+		cat $RESULTA  >> $CARGA_CAJAS
+        	CHK_NEGATIVO=`grep "-" $RESULTA |wc -l|awk '{print $1}'`
+        	export CHK_NEGATIVO
+        	if [ "$CHK_NEGATIVO" -ne "0" ]
+        	then
+                	echo "suc$i\t\t\c" >> $SUCS_NEGATIVOS
+                	echo "Suc$i.-.("$CHK_NEGATIVO"-)\t\c"
+        	else
+                	echo "Suc$i...(ok)\t\c"
+        	fi
+	else 
+		#echo "********* No hay comunicacion con suc$i *********"
+		echo "Suc$i\t\t\c" >> $SUCS_NOCOMUNIC
+		echo "Suc$i.?.( NC )\t\c"
+	fi
+done
+	echo >>$TMP_INFO
+	echo "Sucursales con cajas con cargas en negativo:\n " >>$TMP_INFO
+	echo "`cat $SUCS_NEGATIVOS`\n\n" >>$TMP_INFO
+	if [ -s "$SUCS_NOCOMUNIC" ]
+	then
+		echo "Sucursales sin comunicacion: `cat $SUCS_NOCOMUNIC`" >>$TMP_INFO
+	fi
+	Informe_negativos abruzzese		
+	
+	

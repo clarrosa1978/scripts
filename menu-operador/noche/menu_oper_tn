@@ -1,0 +1,87 @@
+#set -x
+#########################################################################
+#									#
+# SCRIPT: Menu_oper_tn							#
+#									#
+# DESCRIPCION: Realizar las tareas rutinarias de la noche		#
+#									# 
+#									#
+# AUTOR: Cerizola Hugo - Operaciones					#
+#									#
+#########################################################################
+
+export PATH_MENU="/tecnol/operador/noche"
+export PATH_MENU_TMP="$PATH_MENU/tmp"
+export PATH_MENU_LOGS="$PATH_MENU/logs"
+export FECHA="`cat $PATH_MENU/fecha.dat`"
+export FECHA_PROC="$PATH_MENU/fecha.dat"
+Banner()
+{
+clear;
+echo
+echo "          =============================================="
+echo "            $1       "
+echo "          =============================================="
+echo
+}
+
+export OPCION="";
+export DIR_ANT="`pwd`";
+
+
+Cambio_fecha_proceso()
+{
+export FECHA="`cat $PATH_MENU/fecha.dat`"
+Banner " Cambiar fecha de proceso "
+echo
+echo 
+echo "	La fecha actual es: $FECHA"
+echo  
+echo "	La nueva fecha es  (ddmm): \c"
+read FECHA_NUEVA
+export FECHA_NUEVA
+echo "$FECHA_NUEVA" > $FECHA_PROC
+export FECHA
+echo
+}
+
+
+######################################################################################
+######################################################################################
+
+#trap "" 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+cd $PATH_MENU
+while [ "$OPCION" != "S" -a "$OPCION" != "s" ]
+do
+	Banner " Menu de operaciones de Turno Noche";
+	echo "\t	** Fecha de Proceso: `cat $FECHA_PROC` **\t	"
+	echo "\t\t\t\t\t\t\t"
+	echo "\t\t\t\t\t\t\t"
+	echo "\t\t1) Cambiar fecha de proceso\t\t";
+	echo "\t\t2) Menu de control de cierres\t\t";
+	echo "\t\t3) Matar usuarios (para inter_of)\t";
+	echo "\t\t4) Control de cargas de cajas "
+	echo "\t\t5) Menu de archivos para juncadella\t"
+	echo "\t\t6) Menu de control de replicas\t\t"
+	echo "\t\t7) Menu carga de Promociones \t"
+	echo "\t\t8) Menu p/manejo de Triggers de Precios \t"
+	echo "\t\t\t\t\t\t\t"
+	echo "\t\t\t\t\t\t\t"
+	echo "\t\tS) Para salir\t\t\t"
+	echo
+	echo "\t\t\tOPCION: \c";
+	read OPCION
+	clear
+	case $OPCION in
+		
+		1) $PATH_MENU/Cambio_fecha_proceso;;
+		2) $PATH_MENU/Menu_ctrl_cierres.sh;;
+		3) $PATH_MENU/Mato_usuarios.sh;;
+		4) $PATH_MENU/Menu_ctrl_cargas.sh;;
+		5) $PATH_MENU/Menu_arch_juncadella.sh;;
+		6) $PATH_MENU/Menu_ctrl_replicas.sh;;
+		7) $PATH_MENU/home/root/promociones/promociones.sh;;  #Menu_carga_Promo.sh;;
+		8) $PATH_MENU/Menu_Trigger_Precios.sh;;
+	esac
+done;
+cd $DIR_ANT;                      

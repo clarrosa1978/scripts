@@ -1,0 +1,70 @@
+#!/usr/bin/ksh
+###############################################################################
+# Aplicacion.........: BACKUP                                                 #
+# Grupo..............:                                                        #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Genera export de la base EM62 con el comando ecs util. #
+# Nombre del programa: backup_ecs.sh                                          #
+# Nombre del JOB.....: BKECS                                                  #
+# Solicitado por.....: Cristian Larrosa                                       #
+# Descripcion........:                                                        #
+# Modificacion.......: 06/08/2008                                             #
+###############################################################################
+
+set -x
+
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+export FECHA=${1}
+export NOMBRE="backup_ecs"
+export PATHAPL="/tecnol/backups"
+export PATHLOG="${PATHAPL}/log"
+export PATHDMP="/export"
+export LOG="${PATHLOG}/${NOMBRE}.${FECHA}.log"
+export DMP="${PATHDMP}/exportECS.${FECHA}.dmp"
+export ARCHDEF="${PATHAPL}/deftable.def"
+export DC="ctm01 gdm dwh sf000 online1 psp1 sp9 wf `cat /etc/listalnx | sed s/^/suc/`"
+
+ecsutilexport()
+{
+	ecs util -U emuser -P `cat /home/ecs/scripts/.clap.txt` -export -type def -type cal -type sys -type dc -type user -type alert -type gc -type maint -type collect -type view -type filter -type log -type hier -type audit -type history -file ${DMP}
+}
+
+ecsexpdeftable()
+{
+	for i in $DC
+	do
+ 		echo "<?xml version='1.0' encoding='UTF-8'?>" 	> ${ARCHDEF}
+		echo "<!DOCTYPE TERMS SYSTEM /"terms.dtd/">" 	>>${ARCHDEF}
+		echo "<TERMS>"	>>${ARCHDEF}
+		echo "<TERM>" >>${ARCHDEF}
+		echo "<PARAM NAME=/"DATACENTER/" OP=/"EQ/" VALUE=/"${i}/"/>" >>${ARCHDEF}
+		echo "</TERM>" >>${ARCHDEF}
+		echo "</TERMS>" >>${ARCHDEF}
+        	exportdeftable -U emuser -P `cat /home/ecs/scripts/.clap.txt` -s EM01 -arg ${ARCHDEF} -out ${PATHDMP}/$i.${FECHA}.def 
+		if [ $? != 0 ]
+		then
+			echo "Error al generar ${ARCHDEF}${PATHDMP}/$i.${FECHA}.def
+			exit 1
+		fi
+}
+
+ecsutilexport
+if [ $? = 0 ]
+then
+	compress ${DMP}
+ 	if [ $? != 0 ]
+  	then
+  		echo "No se pudo comprimir el archivo de backup"
+  	else
+  		echo "El backup finalizo exitosamente y se comprimio el archivo"
+		find ${PATHDMP} -name "exportECS.*.dmp.Z" -mtime +30 -exec rm {} \;
+		find ${PATHLOG} -name "${NOMBRE}.*.log" -mtime +30 -exec rm {} \;
+		ecsexpdeftable
+  		exit 0
+ 	fi
+else
+	echo "El backup finalizo MAL"
+	exit 1
+fi

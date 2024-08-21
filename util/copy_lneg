@@ -1,0 +1,41 @@
+#! /bin/sh
+########################################################################################
+#                                               Fernandez Garay Jorge - 09/2004
+# copy_lneg
+#
+# Programa ejecutado por el job  'CPLNEGTICK' de la cadena LNEG_LUNCHEON_TICK de
+# Control-M.
+# Copia el recien generado archivo Completo de Lista Negra de Tickets LUNCHEON
+# del directorio de generacion en /sfctrl, al home directory del usuario sfftp, a
+# fin de dejarlo accesible via ftp, a la PC contadora de tickets, en sucursales
+# con Venta Mayorista. 
+# Setea Owner, group y permisos, y borra el source file del /sfctrl/tmp
+#
+#########################################################################################
+
+set -x
+
+export SOURCE_CHK_SUM=`sum /sfctrl/tmp/tktinv.txt|awk ' { print $1,$2 } '`
+
+cp -p /sfctrl/tmp/tktinv.txt /home/sfftp
+
+if [ ! -f /home/sfftp/tktinv.txt ]
+then
+          echo "\n\n$0: El archivo /sfctrl/tmp/tktinv.txt NO SE HA COPIADO A /home/sfftp."
+          exit 10
+fi
+
+export TARGET_CHK_SUM=`sum /home/sfftp/tktinv.txt|awk ' { print $1,$2 } '`
+
+if [ "$TARGET_CHK_SUM" != "$SOURCE_CHK_SUM" ]
+then
+          echo "\n\n$0: El archivo Completo de Lista Negra de Tickets LUNCHEON /home/sfftp/tktinv.txt"
+          echo "copiado, NO VERIFICA el Checksum del archivo de origen /sfctrl/tmp/tktinv.txt."
+          exit 10
+fi
+
+chown sfftp.sfftp /home/sfftp/tktinv.txt
+chmod 440 /home/sfftp/tktinv.txt
+
+rm /sfctrl/tmp/tktinv.txt
+exit 0

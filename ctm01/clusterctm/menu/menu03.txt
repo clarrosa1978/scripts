@@ -1,0 +1,12 @@
+0:0:Menu de Control-M Server :../funciones/funciones_ctm.lib
+1:1:Verificar Componentes:check_local_database_ctm ;check_local_ctm ;check_local_ctm_ca
+2:2:Activar Base de Datos:start_local_database_ctm
+3:3:Activar Componentes:start_local_ctm;start_local_ctm_ca 
+4:4:Activar Todo Control-M Server:start_local_database_ctm;start_local_ctm;start_local_ctm_ca 
+5:5:Desactivar Base de Datos:stop_local_database_ctm
+6:6:Desactivar Componentes:stop_local_ctm_ca;stop_local_ctm 
+7:7:Desactivar Todo Control-M Server:stop_local_ctm_ca;stop_local_ctm;stop_local_database_ctm
+8:8:Restaurar datos del servidor de Contingencia: copy_from_db_mirror 
+9:9:Reestablecer el espejado de las bases de datos:copy_to_mirror 
+A:a:Verificar el estado del espejado:check_mirror_ctm 
+s:S:Salir:exec ./dynamic_menu.sh menu/menu01.txt

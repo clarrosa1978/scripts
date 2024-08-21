@@ -1,0 +1,21 @@
+function EsNumerico
+{
+        #set -x
+        autoload  Check_Par
+        Check_Par 1 "$@"
+        if [ $? = 0 ]
+        then
+                typeset NUMERO=$1
+                typeset VALIDACION=`echo "${NUMERO}"|egrep '^[0-9]+$'`
+                typeset EXIT="1"
+                if [ ${VALIDACION} ] && [ ${VALIDACION} -eq ${NUMERO} ]
+                then
+                        EXIT=0
+                else
+                        EXIT=1
+                fi
+        else
+                EXIT=2
+        fi
+        return $EXIT
+}

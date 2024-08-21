@@ -1,0 +1,242 @@
+#!/usr/bin//expect 
+#set -x
+############################################################################
+#                                                                          #
+# Script para cambiar passwords automatica y masivamente usando expect     #
+#      ~                                                                   #
+#     . .     Demian Barlaro                                               #
+#     /V\     Administrador UNIX                                           #
+#    // \\    COTO C.I.C.S.A.                Version: Feb 2008             #
+#   /(   )\   dbarlaro@coto.com.ar                                         #
+#    ^ ~ ^    int. 5462                                                    #
+#                                                                          #
+############################################################################
+
+#Check Parameters############################################################################################################
+
+if { $argc<3 || $argc>5 } { send_user "massPassSet.exp: usage: massPassSet.exp <USER> <PASSWD> <SERV_LIST>\n"; exit 1}
+if { $argc >= 4 } { set speed [lindex $argv 3] } else { set speed "slow" }
+if { $speed == "fast" } { set force_conservative 0 }
+if { $speed == "slow" } { set force_conservative 1 }
+if {$force_conservative} {
+        set send_slow {1 .001}
+        proc send {ignore arg} {
+                sleep .1
+                exp_send -s -- $arg
+        }
+}
+if { $argc == 5 } { set verbose [lindex $argv 4] } else { set verbose "silent" }
+if { $verbose == "silent" } { log_user 0 }
+if { $verbose == "verbose" } { log_user 1 }
+
+#Set some variables##########################################################################################################
+
+set timeout 30				
+match_max 100000		
+set user [lindex $argv 0]
+set password [lindex $argv 1]			
+set servfile [lindex $argv 2]		
+set prompt "(#|\\\$|>|]) ?$"	
+set invoker [exec whoami]		
+if { $invoker == "root" } { set sudo "" } else { set sudo "sudo" }
+set lclhst [exec uname -n | cut -f1 -d.]
+
+#Check if third parameter is a server name or a file#########################################################################
+
+spawn $env(SHELL)
+
+if [catch {open $servfile} sf] {
+	log_file; log_file -noappend ~/.mPS.tmp	
+	send_log $servfile 		
+	log_file		
+	set sf [open ~/.mPS.tmp r] 		
+} else {				
+	close $sf		
+	set sf [open $servfile r]
+}
+
+#Hands On!###################################################################################################################
+
+#spawn $env(SHELL)					
+
+#Start looping through the file to get into all servers (if more than one)###################################################
+while { [gets $sf srvr] != -1 } {
+	expect -re "$prompt"
+	send -- "./checkOS.sh $srvr\r"
+	expect {
+		-exact "Linux" {
+			set command "ssh"
+			send -- "\003" }
+		-exact "AIX" {
+			set command "rsh"
+			send -- "\003" }
+	}
+	expect -re "$prompt"
+	send -- "$sudo $command $srvr\r"
+
+#Expecting connection failures###############################################################################################
+
+	expect {
+		-exact "Read from remote host $srvr: Connection reset by peer" {
+			send_user "Conexion a $srvr rehusada\r\n"	
+			continue }				
+		-exact "Old password: " {
+                        send -- "\003"
+			send_user "Server $srvr is requesting password change\r\n"
+                        continue }
+                -exact "Connection to $srvr closed by remote host." {
+			send_user "Conexion a $srvr rehusada\r\n"
+			continue }
+		-exact "$invoker@$srvr's password: " {
+			send -- "\003"
+			send_user "$srvr solicita password para acceder\r\n"
+			continue }
+		-exact	"(current) UNIX password: " {
+			send -- "\003"
+			send_user "$srvr solicita cambio de password para acceder\r\n"
+			continue }
+		-exact "ksh: /home/$invoker/.profile\[25\]: stty: not found" {
+			send -- "\003"
+			expect -re $prompt  
+			send -- "uname -n | cut -f1 -d.\r"
+                        expect {
+                        	-nocase -re $srvr {
+                                	send -- "passwd $user\r" }
+                                -nocase -exact "$lclhst" {
+                                        if { $srvr != $lclhst } {
+                                                send_user "Fallo la conexion a $srvr\r\n"
+                                                continue }
+                                        else {
+                                                send -- "passwd $user\r" }
+                                	}
+                        	}
+			}
+		-exact "Are you sure you want to continue connecting (yes/no)?" {
+			send -- "yes\r"
+			expect {
+				-exact "$invoker@$srvr's password: " {
+					send -- "\003"
+					send_user "$srvr solicita password para ingresar\r\n"
+					continue }
+				-re $prompt {
+					send -- "uname -n | cut -f1 -d.\r"
+                        		expect {
+                                		-nocase -re $srvr {
+                                        		send -- "passwd $user\r" }
+						-nocase -exact "$lclhst" {
+                                        		if { $srvr != $lclhst } {
+								send_user "Fallo la conexion a $srvr\r\n"
+                                                		continue }
+                                        		else {
+                                                		send -- "passwd $user\r" }
+                                        	}
+					}
+				}
+			}
+		}
+		-re $prompt { 
+			send -- "uname -n | cut -f1 -d.\r"
+			expect {
+				-nocase -re $srvr {
+       					send -- "passwd $user\r" }
+				-nocase -exact "$lclhst" {
+					if { $srvr != $lclhst } {
+						send_user "Fallo la conexion a $srvr\r\n"
+						continue }
+					else {
+						send -- "passwd $user\r" }
+				}
+			}
+		}
+		timeout {				
+			send_user "Time out error in $srvr\r\n"	
+			send -- "\003" 			
+			continue }		
+	}
+	expect {
+		-re "Change password: .*: unknown user." {
+			send_user "$user no existe en $srvr\r\n" }
+		-re "passwd: Unknown user name .*" {
+			send_user "$user no existe en $srvr\r\n" }
+		-exact "Permission denied" {
+			send_user "$user no existe en $srvr\r\n" }
+		-exact "Password cannot be changed.  Reason: Cannot access protected password entry." {
+			send_user "$user no existe en $srvr\r\n" }
+		-exact "Unexpected failure." {
+			send_user "$user no existe en $srvr\r\n" }
+		-re ".*User .* does not exist." {
+			send_user "$user no existe en $srvr\r\n" }
+		-exact "\r\nPassword:" {
+			send -- "\r\n"
+			send_user "$srvr solicita password para usar sudo\r\n" }
+		-re "here.*: " {
+			send -- "p\r" 
+			expect -re ".*assword:"
+			send -- "$password\r"
+			expect {
+				-re ".*new password:" {
+					send -- "$password\r" 
+					send_user "Password modificado con exito para $user en $srvr\r\n" }
+				-exact "You may not re-use the same password." {
+					send -- "\003" 
+					send_user "Ese password esta siendo usado por $user en $srvr. Sin Cambios\r\n" }
+			}
+		}
+		-exact "Password cannot be changed. Reason: password lifetime has passed." {
+			send -- "\003"
+			expect -re $prompt
+			send -- "sudo /usr/lbin/modprpw -k $user\r"
+			expect -re $prompt
+			send -- "passwd $user\r" 
+			expect {
+				-re ".*new password:" {
+					send -- "$password\r" 
+					log_file; log_file ~/mPS.log
+					send_user "Password modificado con exito para $user en $srvr\r\n"
+					log_file; log_file ~/mPS.done
+					send_log "$srvr\r\n" }
+				-exact "You may not re-use the same password." {
+					send -- "\003" 
+					log_file; log_file ~/mPS.log
+					send_user "Ese password esta siendo usado por $user en $srvr. Sin Cambios\r\n"
+					log_file; log_file ~/mPS.undone
+                        		send_log "$srvr\r\n" }
+			}
+		}
+		-re ".*number:" {
+			send -- "4\r" 
+			expect -re ".*assword:"
+                        send -- "$password\r"
+                        expect -re ".*assword:"
+                        send -- "$password\r" 
+			send_user "Password modificado con exito para $user en $srvr\r\n" }
+		-nocase -re "new .*password:" {
+			send -- "$password\r"
+        		expect -re ".*assword:*"
+        		send -- "$password\r" 
+			send_user "Password modificado con exito para $user en $srvr\r\n" }
+	}
+	expect -re $prompt
+	send -- "uname\r"
+	expect {
+		-nocase -exact "AIX"
+			{ send -- "/usr/bin/pwdadm -f NOCHECK $user\r" }
+		-nocase -exact "SunOs"
+			{ send -- "\003" }
+		-nocase -exact "Linux"
+                        { send -- "\003" }
+		-nocase -exact "HP-UX"
+                        { send -- "\003" }
+		-nocase -exact "IRIX64"
+                        { send -- "\003" }
+		-nocase -exact "OSF1"
+                        { send -- "\003" }
+		}
+	send -- "exit\r"
+}
+close $sf
+sleep 1
+expect -re $prompt
+expect_before {}
+expect eof
+exit

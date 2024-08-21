@@ -1,0 +1,62 @@
+#! /bin/sh
+
+#########################################################################
+#                                      Jorge Fernandez Garay - 04/2007
+# unzip_tknacion
+#
+# Programa lanzado por el Job UNZIPTKNAC, de la cadena 'TICKETS' NACION
+# que descomprime (con 'unzip'), el Boletin de Ticket Nacion de la fecha
+# , si esta comprimido
+#
+#########################################################################
+
+set -x
+
+notify_by_mail()
+{
+        set -x
+
+        # Notifica el incidente por mail
+        # En $1 recibe El mensaje a notificar
+
+        echo "$1"|/usr/bin/mhmail -s "Server $HOSTNAME - CADENA DE TRANSMISION DE TICKETS NACION" operacionesaix@coto.com.ar
+
+}
+
+##################### MAIN PROGRAM ###########################
+
+# Recibe 3 Parametros del JOB
+export PLANIF_DATE="$1"
+export TICK_BOL_DIR="$2"
+# Nombre del Boletin, sin extencion '.zip'
+export TICK_BOL_NAME="$3"
+
+export MAIL_BODY=''
+export EXIT_STAT=''
+export BOL_HEADER=''
+export BOL_HEADER_DATE=''
+
+if [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip" ]
+then
+         # Boletin en Linea para descomprimir
+         (cd "$TICK_BOL_DIR/preproceso"; unzip "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip")
+         EXIT_STAT="$?"
+         if [ "$EXIT_STAT" -ne 0 ] || [ ! -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+         then
+                   MAIL_BODY="JOB UNZIPTKNAC: ERROR de UNZIP para el Boletin $TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip de la fecha"
+                   notify_by_mail "$MAIL_BODY"
+                   exit 99
+         else
+                   echo "Boletin $TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip Descomprimido OK"
+                   rm "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip"
+                   exit 0
+         fi
+
+elif [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+then
+         exit 0
+else
+         MAIL_BODY="JOB UNZIPTKNAC: ERROR  BOLETIN $TICK_BOL_DIR/preproceso/$TICK_BOL_NAME.zip de la fecha INEXISTENTE"
+         notify_by_mail "$MAIL_BODY"
+         exit 98
+fi

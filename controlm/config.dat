@@ -1,0 +1,76 @@
+# CONTROL-M/Server-Agent communication parameters
+PROTOCOL TCP
+CTMS_PORT_NUM 9005
+COMTIMOUT 60
+COMTRYNO 5
+COMM_TRACE 0
+
+# CONTROL-M/Server IPC port
+CTM_RT_PORT_NUMBER 6005
+
+# CONTROL-M/Server Statistics algorithm
+STATISALG MEMNAME
+
+#CONTROL-M/Server Alertas
+NOT_ORDERED_JOB_ALERT 2
+
+# CONTROL-M/Server maximum DB Updates before DOWNLOAD
+CD_MAX_DBU 1000
+
+# CONTROL-M/Server-EM communication keepalive parameters
+CTM_PRM_KPA_ACTIVE Y
+CTM_PRM_KPA_BETWEEN_MSGS 300
+CTM_PRM_KPA_ROUNDTRIP_TIMEOUT 300
+
+# Managing log files
+OS_DIAG_LIMIT_LOG_FILE_SIZE 10
+OS_DIAG_LIMIT_LOG_VERSIONS 10
+
+# WatchDog 
+WD_INTERVAL 6
+CTM_PRM_ENABLE_UE  Y
+CTM_WD_ENABLE YES
+WD_USEREXIT_NUMBER 0
+WD_CTMEXIT_NUMBER 2
+#WD_ALIVE_MSG WD is alive
+
+# WatchDog error handlers 
+WD_CTO_HOSTNAME 
+WD_CTO_TIMEOUT 10
+WD_ERROR_HANDLES_TIMEOUT 10
+WD_ERROR_HANDLER_SCRIPT_FILE ./scripts/UE_handler
+
+# WatchDog exit's for users 
+# Use following format to define user values
+WD_USEREXIT_#_INTERVAL  #    (run every # interval)
+WD_USEREXIT_#_TIMEOUT   #    (in seconds)
+WD_USEREXIT_#_RUN_STATE      (y / n)
+WD_USEREXIT_#_SUSPEND_STATE  (y / n)
+WD_USEREXIT_#_SCRIPT_FILE    Full path to the script / executable file 
+WD_USEREXIT_#_CMD_LINE       A command line to be passed to the script
+WD_USEREXIT_#_ERROR_MSG      Error to be passed if the check fail
+
+# WatchDog exit's for Control-M
+WD_CTMEXIT_1_INTERVAL 20
+WD_CTMEXIT_1_TIMEOUT 30
+WD_CTMEXIT_1_RUN_STATE Y
+WD_CTMEXIT_1_SUSPEND_STATE N
+WD_CTMEXIT_1_SCRIPT_FILE ctmdiskspace
+WD_CTMEXIT_1_CMD_LINE -LIMIT "10 M" -PATH $HOME
+WD_CTMEXIT_1_ERROR_MSG Low on disk space
+
+WD_CTMEXIT_2_INTERVAL 20
+WD_CTMEXIT_2_TIMEOUT 30
+WD_CTMEXIT_2_RUN_STATE Y
+WD_CTMEXIT_2_SUSPEND_STATE N
+WD_CTMEXIT_2_SCRIPT_FILE ctmdbspace
+WD_CTMEXIT_2_CMD_LINE -LIMIT 90
+WD_CTMEXIT_2_ERROR_MSG Low on database space
+
+# HeartBeat check
+WD_HEARTBEAT_INTERVAL 1
+WD_HEARTBEAT_LIMIT 360
+
+# Database transaction serialization default
+CTM_SERIAL_ENABLED N
+

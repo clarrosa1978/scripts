@@ -1,0 +1,1 @@
+*/1 * * * * root /usr/bin/rsync -av suc208::multimedia/Picaderos/42/ /multimediasucursales/images --delete

@@ -1,0 +1,6 @@
+0:0:Menu de Control-M Enterprise Manager :../funciones/funciones_all.lib
+1:1:Activar Bases de Datos:start_database_ecs;start_local_database_ctm
+2:2:Activar Todo Control-M:start_database_ecs;start_local_database_ctm;start_local_corba;start_local_conf_server;start_local_admin_agent;sleep 10;start_local_ws;start_local_ecs;start_local_ctm;start_local_ctm_ca;start_agent
+3:3:Desactivar Todo Control-M:stop_local_admin_agent ;stop_local_ecs ;stop_local_conf_server;stop_local_ws;stop_local_corba;stop_local_ctm_ca;stop_local_ctm
+4:4:Desactivar las bases de datos:stop_local_database_ecs;stop_local_database_ctm
+s:S:Salir:exec ./dynamic_menu.sh menu/menu01.txt

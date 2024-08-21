@@ -1,0 +1,39 @@
+echo_n()
+{
+  if [ -z "`echo -n`" ]; then
+    echo -n "$1"
+  else
+	 if [ -z "`echo -e`" ]
+	 then
+    	   echo -e "$1\c"
+	 else
+           echo "$1"
+         fi
+  fi
+}
+
+press_enter()
+{
+        echo_n "\nPresione Enter para Continuar"
+        read Enter
+}
+
+log()
+{ 
+  echo "`date` : Usuario $LOGNAME : $1" >> $LOG_FILE
+}
+
+test_param()
+{
+  CPP="$1"
+  CPE="$2"
+  if [ "$CPP" != "$CPE" ]
+  then
+     echo "Error. La cantidad de parametros no es la esperada"
+     exit 32
+  fi
+}
+log()
+{
+  echo "`date` : Usuario $SUDO_USER : $1 : Opcion $2 "  >> $LOG_FILE
+}

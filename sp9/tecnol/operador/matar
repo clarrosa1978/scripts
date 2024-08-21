@@ -1,0 +1,7 @@
+pid=`ps -fu $1 | grep -v UID |  awk '{ print $2}'`
+for i in $pid
+do
+
+ echo MATANDO $i
+        kill -9 $i 2>/dev/null
+done

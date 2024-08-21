@@ -1,0 +1,6 @@
+function RefrescarMenu{
+         clear
+         FMenu
+         echo "\tIngrese una opcion: \c"
+         read Opc
+}

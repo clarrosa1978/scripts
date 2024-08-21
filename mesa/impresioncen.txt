@@ -1,0 +1,6 @@
+MENU IMPRESION CENTRAL
+nodo9;vercolasimpcen.sh;nodo9
+sap1;vercolasimpcen.sh;sap1
+psp1;vercolasimpcen.sh;psp1
+pucara;vercolasimpcen.sh;pucara
+S80-FNCL;vercolasimpcen.sh;S80-FNCL

@@ -1,0 +1,40 @@
+#/usr/bin/ksh
+set -x
+################################################################################
+#      Script: mailftp.sh
+#       Autor: Gustavo Goette
+#    Ult.Mod.: 12/08/1999
+# Descripcion: Envia confirmacion y detalle de transferencias FTP
+################################################################################
+HOST="`hostname -s`"".coto.com.ar"
+SCRIPT="mailftp.sh"
+DESTACOUNT="$1" # mail account
+DESTINATION="$2" #Alias for accounts
+LOG="$3" #Aplication Log to send
+APLICATION="$4" #Aplication's Name
+MSG="$LOG.tmp" # Temp file
+export HOST SCRIPT DESTACOUNT DESTINATION LOG APLICATION MSG
+
+if [ $# -ne 4 ]
+then
+        echo "Usage $0 MAIL_ACOUNT ALIAS LOG_FILE APLICATION_NAME"
+        exit 14
+fi
+
+
+#Preparacion del archivo de Mail
+
+echo "mail from: operaciones@coto.com.ar" > $MSG
+echo "rcpt to: $DESTACOUNT" >> $MSG
+echo "DATA" >> $MSG
+echo "subject: Detalle del envio de Archivos de $APLICATION"  >> $MSG
+echo "TO: $DESTINATION; hprofitos@coto.com.ar" >> $MSG
+echo "" >> $MSG
+cat $LOG >> $MSG
+echo "." >> $MSG
+echo "quit" >> $MSG
+
+telnet "$HOST" 25 < $MSG
+
+rm $MSG
+exit 0

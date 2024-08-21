@@ -1,0 +1,27 @@
+set -x 
+
+export OPERADOR_WRK="/tecnol/operador/noche"
+export Banner="$OPERADOR_WRK/Banner.ksh"
+export PATH_MENU="/tecnol/operador/noche"
+export PATH_MENU_TMP="$PATH_MENU/tmp"
+export PATH_MENU_LOGS="$PATH_MENU/logs"
+export FECHA="`cat $PATH_MENU/fecha.dat`"
+export FECHA_arc="$PATH_MENU/fecha.dat"
+export FECHA_tmp="$PATH_MENU_TMP/FECHA.tmp"
+
+$Banner " Cambiar fecha de archivos "
+echo
+echo "\tLa fecha actual es $FECHA "
+echo "\tDesea cambiarla (s/n): \c"
+read RESP
+if [ "$RESP" = "s" -o "$RESP" = "S" ] 
+	then
+        echo
+        echo "\tIngrese la nueva fecha (ddmm): \c"
+        read NUEVA_FECHA; export NUEVA_FECHA; 
+        echo "$NUEVA_FECHA" > $FECHA_tmp 
+        FECHA="`cut -c1-4 $FECHA_tmp `"
+	cat $FECHA_tmp > $FECHA_arc
+        export FECHA
+        echo  
+fi

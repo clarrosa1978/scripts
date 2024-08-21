@@ -1,0 +1,69 @@
+#! /bin/sh
+
+#########################################################################
+#                                     Fernandez Garay Jorge - 11/2001
+# check_visabine
+#
+# Controla la existencia, la fecha de transferencia al sp9, la fecha de
+# generacion del archivo por visa, y el record_count
+# Corresponde al 2do. Job de la cadena DISTRIB_VISABINE, CTRL_BINE
+# Este Job pone condiciones a todos los jobs que transfieren el
+# visabine.dkt a cada suc.
+#
+########################################################################
+
+set -x
+
+WORK_DIR="/tecnol/tickets"
+LOG_DIR="$WORK_DIR/log"
+CTRL_FILE="/tickets/visa/visabine.dkt"
+export WORK_DIR LOG_DIR CTRL_FILE
+
+if [ ! -f "$CTRL_FILE" ]
+then
+         echo "\n\n`date +"%d/%m/%Y"` $0: El erchivo visabine.dkt a transferir no existe"|tee -a "$LOG_DIR"/errlog
+         exit 10
+fi
+
+
+CHK_DATE=`date +"%b %d"`
+FILE_DATE=''
+export FILE_DATE CHK_DATE
+
+FILE_DATE=`ls -l "$CTRL_FILE" 2>/dev/null|awk ' { printf "%s %02d", $6, $7 } '|awk ' { if ( length( $2 ) == 1 ) { $2="0"$2 } ;print $0 } '`
+
+if [ "$FILE_DATE" != "$CHK_DATE" ]
+then
+           echo "\n\n`date +"%d/%m/%Y"` $0: el archivo completo a concatenar $WORK_DIR/$CTRL_FILE no posee fecha de hoy. Abortando..."|tee -a "$LOG_DIR"/errlog
+           exit 24
+fi
+
+
+# Controla fecha de creacion y record count
+
+CTRL_GEN_DATE=`date +"%y%m%d"`
+GEN_DATE=`head -1 "$CTRL_FILE"|awk ' { print sprintf("%s", substr( $0, 1, 6 )) } '`
+export CTRL_GEN_DATE GEN_DATE
+
+if [ "$GEN_DATE" != "$CTRL_GEN_DATE" ]
+then
+        echo "\n\n`date +"%d/%m/%Y"` $0: La fecha del header del archivo visabine.dkt no es la de hoy. Abortando..."|tee -a "$LOG_DIR"/errlog
+        exit 24
+fi
+
+
+REC_COUNT=`wc -l "$CTRL_FILE"|awk ' { print $1 } '`
+CTRL_REC_COUNT=`tail -1 "$CTRL_FILE"|awk ' { print sprintf("%d", $1) } '`
+export REC_COUNT CTRL_REC_COUNT
+
+if [ "$REC_COUNT" != "$CTRL_REC_COUNT" ]
+then
+        echo "\n\n`date +"%d/%m/%Y"` $0: El archivo visabine.dkt no verifica el record count del trailer reccord. Abortando..."|tee -a "$LOG_DIR"/errlog
+        exit 30
+else
+        echo "\n\n`date +"%d/%m/%Y"` $0: START: Las condiciones estan dadas para que comience la distribucion del visabine a sucs\n"|tee -a "$LOG_DIR"/exec_log
+
+
+        
+        exit 0
+fi

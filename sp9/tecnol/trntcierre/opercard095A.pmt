@@ -1,0 +1,9 @@
+%%PARM1=G
+%%PARM2=/sfctrl/data/descarga
+%%PARM3=opercard.%%ODAY.%%OMONTH
+%%PARM4=suc95
+%%PARM5=/trntcierre/suc95
+%%PARM6=opercard.%%ODAY.%%OMONTH
+%%PARM7=root
+%%PARM8=system
+%%PARM9=600

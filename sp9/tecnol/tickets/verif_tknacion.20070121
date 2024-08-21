@@ -1,0 +1,122 @@
+#! /bin/sh
+
+#########################################################################
+#                                      Jorge Fernandez Garay - 04/2007
+# verif_tknacion
+#
+# Programa lanzado por el Job VERIFTKNAC, de la cadena 'TICKETS' NACION.
+# Verifica la fecha del header del Boletin, la cantidad de registros, y
+# el formato del Boletin.
+# Elimina el caracter de control 'CR' (\015), a final de cada registro
+#
+#########################################################################
+
+set -x
+
+notify_by_mail()
+{
+        set -x
+
+        # Notifica el incidente por mail
+        # En $1 recibe El mensaje a notificar
+
+        echo "$1"|/usr/bin/mhmail -s "Server $HOSTNAME - CADENA DE TRANSMISION DE TICKETS NACION" operacionesaix@coto.com.ar
+
+}
+
+##################### MAIN PROGRAM ###########################
+
+# Recibe 3 Parametros del JOB
+export PLANIF_DATE="$1"
+export TICK_BOL_DIR="$2"
+# Nombre del Boletin, sin extencion '.zip'
+export TICK_BOL_NAME="$3"
+
+export MAIL_BODY=''
+export BOL_HEADER=''
+export BOL_HEADER_DATE=''
+export BOL_LINES_COUNT=''
+export BOL_RECORD_COUNT=''
+export BOL_TRAILER=''
+export TEMP_FILE="temp_bol.$$"
+export CHECK_REC_COUNT=''
+
+if [ -f "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" ]
+then
+         # Boletin en Linea
+         # Se verifica que sea el de la fecha
+         BOL_HEADER=`head -1 "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME"`
+         BOL_HEADER_DATE=`expr "$BOL_HEADER" : '\([0-9]\{8\}\).*$'`
+
+         if [ ! "$BOL_HEADER_DATE" ]
+         then
+                  MAIL_BODY="JOB VERIFTKNAC: El Boletin de Ticket Nacion en dir. preproceso, NO POSEE HEADER."
+                  notify_by_mail "$MAIL_BODY"
+                  exit 10
+         fi
+
+         if [ "$BOL_HEADER_DATE" != "$PLANIF_DATE" ]
+         then
+                  # Se lo borra
+                  mv "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" "$TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.novalid"
+                  MAIL_BODY="JOB VERIFTKNAC: El Boletin de Ticket Nacion en dir. preproceso, NO ES DE FECHA DE HOY.\nBoletin RENOMBRADO A $TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.novalid."
+                  notify_by_mail "$MAIL_BODY"
+                  exit 10
+         fi
+
+         # Aqui, El Boletin en linea es de la fecha. Se verifica RECORD COUNT
+         BOL_LINES_COUNT=`cat "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME"|wc -l|sed -e 's/[ ][ ]*//g'`
+         BOL_RECORD_COUNT=`expr "$BOL_LINES_COUNT" - 2`
+                  
+         BOL_TRAILER=`tail -1 "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME"`
+         BOL_TRAILER=`expr "$BOL_TRAILER" : '^[^0-9]*[0]*\([0-9][0-9]*\)[^0-9]*$'`
+
+         if [ ! "$BOL_TRAILER" ]
+         then
+                  MAIL_BODY="JOB VERIFTKNAC: El Boletin de Ticket Nacion en dir. preproceso, NO POSEE TRAILER RECORD."
+                  notify_by_mail "$MAIL_BODY"
+                  exit 10
+         fi
+
+         if [ "$BOL_TRAILER" -eq 0 ]
+         then
+                  # Boletin Vacio de comienzos de operacion
+                  # Se descarta y notifica en el siguiente JOB
+                  exit 0
+         fi
+
+         if [ "$BOL_RECORD_COUNT" -ne "$BOL_TRAILER" ]
+         then
+                  mv "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" "$TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.novalid"
+                  MAIL_BODY="JOB VERIFTKNAC: El Boletin de Ticket Nacion de la fecha, en dir preproceso, NO VERIFICA el Record Count.\nBoletin RENOMBRADO A $TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.novalid."
+                  notify_by_mail "$MAIL_BODY"
+                  exit 99
+         fi
+
+         # En este punto, se verifica el formato de Registros, sobre un temporario
+         # al que se le eliminaron caracteres de control (CR)
+         cat "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME"|tr -d '\015'|\
+         awk -v rec_count="$BOL_LINES_COUNT" -f /tecnol/tickets/verif_tknacion.awk > "$TICK_BOL_DIR/preproceso/$TEMP_FILE" 
+
+         CHECK_REC_COUNT=`cat "$TICK_BOL_DIR/preproceso/$TEMP_FILE"|wc -l|sed -e 's/[ ][ ]*//g'`
+         if [ "$CHECK_REC_COUNT" -ne "$BOL_LINES_COUNT" ]
+         then
+                  # El Boletin de la fecha contiene Records invalidos
+                  MAIL_BODY="JOB VERIFTKNAC: El Boletin de Ticket Nacion en Dir. preproceso, CONTIENE REGISTROS INVALIDOS.\nBoletin RENOMBRADO A $TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.novalid."
+                  notify_by_mail "$MAIL_BODY"
+                  mv "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME" "$TICK_BOL_DIR/$TICK_BOL_NAME.$PLANIF_DATE.novalid"
+                  rm "$TICK_BOL_DIR/preproceso/$TEMP_FILE"
+                  exit 97
+         fi
+
+         # En este punto, el Temporario contiene el Boletin verificado, con los chars CR extirpados
+         cat "$TICK_BOL_DIR/preproceso/$TEMP_FILE" > "$TICK_BOL_DIR/preproceso/$TICK_BOL_NAME"
+         rm "$TICK_BOL_DIR/preproceso/$TEMP_FILE"
+         exit 0
+
+else
+         # El Boletin no esta en linea
+         MAIL_BODY="JOB VERIFTKNAC: El Boletin de Ticket Nacion de la fecha,\n INEXISTENTE EN $TICK_BOL_DIR/preproceso, PARA VERIFICAR."
+         notify_by_mail "$MAIL_BODY"
+         exit 20
+fi

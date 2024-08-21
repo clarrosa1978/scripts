@@ -1,0 +1,1 @@
+suc01 hostname;368 espacio total;2 candiscos;128 memoria;1 cantidad procesadores;C20 modelo;

@@ -1,0 +1,14 @@
+log file = /var/log/rsync.log
+timeout = 300
+[multimediasucursales]
+        comment = rsync para archivos de publicidad para los LCD.                                 
+        path = /multimediasucursales/images
+        read only = no
+        write only = yes
+        use chroot = yes
+        list = no
+        uid = lcd
+        gid = lcd
+        transfer logging = yes
+        hosts allow = suc219
+        post-xfer exec = chown -R lcd.lcd /multimediasucursales/*

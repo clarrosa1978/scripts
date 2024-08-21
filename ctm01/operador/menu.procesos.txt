@@ -1,0 +1,13 @@
+MENU PROCESOS DE SUCURSALES 
+Levantar procesos STOREFLOW;admprocesos.sh;UPSF
+Bajar procesos STOREFLOW;admprocesos.sh;DOWNSF
+Controlar procesos de STOREFLOW;admprocesos.sh;VERSF
+Levantar procesos VPRCTRL;admprocesos.sh;UPVPR
+Bajar procesos VPRCTRL;admprocesos.sh;DOWNVPR
+Controlar procesos de VENTASxRESERVA;admprocesos.sh;VERVPR
+Levantar AGENTE de CONTROLM;admprocesos.sh;UPAGCTRLM
+Bajar AGENTE de CONTROLM;admprocesos.sh;DOWNAGCTRLM
+Controlar los procesos de AGENTE de CONTROLM;admprocesos.sh;VERAGCTRLM
+Levantar CONTROLM SERVER;admprocesos.sh;UPSRVCTRLM
+Bajar CONTROLM SERVER;admprocesos.sh;DOWNSRVCTRLM
+Controlar los procesos de CONTROLM SERVER;admprocesos.sh;VERSRVCTRLM

@@ -1,0 +1,15 @@
+export PATH_MENU="/home/root/operador/andres/menu_oper"
+export PATH_MENU_TMP="$PATH_MENU/tmp"
+export PATH_MENU_LOGS="$PATH_MENU/logs"
+export FECHA="`cat $PATH_MENU/fecha.dat`"
+export FECHA_PROC="$PATH_MENU/fecha.dat"
+Banner()
+{
+clear;
+echo
+echo "          =============================================="
+echo "            $1       "
+echo "          =============================================="
+echo
+}
+     

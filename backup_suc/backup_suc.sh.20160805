@@ -1,0 +1,1001 @@
+#!/bin/bash
+################################################################################
+# Nombre.............: backup_fs,sh                                            #
+# Autor..............: NHC                                                     #
+# Objetivo...........: Resguardo de datos en Sucursales (DVD)                  #
+# Modificacion.......: Cristian Larrosa - Depura /sfctrl antes del tar         #
+#                      y se cambia el metodo de compresion a bzip2.            #
+# Documentacion......:                                                         #
+################################################################################
+#
+#set -x
+#set -n
+
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+export FECHA=${1}
+export NOMBRE="backup"
+export PATHAPL="/tecnol/backup"
+export PATHLOG="$PATHAPL/log"
+export DIR_PROV="/provisorio"
+export FS_PRO="${DIR_PROV}/backups"
+export FS_DVD="/media/dvd"
+export SUC=`hostname`
+export ARCH_TMP="/tmp/mount"
+export BACKUP=""      # Opciones DVD o DSK
+export TIPO_DVD=""    # Opciones NEW - SEC - NONE - USA - 
+export SEC=""         # Opciones HOY - AYER - MAN - DIA
+export SEC_FNL=""
+export DEV=`ls -l /dev/dvd | awk '{print $11}'`
+export ESP="\n\t\t     "
+export INFORMAR="Comuniquese con el Centro de Computos de Central int. 5257-5258 \n\t\t      o envie un mail con este error a la casilla operaciones@redcoto.com.ar "
+export STS="false"
+FALSE="false"
+TRUE="true"
+K_DVD_MA="DVD+RW"
+K_DVD_ME="DVD-RW"
+TIPO_DVD=$K_DVD_MA
+K_TIPO_DVD="DVD"
+K_TIPO_DVD_N="NONE"
+TIPO_DVD=$K_TIPO_DVD
+
+# archivos de para grabar el dvd
+export SORT_K3B="/provisorio/sort.tmp"
+export LIST_K3B="/provisorio/list.tmp"
+export BACK_K3B="/provisorio/backup.tmp"
+
+>$SORT_K3B
+>$LIST_K3B
+>$BACK_K3B
+
+###############################################################################
+###                            Funciones                                    ###
+###############################################################################
+
+#--------------------------------------------------------------------------
+# Obteniendo el tipo de equipo
+#--------------------------------------------------------------------------
+
+ver_equipo ()
+{
+#set -x
+
+EQUIPO=`dmidecode -t 1 | grep 'Product Name:' | uniq  | cut -d':' -f2 | head -1`
+echo $EQUIPO | grep -i x3200 1>/dev/null 2> /dev/null
+if [ $? = 0 ]
+then
+        export TYP_GRAB="GENERICA"
+else
+        echo "$EQUIPO" | grep -i Proliant 1>/dev/null 2> /dev/null
+        if [ $? = 0 ]
+        then
+                export TYP_GRAB="GENERICA"
+        else
+                #     BUSCO EL TIPO DE EQUIPO DE OTRA FORMA  -----------------------------
+                EQUIPO=`lshw -C system | grep 'product:'  | uniq  | cut -d':' -f2 | head -1`
+                echo "$EQUIPO" | grep -i 3200 1>/dev/null 2> /dev/null
+                if [ $? = 0 ]
+                then
+                        export TYP_GRAB="GENERICA"
+                else
+                        echo "$EQUIPO" | grep -i 3250 1>/dev/null 2> /dev/null
+                        if [ $? = 0 ]
+                        then
+                                export TYP_GRAB="FABRICANTE"
+                        else
+                                OBSERV="Error al identificar el equipo, Verifique, luego vuelvalo a intentar...!!!"
+                                printf "%-6s %-1s %-48s \n" "$SUC" "|" "$OBSERV" | tee -a $ARCH_TMP
+                        fi
+                fi
+        fi
+fi
+}
+
+#------------------------------------------------------------------------------
+#  0) Restartear Procesos AUTOFS
+#------------------------------------------------------------------------------
+stop_autofs ()
+{
+#set -x
+STS=$FALSE
+service autofs stop	>>$ARCH_LOG
+if [ $? = 0 ]
+then
+	service autofs status | tail -1 | grep media
+	if [ $? != 0 ]
+	then
+                /usr/bin/kill -9 `lsof -u root | grep automount | grep media | awk '{ print $9 " " $2 }' | grep "^/media" | awk '{ print $2 }'` >>$ARCH_LOG >/dev/null 2>&1
+		STS=$TRUE
+	else
+		echo "No se pudo detener el demonio autofs ${ESP} ejecute desde la linea de comando \"service autofs restart\""
+		exit 100
+	fi
+	STS=$TRUE
+fi
+}
+
+#------------------------------------------------------------------------------
+#  0) Limpiar procesos DVD
+#------------------------------------------------------------------------------
+
+limpia_proc ()
+{       
+#set -x
+/usr/bin/kill -9 `/usr/sbin/lsof -u root | grep $DEV | awk '{ print $2}'` >/dev/null 2>&1 
+}    
+
+#------------------------------------------------------------------------------
+#  1) Carga log
+#------------------------------------------------------------------------------
+carga_log ()
+(
+MENSAJE=${1}
+echo "`date +%d` `date +%b` `date +%Y` - `date +%R` : $MENSAJE" | tee -a $ARCH_LOG
+echo "----------------------------------------------------------------------------"
+)
+
+#------------------------------------------------------------------------------
+#  2) Carga informe
+#------------------------------------------------------------------------------
+carga_inf ()
+(
+MENSAJE=${1}
+echo "`date +%d` `date +%b` `date +%Y` - `date +%R` : $MENSAJE" | tee -a $ARCH_INF
+echo "---------------------------------------------------------------------" | tee -a $ARCH_INF
+)
+
+#------------------------------------------------------------------------------
+#  3) Ejectar DVD de la unidad
+#------------------------------------------------------------------------------
+
+eject_dvd ()
+{       
+#set -x  
+echo " "
+
+#if [ ${TYP_GRAB} != "FABRICANTE" ]
+#then
+#	 eject   # >>$ARCH_LOG # 
+#	if [ $? != 0 ]
+#	then    
+#		limpia_proc
+#		/usr/bin/eject
+#        	if [ $? = 0 ]
+#	        then
+#        	        carga_log "Grabadora de DVD ABIERTA..."
+#			sleep 15
+#	        else
+#        	        MSJ="Hubo un error al intentar expulsar el DVD de la grabadora.  Verifique!!!"
+#			carga_log "$MSJ" ; carga_inf "$MSJ"
+#			SALIDA="exit 4"
+#        	fi
+#	fi
+#fi
+}
+
+#------------------------------------------------------------------------------
+#  4) Introducir DVD de la unidad
+#------------------------------------------------------------------------------
+
+inject_dvd ()
+{
+#set -x
+
+if [ ${TYP_GRAB} != "FABRICANTE" ]
+then
+	STS=$FALSE
+	eject -t # >>$ARCH_LOG #
+	if [ $? != 0 ] 
+	then 
+		limpia_proc
+		/usr/bin/eject -t # >>$ARCH_LOG #
+		if [ $? = 0 ]
+	        then
+        	        carga_log "Grabadora de DVD CERRADA"
+			sleep 15
+			STS=$TRUE
+        	else
+	                MSJ="Hubo un error al insertar el DVD de la grabadora. Verifique!!!"
+		        carga_log "$MSJ" ; carga_inf "$MSJ"
+			STS=$FALSE
+		        SALIDA="exit 5"
+	        fi
+	else
+		STS=$TRUE
+	fi       
+else
+		STS=$TRUE
+	
+fi
+
+}         
+
+#------------------------------------------------------------------------------
+#  5)  Controlando Unidad de dvd 
+#------------------------------------------------------------------------------
+
+control_dvd ()
+{
+#set -x
+STS=$FALSE
+ls -l /dev/dvd | awk '{print $11}'
+if [ $? != 0 ]
+then
+        MSJ="No se detecto Unidad de DVD ${ESP} Se Realizo backup a Disco por seguridad, pero ${INFORMAR} ${ESP} el siguiente error: NO SE DETECTO UNIDAD DE DVD"
+	carga_log "$MSJ" ; carga_inf "$MSJ"
+	SALIDA="exit 10"
+else
+	DEV=`ls -l /dev/dvd | awk '{print $11}'` 
+	DEVICE="/dev/$DEV" 
+	STS=$TRUE
+fi
+}
+	
+#------------------------------------------------------------------------------
+#  6)  Desmontar DVD
+#------------------------------------------------------------------------------
+
+desmontar_dvd ()
+{
+#set -x
+STS=$FALSE
+limpia_proc
+sleep 10
+carga_log "Desmontando /media/dvd..."
+df -k $FS_DVD | grep "$FS_DVD" > /dev/null 2>&1
+if [ $? = 0 ]
+then
+	umount $FS_DVD >>$ARCH_LOG # > /dev/null 2>&1
+	STS=$TRUE
+	if [ $? = 0 ]
+	then
+		FS_MONT="NO_OK"
+		carga_log "Filesystem /media/dvd Desmontado"
+	else
+		FS_MONT="OK"
+                MSJ="ERROR!! No se pudo desmontar /media/dvd..."
+	        carga_log "$MSJ" ; carga_inf "$MSJ"
+		SALIDA="exit 8"
+	fi
+else
+        carga_log "El Filsystem $FS_DVD ya esta desmontado"
+        DESMOUNT="OK"
+	STS=$TRUE
+fi
+}
+
+#------------------------------------------------------------------------------
+#  7)  Montar DVD
+#------------------------------------------------------------------------------
+
+montar_dvd ()
+{
+control_dir
+#set -x
+STS=$FALSE
+limpia_proc
+inject_dvd
+
+if [ $STS = $TRUE ]
+then
+	carga_log "Montando /media/dvd..."
+	sleep 10
+	df -k $FS_DVD | grep "$FS_DVD" > /dev/null 2>&1
+	if [ $? = 0 ]
+	then
+		FS_MONT="OK"
+        	carga_log "El Filesystem $FS_DVD ya estaba montado"
+		STS=$TRUE
+	else	
+		for MNT in 1 2 3 4 5 
+		do
+		mount -t iso9660 -o rw,noatime $DEVICE $FS_DVD > ${ARCH_TMP} 2>&1 
+		if [ $? = 0 ]
+		then
+			STS=$TRUE
+			FS_MONT="OK"
+                	carga_log "Filesystem $FS_DVD fue montado correctamente"
+			sleep 10
+			break
+		else 
+			FS_MONT="NO_OK"
+			STS=$FALSE
+        		MSJ="Intento $MNT : No se pudo Montar el dispositivo de DVD.."
+                	carga_log "$MSJ" #; carga_inf "$MSJ"
+			#eject -t 
+			sleep 20
+		fi
+		done
+		if [ $FS_MONT = "NO_OK" ]
+		then
+                	MSJ="Despues de 5 intentos, No se pudo Montar el dispositivo de DVD..Controlar!! " 
+                        carga_log "$MSJ" #; carga_inf "$MSJ"
+			SALIDA="exit 6"
+		fi
+	fi
+else
+	FS_MONT="NO_OK"
+	echo "Fallo la funcion inject"
+        SALIDA="exit 6"
+fi
+}
+
+
+#------------------------------------------------------------------------------
+#  8)  Control de Directorio a donde se va a montar
+#------------------------------------------------------------------------------
+
+control_dir ()
+{
+#set -x
+STS=$FALSE
+if [ -d /media/dvd ]
+then
+        carga_log "Existe el directorio /media/dvd donde montar el dvd"
+	STS=$TRUE
+else  
+        MSJ="No se encontrol el directorio /media/dvd ${ESP}  Se procede a crearlo para la ejecucion del backup"
+	mkdir /media/dvd
+	chown 755 /media/dvd
+        carga_log "$MSJ" ; carga_inf "$MSJ"
+#       SALIDA="exit 12"
+fi
+} 
+
+#----------------------------------------------------------------------------
+#            Control Directorio a donde se realiza backup a disco
+#----------------------------------------------------------------------------
+
+control_bckdir ()
+{
+#set -x
+STS=$FALSE
+
+if [ -d $FS_PRO ]
+then
+        carga_log "Existe el directorio $FS_PRO donde realizar el backup"
+	STS=$TRUE
+	echo "Existe el directorio $FS_PRO"
+else
+	mkdir $FS_PRO
+	if [ $? = 0 ]
+	then
+		carga_log "Se creo el directorio $FS_PRO donde realizar el backup"
+		STS=$TRUE
+	else
+		
+        	MSJ="No existe el directorio $FS_PRO ${ESP} y no se pudo crear, generelo manualmente y vuelva a arrancar el Backup"
+        	carga_log "$MSJ" ; carga_inf "$MSJ"
+        	SALIDA="exit 12"
+	fi
+fi
+}
+
+
+#------------------------------------------------------------------------------
+#  9) Chequear DVD puesto
+#------------------------------------------------------------------------------
+
+chec_dvd ()
+{
+#set -x
+STS=$FALSE
+limpia_proc
+desmontar_dvd
+TIPO_DVD="DVD"
+ERR="error"
+MONTADO="nomedia"
+
+if [ $STS = $TRUE ]
+then
+	rm $CHK_DVD >/dev/null 2>&1 
+	CHK_DVD="/tmp/chec_dvd.tmp"
+	eject -t
+	sleep 5
+	/usr/bin/dvd+rw-mediainfo /dev/$DEV >$CHK_DVD 2>&1
+	cat $CHK_DVD >>$ARCH_LOG
+	cat $CHK_DVD|grep "Mounted Media:"|awk '{print $4}'|grep DVD
+	if [ $? = 0 ]
+	then
+		DVD_IN=`cat $CHK_DVD|grep "Mounted Media:"|awk '{print $4}'|grep DVD`
+	else
+		DVD_IN="nodd"
+	fi
+
+	cat $CHK_DVD|grep "Input/output error"
+	if [ $? = 0 ]
+	then
+		DVD_ERR=`cat $CHK_DVD|grep "Input/output error"`
+	else
+		DVD_ERR="noerr"
+	fi
+
+	cat $CHK_DVD|grep "no media mounted"|awk '{print $2 $3}'
+
+	if [ $? = 0 ]
+	then	
+		DVD_MOUNT=`cat $CHK_DVD|grep "no media mounted"|awk '{print $2 $3}'`
+	else
+		DVD_MOUNT="NO"
+	fi
+
+	if [ $DVD_IN = $K_DVD_MA ]||[ $DVD_IN = $K_DVD_ME ]
+	then
+		carga_log "Existe un $DVD_IN en el dispositivo $DEVICE"
+		STS=$TRUE
+	else
+		if [ $DVD_ERR = $ERR ]
+		then
+			carga_log "Chequee su DVD tiene error de lectura"
+			SALIDA="exit 14"
+			STS=$FALSE
+		else
+			if [ $DVD_MOUNT = $MONTADO ]
+			then
+				carga_log "No hay un DVD en el dispositivo"
+				SALIDA="exit 13"
+				STS=$FALSE
+			else
+				carga_log "Error desconocido con el dvd"
+				SALIDA="exit 9"
+				STS=$FALSE
+			fi
+		fi
+	fi
+else
+	SALIDA="exit 17"
+	MSJ="El dvd/cd insertado $DVD_IN es ilegible o no sirve para realizar el backups diario ${ESP} Cambie el DVD y use del tipo DVD+RW ${ESP} se procede a realizar el backup en el Servidor ${ESP} Si hay un DVD puesto del tipo DVD+RW o DVD-RW, dejelo y ${ESP} ${INFORMAR} ${ESP} y pida que se lo formateen o revisen"
+
+        carga_log "$MSJ" ; carga_inf "$MSJ"
+rm $CHK_DVD 2>/dev/null 1>/dev/null
+fi
+}
+#------------------------------------------------------------------------------
+# 10) Grabar archivo de  secuencia
+#------------------------------------------------------------------------------
+
+grabar_secuencia ()
+{
+#set -x
+limpia_proc
+inject_dvd
+TIPO_DVD=$2
+if  [ $TIPO_DVD = "SEC" ] ||  [ $TIPO_DVD = "NEW" ] ||  [ $TIPO_DVD = "USA" ] && [ $BACKUP = "DVD" ]
+then
+	rm ${FS_PRO}/*
+	carga_log "Creando el archivo de secuencia a grabar"
+	touch ${FS_PRO}/secuencia
+	echo ${SEC_FNL} >${FS_PRO}/secuencia
+	echo "secuencia=/provisorio/backup/secuencia" | tee -a ${BACK_K3B}
+	read
+	
+fi
+read
+}
+
+#------------------------------------------------------------------------------
+#  11) Formatear dvd
+#------------------------------------------------------------------------------
+
+formatear_dvd ()
+{
+#set -x
+ARCH_FRMT="/tmp/error_formatear"
+limpia_proc
+desmontar_dvd
+carga_log "Formateando DVD.."
+
+	/usr/bin/dvd+rw-format -force -gui /dev/$DEV  >$ARCH_FRMT 2>&1
+	
+	cat $ARCH_FRMT >>$ARCH_LOG
+
+        if [ $? != 0 ]
+        then
+                /usr/bin/growisofs -Z /dev/$DEV=/dev/zero >$ARCH_FRMT 2>&1
+		cat $ARCH_FRMT >>$ARCH_LOG  
+        fi
+if  [ $? != 0 ]
+then
+	SAL_FRMT="NO_OK"
+        BACKUP="DSK"
+        TIPO_DVD="NONE"
+	SAL_MSJ="NO_OK"
+	MSJ="FALLO BACKUP !!! Hubo un error al intentar formatear el DVD ${ESP} O no es un DVD regrabable, reviselo y cambie, se continua backup a disco"
+	SALIDA="exit 15"
+       	FORMAT="NO_OK"		
+	break
+else
+        TIPO_DVD="NEW"
+        BACKUP="DVD"
+	SAL_MSJ="OK"
+	SAL_FRMT="OK"
+	MSJ="El DVD se pudo formatear correctamente se continua backup en DVD"
+       	FORMAT="OK"
+	sleep 15
+fi
+}
+
+#------------------------------------------------------------------------------
+# 12) Generando archivos .tar
+#------------------------------------------------------------------------------
+
+genera_tar ()
+{
+#set -x
+STS=$FALSE
+SEC_BKP=$1
+export ARCH_LST_BKP=/tecnol/backup/log/arch_lst_bkp_sec_${SEC_BKP}.lst
+>$ARCH_LST_BKP
+cd $FS_PRO
+#FS_TAR="vtareserva.sec${SEC_BKP}.tar.bzip2:vtareserva"
+FS_TAR="tecnol.sec${SEC_BKP}.tar.bzip2:tecnol vtareserva.sec${SEC_BKP}.tar.bzip2:vtareserva sts.sec${SEC_BKP}.tar.bzip2:sts expora.sec${SEC_BKP}.tar.bzip2:expora home.sec${SEC_BKP}.tar.bzip2:home etc.sec${SEC_BKP}.tar.bzip2:etc sfctrl.sec${SEC_BKP}.tar.bzip2:sfctrl"
+CANT_ARC=`echo ${FS_TAR} | wc -w`
+carga_log "Generando Archivos tar en disco"
+for FS in $FS_TAR
+do
+	ARCH_TAR=`echo $FS | cut -d":" -f1`
+	FS_TAR=`echo $FS | cut -d":" -f2`
+	echo "$ARCH_TAR /$FS_TAR"
+	CNT_ARC_BKP=`ls -lt ${FS_PRO}/${FS_TAR}* | wc -l` 2>/dev/null
+       	find ${FS_PRO} -name "${FS_TAR}*" -exec rm {} \;
+	carga_log "Generando archivo $FS_PRO/$ARCH_TAR en el $FS_PRO"
+	if [ ${FS_TAR} = 'sfctrl' ]
+	then
+		tar cvjf $FS_PRO/$ARCH_TAR  --exclude="/sfctrl/tmp" --exclude="/sfctrl/interface" --exclude="/sfctrl/i" /$FS_TAR  1>/dev/null 2>/dev/null
+	else
+		tar cvjf $FS_PRO/$ARCH_TAR    /$FS_TAR  1>/dev/null 2>/dev/null
+	fi
+	if [ $? = 0 ]
+	then
+		STS=$TRUE
+        	md5sum "${FS_PRO}/${ARCH_TAR}" | tee -a $ARCH_LST_BKP 
+		ls -lt ${FS_PRO}/${ARCH_TAR} | tee -a $ARCH_LOG
+		echo "${ARCH_TAR}=/provisorio/backups/${ARCH_TAR}" | tee -a ${BACK_K3B}
+	else
+        	MSJ="No se pudo crear el archivo $ARCH_TAR en el Fs $DIR_TAR ${ESP} Haga espacio en el $FS_PRO y reejecute el backup"
+ 		carga_log "$MSJ"	
+        	SALIDA="exit 16" 
+	fi
+done
+if [ $CANT_ARC -eq 0 ]
+then
+        MSJ="ERROR !!! FALLO BACKUP !!! ${ESP} No se ha podido realizar el backup a disco de todos los archivos"
+	carga_log "$MSJ" ; carga_inf "$MSJ"
+        SALIDA="exit 16"
+else
+        if [ `cat $ARCH_LST_BKP | wc -l` -lt $CANT_ARC ] 
+        then
+        	ARC_TAR_BKP="INCOMPLETO"
+        	MSJ="ERROR !!! FALLO BACKUP !!! ${ESP}  No se han podido realizar el backup a disco de todos los archivos"
+		carga_log "$MSJ" ; carga_inf "$MSJ"
+        	SALIDA="exit 16"
+        else
+        	ARC_TAR_BKP="COMPLETO"
+        	MSJ="Se resguardaron todos los archivos en el Servidor"
+		carga_log "$MSJ" ; carga_inf "$MSJ"
+		STS=$TRUE
+        fi
+fi
+}
+
+#------------------------------------------------------------------------------
+# 13) Levantado archivos a DVD 
+# Tanto para DVD +RW como -RW se ejecutar la misma sentencia
+# En el caso de querer discriminar,  el tipo de dvd queda en la variable $DVD_IN
+#------------------------------------------------------------------------------
+
+backup_a_dvd ()
+{
+#set -x
+desmontar_dvd
+cd $FS_PRO
+carga_log "Grabando archivos a DVD"
+
+STS=$FALSE
+
+#/usr/bin/growisofs -Z /dev/${DEV} -use-the-force-luke=notray -use-the-force-luke=tty -speed=4 -gui -graft-points -volid CDROM -volset-size 1 -volset-seqno 1 -rock -joliet -udf -full-iso9660-filenames -iso-level 2 /provisorio/backups  >/tmp/grabacion 2>&1
+
+/usr/bin/growisofs -Z /dev/${DEV} -use-the-force-luke=notray -use-the-force-luke=tty -input-charset iso8859-1 -use-the-force-luke=dao -dvd-compat -speed=4 -gui -graft-points -volid -volset -appid -publisher -preparer -sysid -volset-size 1 -volset-seqno 1 -sort ${SORT_K3B} -rational-rock -hide-list ${LIST_K3B} -full-iso9660-filenames -iso-level 2 -path-list ${BACK_K3B} >/tmp/grabacion 2>&1
+
+
+if [ $? = 0 ]
+then
+	MSJ="Se Terminaron de copiar todos los archivos al DVD"
+	carga_log "$MSJ" ; carga_inf "$MSJ"
+	COPIA_BKP="OK"
+	STS=$TRUE
+	SALIDA="exit 2"
+else
+	COPIA_BKP="NO_OK"
+    	MSJ="Ha ocurrido un Error al copiar los archivos al DVD. Fallo el backup a DVD por favor consulte con operaciones"
+        carga_log "$MSJ" ; carga_inf "$MSJ"
+        SALIDA="exit 11" 
+fi
+cat /tmp/grabacion >>$ARCH_LOG
+}
+
+
+#------------------------------------------------------------------------------
+#  14) Leer el contenido del DVD
+#-----------------------------------------------------------------------------
+
+leer_dvd ()
+{
+#set -x
+limpia_proc
+montar_dvd
+if [ $FS_MONT = "OK" ] 2>/dev/null
+then
+	carga_log "Aguarde Leyendo el contenido del DVD"
+	ARCH_UP="`ls -lt /media/dvd`"
+	if [ ${ARCH_UP} = "total 0" ]  2>/dev/null
+	then
+		MSJ="Se han detectado 0 archivos grabados en el DVD. Por favor consulte con operaciones"
+                BACKUP_A_DVD="NOOK"
+               	carga_log "$MSJ" ; carga_inf "$MSJ"	
+		SALIDA="exit 7"
+		DVD_READ="NOOK"
+		COPIA_BKP="NOOK"
+	else
+		if [ ${COPIA_BKP} = "OK" ] 
+		then
+			BACKUP_A_DVD="OK"
+      	 		carga_log "Aguarde Leyendo el contenido del DVD"
+			DVD_READ="OK"
+			carga_log "${ARCH_UP}"
+		else
+                        BACKUP_A_DVD="NOOK"
+                        DVD_READ="OK"
+			MSJ="Se leyo el DVD y tiene archivos del backup anterior. Por favor consulte con operaciones"
+                        carga_log "${ARCH_UP}"				
+		fi
+	fi
+else
+        MSJ="Ha ocurrido un error al querer montar el contenido DVD. Por favor consulte con operaciones"
+        carga_log "$MSJ" ; carga_inf "$MSJ"
+        SALIDA="exit 6"
+fi
+}
+
+#------------------------------------------------------------------------------
+#  15) Verificar Grabacion en DVD 
+#------------------------------------------------------------------------------
+
+chk_grab_dvd ()
+{
+#set -x
+inject_dvd
+montar_dvd
+leer_dvd
+CONTAR_ARC=0
+if [ $FS_MONT = "OK" ] && [ $DVD_READ = "OK" ] && [ ${COPIA_BKP} = "OK" ]
+then
+	carga_log "Controlando Archivos subidos a DVD"
+	for ARCH_CHK in `cat ${ARCH_LST_BKP} | cut -d"/" -f4`
+	do
+		CHKSUMDSK=`grep $ARCH_CHK ${ARCH_LST_BKP} | cut -d" " -f1`
+		CHKSUMDVD=`md5sum $FS_DVD/${ARCH_CHK} | cut -d" " -f1`
+       		if [ ${CHKSUMDSK} = ${CHKSUMDVD} ]
+      	  	then
+			carga_log "El archivo $ARCH_CHK se resguardo correctamente en el dvd"
+			CONTAR_ARC=`expr $CONTAR_ARC "+" 1`
+			ls -lt $FS_DVD/${ARCH_CHK}  | tee -a $ARCH_LOG
+		else
+			carga_log "Error el archivo $ARCH_CHK no se resguardo correctamente en el dvd"
+       	        	SALIDA="exit 18"
+		fi
+	done
+	CANT_ARC=`cat ${ARCH_LST_BKP} | cut -d"/" -f3 | wc -w`
+	if [ $CANT_ARC = $CONTAR_ARC ] 
+	then
+		if [ $SAL_DVD = "SEC_OK" ]
+		then 
+			MSJ="BACKUP COMPLETO - FINALIZACION OK ${ESP} Se han resguardado todos los archivos en el DVD ${ESP} Y se han comprobado los archivos Grabados "
+			SALIDA="exit 0  "
+		else
+		 	if [ $SAL_DVD = "SEC_ERR" ]	
+			then
+				MSJ="BACKUP COMPLETO - !!! ATENCION !!! ${ESP} Que si bien se han resguardado todos los archivos en el DVD ${ESP} Haga revizar la secuencia del DVD la proxima vez que use este DVD ${ESP} ${INFORMAR}"
+				SALIDA="exit 1 "
+			fi
+		fi
+	else
+		if [ $CONTAR_ARC = 0 ]
+		then
+	       	 	MSJ="ATENCION BACKUP SIN COMPROBAR LA CORRECTA GRABACION DE LOS ARCHIVOS!!! ${ESP} no se han podido comprobar la correcta grabacion a DVD de los archivos de backup ${ESP} ${INFORMAR} ${ESP} y pida chequear el DVD. En caso de continuar fallando reemplacelo por uno nuevo"
+               		SALIDA="exit 3"	
+		else
+			MSJ="BACKUP INCONSISTENTE, NO SE CHEQUEARON LA TOTALIDAD DE LOS ARCHIVOS GRABADOS!!!${ESP} Solamente se han comprobado $CONTAR_ARC de $CANT_ARC que se grabaron a DVD"
+			SALIDA="exit 2"
+		fi
+	fi
+fi
+carga_log "$MSJ" ; carga_inf "$MSJ"
+
+}
+
+#------------------------------------------------------------------------------
+#  16) Controlando Espacios de Fs Provisorio 
+#------------------------------------------------------------------------------
+
+ctrol_dir_provi ()
+{
+#set -x
+TAM_PROV_KB=`df -k /provisorio | grep -v lv | grep -v Used | awk '{print $3}'`
+TAM_PROV_BT=`expr $TAM_PROV_KB "*" 1024`
+ARCH_TAR=$1
+if [ -s $DIR_PROV/$ARCH_TAR ]
+then
+TAM_ARCH_BT=`ls -lt $DIR_PROV/$ARCH_TAR | awk '{print $5}'`
+	if [ $TAM_PROV_BT -lt $TAM_ARCH_BT ]
+	then
+	    MSJ="No hay espacio en el $DIR_PROV para hacer los archivos $ARCH_TAR"
+            SALIDA="exit 19"
+	    exit 19
+	fi
+else
+	MSJ="No se pudo hacer backup de $ARCH_TAR"
+	SALIDA="exit 19"
+	 
+fi
+carga_log "$MSJ" ; carga_inf "$MSJ"
+}
+
+#------------------------------------------------------------------------------
+#  17) control_secuencia 
+#------------------------------------------------------------------------------
+
+control_secuencia ()
+{
+#set -x
+inject_dvd
+montar_dvd
+TIPO_DVD="SEC_OK"
+
+if [ $STS = $TRUE ]
+then
+	echo "Monto el DVD - control_secuencia"
+	ls /media/dvd/secuencia
+        if [ $? = 0 ]
+        then
+                cp -p /media/dvd/secuencia ${FS_PRO}/secuencia
+		echo "secuencia=${FS_PRO}/secuencia" | tee -a ${BACK_K3B}	
+                SEC_DVD=`cat /media/dvd/secuencia`
+		echo "Secuencia grabada $SEC_DVD"
+                if [ $SEC_BKP = $SEC_DVD ]
+                then
+			MSJ="La secuencia es la CORRECTA!!!"
+                        carga_log "$MSJ" ; carga_inf "$MSJ"
+                        MSJ="Se comienza el backup"
+                        carga_log "$MSJ" ; carga_inf "$MSJ"
+                        TIPO_DVD="SEC_OK"
+                        SAL_DVD="SEC_OK"
+                        export SEC_FNL=${SEC_DVD}
+                else
+                        MSJ="ATENCION!!! El DVD que esta puesto tiene grabada la secuencia $SEC_DVD ${ESP} y la secuencia que corresponde al dia de hoy es la Nro $SEC_BKP"
+                        carga_log "$MSJ" ; carga_inf "$MSJ"
+			TIPO_DVD="SEC_ERR"
+                        SAL_DVD="SEC_ERR"
+                        export SEC_FNL=${SEC_DVD}
+		fi
+	else
+		TIPO_DVD="SEC_ERR"
+                SAL_DVD="SEC_ERR"
+                export SEC_FNL=${SEC_DVD}	
+		MSJ="El DVD no tiene grabado el archivo de secuencia ${ESP}. Se hace el backup en la secuencia ${SEC_BKP} ${ESP} ${INFORMA}"
+                carga_log "$MSJ" ; carga_inf "$MSJ"
+
+	fi
+else
+	TIPO_DVD="SEC_ERR"
+        SAL_DVD="SEC_ERR"
+        export SEC_FNL=${SEC_DVD}
+        MSJ="No se pudo montar el dvd, no se puede determinar ni grabar la secuencia. Igual se procede a grabar los datos"
+        carga_log "$MSJ" ; carga_inf "$MSJ"
+fi
+STS=$TRUE
+}
+
+#------------------------------------------------------------------------------
+#  19)  Envio de mail a los usuarir
+#------------------------------------------------------------------------------
+
+Enviar_mail_alerta ()
+{
+#set -x
+#export USUARIOS="operaciones"  
+export USUARIOS="hcerizola"  
+export FILE_LOG="$ARCH_INF"
+export MSG_SUBJECT="Bkp a DVD ${SUC} - ${DIA_BKP} `date +%d` `date +%b` `date +%Y` - Sec ${SEC_BKP} - ${SALIDA}"
+#export MSG_BODY="Backup ${SUC} - ${DIA_BKP} `date +%d` `date +%b` `date +%Y` - Secuencia ${SEC_BKP}" 
+
+for USER in $USUARIOS
+do      
+	cat $FILE_LOG # | mutt -s "$MSG_SUBJECT" -b ${USER}@redcoto.com.ar
+done
+}
+
+#------------------------------------------------------------------------------
+#  20)  Depura filesystems antes de resguardar.
+#------------------------------------------------------------------------------
+
+Depura_SFCTRL ()
+{
+#set -x
+	rm /sfctrl/d/CAMBIOS.ERR*
+	rm /sfctrl/d/credito.dat.*
+	rm /sfctrl/sd01:*
+	rm /sfctrl/sd02:*
+	rm /sfctrl/s02:*
+	rm /sfctrl/GM03*
+	rm /sfctrl/*.sh
+	rm -r /sfctrl/RFAR*
+	rm /sfctrl/d/actmem.*.dat
+	rm /sfctrl/d/trx*.dat
+	rm /sfctrl/d/trx*.asc
+	rm /sfctrl/d/tlog*.asc
+	rm /sfctrl/data/Clientes*
+	rm /sfctrl/data/clientes*
+}
+
+###############################################################################
+#                              PRINCIPAL                                      #
+###############################################################################
+
+set -x  
+STS=$TRUE
+
+######################## Seteo de procesos iniciales #########################
+
+export SEC_CTRLM=$2
+case $SEC_CTRLM in
+        0) export SEC_BKP=7 ; export DIA_BKP="Domingo" ;;
+        1) export SEC_BKP=1 ; export DIA_BKP="Lunes" ;;
+        2) export SEC_BKP=2 ; export DIA_BKP="Martes" ;;
+        3) export SEC_BKP=3 ; export DIA_BKP="Miercoles" ;;
+        4) export SEC_BKP=4 ; export DIA_BKP="Jueves" ;;
+        5) export SEC_BKP=5 ; export DIA_BKP="Viernes" ;;
+        6) export SEC_BKP=6 ; export DIA_BKP="Sabado" ;;
+esac
+
+DIR_INFORMES=`ls -lt /var/www/html | grep informes | awk '{ print $11 }'`
+export ARCH_LOG="$PATHLOG/backup.sec_$SEC_BKP.log"
+export ARCH_INF="${DIR_INFORMES}/Backup.$DIA_BKP.SEC_$SEC_BKP.txt"
+>$ARCH_LOG
+>$ARCH_INF
+chmod 664 $ARCH_INF ; chown root.sfsw $ARCH_INF
+echo -e "Informe del Resultado del Backup a DVD del dia ${DIA_BKP} `date +%d` `date +%b` `date +%Y` Secuencia Nro. ${SEC_BKP}\n" | tee -a $ARCH_INF
+MSJ="Comenzando Backup del dia `date +%d` `date +%b` `date +%Y` ${ESP} La secuencia del dia ${DIA_BKP} es la nro $SEC_BKP"
+carga_log "$MSJ" ; carga_inf "$MSJ"
+
+
+###################### Comienza el Backup ###############################
+
+#Backup a Disco
+# Inserta el disco si esta abierta la grabadora
+if [ $STS = $TRUE ]
+then
+                control_bckdir
+                if [ $STS = $TRUE ]
+                then
+                                Depura_SFCTRL
+                                genera_tar $SEC_BKP
+                else
+                                echo "$STS No se pudo crear el directorio"
+                fi
+
+fi
+
+####################### Se bajan procesos que pueden tomar la DVD ##########
+ver_equipo
+eject -t 
+modprobe autofs4 >>$ARCH_LOG
+limpia_proc
+if [ $STS = $FALSE ] 
+then
+		echo "$STS"
+		echo "No se arranco el backup"
+else
+		stop_autofs
+		if [ $STS = $FALSE ]
+		then
+				echo "No se pudo bajar el proceso $STS"
+		fi
+		echo "$STS pase por el true de stop"
+		
+fi
+		
+#Backup a DVD -- Controles del dvd
+
+if [ $STS = $TRUE ]
+then
+	echo $STS "Comienzo backup a dvd"	
+	control_dvd
+	if [ $STS = $TRUE ]
+	then
+		echo "Existe la DVD --"
+		control_dir
+		if [ $STS = $TRUE ]
+		then
+			#echo "Existe el directorio donde montar"
+			chec_dvd	
+			if [ $STS = $TRUE ]
+			then
+				echo "Salgo del Chec_dvd $STS"
+				control_secuencia
+			echo "La secuencia controlada del backup es $SEC_DVD, la secuencia que debe grabarse es $SEC_BKP"
+			fi
+		fi
+	fi
+fi
+
+#Grabo backup a dvd independientemente de si tiene secuencia o no
+
+if [ $STS = $TRUE ]
+then
+	backup_a_dvd
+	chk_grab_dvd
+	echo "resultado del backup a DVD $STS"
+	if [ $STS = $TRUE ]
+	then
+		echo "se realizo el backup"
+		echo "se chequea"
+		leer_dvd
+		if [ $BACKUP_A_DVD = "OK" ] && [ $SAL_DVD = "SEC_OK" ] 
+                then
+               		 MSJ="BACKUP COMPLETO - FINALIZACION OK ${ESP} Se han resguardado todos los archivos en dvd ${ESP}."
+                         SALIDA="exit 0"
+                else
+                         if [ $SAL_DVD = "SEC_ERR" ]
+                         then
+                         	MSJ="BACKUP COMPLETO - !!! ATENCION ${ESP} Que si bien se han resguardado todos los archivos en el DVD ${ESP} Haga revisar la secuencia grabada en el mismo ya que no corresponde a la del dia ${ESP} ${INFORMAR} "
+				carga_log "$MSJ" ; carga_inf "$MSJ"
+                                SALIDA="exit 1"
+			fi
+			echo "Hubo problemas con la grabacion a DVD. Consulte el archivo /tmp/grabacion"
+		fi
+
+	else
+		if [ $FS_MONT = "NOOK" ]
+		then
+			MSJ="BACKUP A DVD DUDOSO!!! No se pueden leer los archivos grabados en el dvd. Contactese con Operaciones en Casa Central"
+			carga_log "$MSJ"; carga_inf "$MSJ"
+			SALIDA="exit 11"
+		fi
+		
+	fi
+else
+	MSJ="Existe un problema con el medio dvd, por favor controle que este puesto en el dispositivo. Si existe en el dispositivo por favor comuniquese con Operaciones en Casa Central"
+	carga_log "$MSJ"; carga_inf "$MSJ"
+	MSJ="BACKUP ERROR!!! No se pudo realizar el backup a dvd. Contactese con Operaciones en casa Central "
+	carga_log "$MSJ" ; carga_inf "$MSJ"
+	SALIDA="exit 11"
+fi
+
+carga_log "Puede consultar la salida en el archivo $ARCH_LOG"
+
+echo -e "\n\nImportante: Por Cualquier novedad remitirse a la casilla operaciones@redcoto.com.ar" | tee -a $ARCH_INF
+echo "o bien telefonicamente a Central Centro de Computos internos 5258 - 5257" | tee -a $ARCH_INF
+echo -e "\nSitio web: http://${SUC}/informes/Backup.${DIA_BKP}.SEC_${SEC_BKP}.txt" | tee -a $ARCH_INF 
+echo -e "\nDesde este sitio http://asps/instructivos/aix/backup_dvd_sucursalers.doc\npodras descargarte un documento con toda la informacion\nrestante a la operatoria de backups diaria a DVD\n"|tee -a $ARCH_INF
+#echo "$SALIDA" >> $ARCH_LOG
+
+if [ "$SALIDA" != "exit 0" ]
+then
+	Enviar_mail_alerta
+fi
+desmontar_dvd
+if [ $STS = $TRUE ]
+then
+	MSJ="el dvd se desmonto bien"
+	carga_log "$MSJ"; carga_inf "$MSJ"
+else
+	 MSJ="el dvd no se pudo desmontar"
+        carga_log "$MSJ"; carga_inf "$MSJ"
+fi
+sleep 10
+eject #/dev/dvd
+echo "$SALIDA" >> $ARCH_LOG
+$SALIDA
+

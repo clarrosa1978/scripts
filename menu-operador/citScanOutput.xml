@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Hardware>
+
+
+	<Processor version="1" timestamp="1646229215">
+		<Index IsKey="1">1</Index>
+		<ID IsKey="1">3d228a95371af1bf99e16fdbb83cee95</ID>
+		<Family>Power PC Family</Family>
+		<MaxClockSpeed>3808</MaxClockSpeed>
+		<CurrentClockSpeed>3808</CurrentClockSpeed>
+		<CPUEnabled>Y</CPUEnabled>
+	</Processor>
+
+	<Processor version="1" timestamp="1646229215">
+		<Index IsKey="1">2</Index>
+		<ID IsKey="1">3d228a95371af1bf99e16fdbb83cee95</ID>
+		<Family>Power PC Family</Family>
+		<MaxClockSpeed>3808</MaxClockSpeed>
+		<CurrentClockSpeed>3808</CurrentClockSpeed>
+		<CPUEnabled>Y</CPUEnabled>
+	</Processor>
+
+	<PhysicalProcessor version="1" timestamp="1646229215">
+		<Id IsKey="1">1</Id>
+		<CorePerPackageCount>4</CorePerPackageCount>
+		<LogicalProcPerCore>4</LogicalProcPerCore>
+		<Manufacturer>IBM</Manufacturer>
+		<Family>POWER7</Family>
+		<Type></Type>
+		<CpuFreq>3808</CpuFreq>
+		<L2CacheSize>256</L2CacheSize>
+		<L3CacheSize>32768</L3CacheSize>
+		<Brandname>PowerPC_POWER7</Brandname>
+		<Signature></Signature>
+		<Is64BitSupported>Y</Is64BitSupported>
+		<ActiveProcessorCount>8</ActiveProcessorCount>
+		<ActiveCoreCount>2</ActiveCoreCount>
+	</PhysicalProcessor>
+
+	<IPAddress version="1" timestamp="1646229217">
+		<Index>1</Index>
+		<Address IsKey="1">172.16.7.39</Address>
+		<Hostname>adm01</Hostname>
+		<Domain>redcoto.com.ar</Domain>
+		<Subnet>255.255.255.0</Subnet>
+		<Gateway>172.16.7.1</Gateway>
+		<PrimaryDNS>172.16.3.210</PrimaryDNS>
+		<SecondaryDNS>172.16.16.171</SecondaryDNS>
+		<PermanentMacAddress>DE:16:63:B1:30:0A</PermanentMacAddress>
+		<IPV6Address></IPV6Address>
+	</IPAddress>
+
+	<IPAddress version="1" timestamp="1646229217">
+		<Index>2</Index>
+		<Address IsKey="1">192.168.4.10</Address>
+		<Hostname></Hostname>
+		<Domain>redcoto.com.ar</Domain>
+		<Subnet>255.255.255.0</Subnet>
+		<Gateway></Gateway>
+		<PrimaryDNS>172.16.3.210</PrimaryDNS>
+		<SecondaryDNS>172.16.16.171</SecondaryDNS>
+		<PermanentMacAddress>DE:16:63:B1:30:0B</PermanentMacAddress>
+		<IPV6Address></IPV6Address>
+	</IPAddress>
+
+	<NetworkAdapter version="1" timestamp="1646229217">
+		<Index>1</Index>
+		<ID IsKey="1">ec4b47b82326b6daf33f6335d91c0cae</ID>
+		<PermanentAddress>DE:16:63:B1:30:0B</PermanentAddress>
+		<CurrentAddress>DE:16:63:B1:30:0B</CurrentAddress>
+		<Type>Ethernet Adapter</Type>
+		<Model>Virtual I/O Ethernet Adapter (l-lan) [ent1]</Model>
+		<ConnectorType></ConnectorType>
+		<PhysicalType>ethernet</PhysicalType>
+		<EtherChanneldevices></EtherChanneldevices>
+	</NetworkAdapter>
+
+	<NetworkAdapter version="1" timestamp="1646229217">
+		<Index>2</Index>
+		<ID IsKey="1">403b72ab76832b1d47921e541468597f</ID>
+		<PermanentAddress>DE:16:63:B1:30:0A</PermanentAddress>
+		<CurrentAddress>DE:16:63:B1:30:0A</CurrentAddress>
+		<Type>Ethernet Adapter</Type>
+		<Model>Virtual I/O Ethernet Adapter (l-lan) [ent0]</Model>
+		<ConnectorType></ConnectorType>
+		<PhysicalType>ethernet</PhysicalType>
+		<EtherChanneldevices></EtherChanneldevices>
+	</NetworkAdapter>
+
+</Hardware>

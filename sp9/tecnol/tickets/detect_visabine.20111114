@@ -1,0 +1,152 @@
+#!/bin/sh
+
+###########################################################################
+#                                      Fernandez Garay Jorge - 11/2001
+# detect_visabine
+#
+# Correesponde al 1er. Job de la cadena de ControlM agrupada en el group
+# DISTRIB_VISABINE (Distribuye a sucs. el archivo completo de BINES de la
+# Tarjetas VISA Electron).
+# Es ejecutado ciclicamente, para determinar si el archivo completo de
+# bines de la tarjeta Visa Electron, ya se encuentra en el directorio en
+# el que sera procesado, para poner las condiciones al resto de la cadena
+# que distribuye el visabine.
+#
+###########################################################################
+
+
+check_args_number()
+{
+       set -x
+
+       # Controla el No de Positional Param. pasados al script
+
+       # Esta funcion recibe como argumentos, la lista completa de parametros del Script
+
+       PARAM_COUNT="$#"
+       export PARAM_COUNT
+
+       if [ "$PARAM_COUNT" -ne 0 ]
+       then
+             ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date +"%d/%m/%Y"` $0: La cantidad de Parametros pasados al script, debe ser 0.. Abortando ..."
+
+             return 32
+       else
+             return 0
+       fi
+}
+
+
+set_vars()
+{
+
+        set -x
+
+        # Setea algunas var. de uso gral.
+        # El string 'LN' insertado en nombres de vars. y archivos, debe interpretarse por Lista Negra
+
+        WORK_DIR="/tickets/visa"
+        RAW_DIR="$WORK_DIR"
+        LOG_DIR="/tecnol/tickets/log"
+        BACKUP_DIR="$WORK_DIR/backup"
+        UPDATE_BACKUP_DIR="$WORK_DIR/update_back"
+        RETURN_CODE=''
+
+        export WORK_DIR LOG_DIR BACKUP_DIR RETURN_CODE
+
+        return 0
+
+}
+
+
+rawLN_exist()
+{
+
+          set -x
+
+          # Checkea la existencia del archivo de Lists Negra crudo, enviado por la entidad de credito y la fecha del archivo
+
+          RAW_FILENAME='NONAME'
+          export RAW_FILENAME
+
+
+RAW_DIR_FILE_LIST=`ls $RAW_DIR`
+MATCH_FILE=''
+export RAW_DIR_FILE_LIST MATCH_FILE
+
+for raw_fname in $RAW_DIR_FILE_LIST
+do
+
+           MATCH_FILE='NO_MATCH'
+
+           MATCH_FILE=`echo "$raw_fname"|awk ' BEGIN { filename = "NONAME" }
+                                $0 == "visabine.dkt" { filename = $0 }
+                                                 END { if ( filename == "NONAME" ) { print "NO_MATCH" }
+                                                       else { print filename } }
+                                             '`
+
+          if [ "$MATCH_FILE" = "NO_MATCH" ] || [ "$MATCH_FILE" = '' ]
+          then
+                     continue
+          else
+
+                     RAW_FILENAME="$MATCH_FILE"
+                     break
+          fi
+
+done
+
+if [ "$RAW_FILENAME" = "NONAME" ]
+then
+          ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date +"%d/%m/%Y"` $0: No se ha detectado la presencia del archivo visabine.dkt"
+          return 10
+else
+          return 0
+fi
+
+}
+
+
+terminate()
+{
+
+      set -x
+
+      # Argumentos pasados a esta funcion
+      # $1: Exit Code
+      # $2: Mensaje de diagnostico de error
+
+      if [ "$1" -ne 10 ]
+      then
+              echo "$2"|tee -a "$LOG_DIR"/errlog
+      fi
+
+      exit "$1"
+}
+
+##############################   MAIN PROGRAM   ###########################
+
+set -x
+
+RETURN_VALUE=''
+ABBORT_MESSAGE=''
+SUCCESS="0"
+export RETURN_VALUE SUCCESS ABBORT_MESSAGE
+
+# Parametros pasados al script
+
+ARGS=$*
+export ARGS
+
+set -- $ARGS
+
+check_args_number $ARGS && set_vars
+RETURN_VALUE="$?"
+[ "$RETURN_VALUE" -ne "$SUCCESS" ] && terminate "$RETURN_VALUE" "$ABBORT_MESSAGE"
+
+
+rawLN_exist "$RAW_FILENAME"
+RETURN_VALUE="$?"
+[ "$RETURN_VALUE" -ne "$SUCCESS" ] && terminate "$RETURN_VALUE" "$ABBORT_MESSAGE"
+
+terminate "$RETURN_VALUE" "$ABBORT_MESSAGE"

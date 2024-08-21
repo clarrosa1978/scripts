@@ -1,0 +1,9 @@
+%%PARM1=P
+%%PARM2=/trntcierre/suc59
+%%PARM3=opercard.%%ODAY.%%OMONTH
+%%PARM4=amscentral
+%%PARM5=/opercard/suc59
+%%PARM6=opercard.%%ODAY.%%OMONTH
+%%PARM7=root
+%%PARM8=usr
+%%PARM9=664

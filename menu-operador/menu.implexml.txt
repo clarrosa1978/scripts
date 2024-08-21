@@ -1,0 +1,3 @@
+IMPLEMENTAR ARCHIVO XML 
+- VER ARCHIVOS A IMPLEMENTAR;admimpleatg_adm01.sh;VER_XML_IMPLE
+- Copiar XML a scidig01 para implementar;admimpleatg_adm01.sh;SCP_XML_IMPLE
