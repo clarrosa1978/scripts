@@ -1,0 +1,30 @@
+#################################################################################################
+#  Seccion:             INCIDENTES (logs para la operacion)                                     #
+#  Actualizado por:     Cristian Larrosa                Fecha:          20/07/2006              #
+#  Tabla en ECS:        PRECIOS-GDM-ZE000               Aplicacion:     PRECIOS-GDM-ZE000       #
+#  Nombre del Job:      SCPPRECXXX                      Grupo:          TRANSFERENCIA           #
+#################################################################################################
+#  Descripcion del Job: Transmite el archivo de precios auna sucursal zeXXX.                    #
+#################################################################################################
+#  Exit  1:                                                                                     #
+#       Error: Error en la contidad de parametros pasados al script.                            #
+#                                                                                               #
+#       Accion: Chequear en Control-M los parametros que le esta pasando al script.             #
+#                                                                                               #
+#       Recuperacion: Modificar los parametros en Control-M y rearrancar.                       #
+#                                                                                               #
+#  Exit  4:                                                                                     #
+#       Error: La variable DATEHORA esta vacia.                                                 #
+#                                                                                               #
+#       Accion: Ver el sysout para detectar el error, llamar a la guardia de Administracion AIX #
+#                                                                                               #
+#       Recuperacion: Lo que indique la persona que este de guardia.                            #
+#                                                                                               #
+#  Exit  ??:                                                                                    #
+#       Error: Ver el error en el sysout del job.                                               #
+#                                                                                               #
+#       Accion: Ver el sysout para detectar el error, llamar a la guardia de Administracion AIX #
+#                                                                                               #
+#       Recuperacion: Lo que indique la persona que este de guardia.                            #
+#                                                                                               #
+#################################################################################################

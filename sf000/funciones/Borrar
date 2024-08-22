@@ -1,0 +1,23 @@
+###############################################################################
+# Nombre.............: Borrar                                                 #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Borra el archivo pasado como parametro                 #
+# Descripcion........: Recibe como parametro el nombre del archivo a borrar   #
+#                      con el path absoluto.                                  #
+# Valores de Retorno.: 0 - La funcion termino ok.                             #
+#                      1 - La funcion fallo.                                  #
+# Modificacion.......: 13/04/2005                                             #
+###############################################################################
+function Borrar
+{
+        typeset ARCHIVO=$1
+        typeset EXIT="1"
+        autoload Check_Par
+        Check_Par 1 "$@"
+        if [ $? = 0 ] 
+        then
+                rm -f ${ARCHIVO}
+                [ $? = 0 ] && EXIT="0"
+        fi
+        return ${EXIT}
+}

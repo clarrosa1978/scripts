@@ -1,0 +1,253 @@
+#!/bin/ksh
+###############################################################################
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Controlar ts041507,ts041508,ts030508,ts018020.         #
+# Nombre del programa: suc00GDMVtasPLU_scan.sh                                #
+# Solicitado por.....: Omar del Negro                                         #
+# Descripcion........: La alerta posee 2 Reglas:                              #
+# Rule_1 : Controla los procesos ts041507,ts041508,ts018020 desde la apertura #
+#          del Centro, hasta el cierre del Centro.                            #
+# Rule_2 : Controla el proceso ts030508, desde la apertura del Centro.        #
+# Este Procedimiento recibe 1 parametro: la regla de la alerta,que determina  #
+# que procesos se controla, y en que ventana horaria.                         #
+# En caso de encontrar los procesos caidos, los levanta                       #
+# Creacion...........: 25/09/2007                                             #
+# Modificacion.......: 09/06/2008 - Se agrega el control del ongdmcen         #
+# Modificacion.......: 13/06/2008 - Se agrega el control del offset ts041507  #
+###############################################################################
+
+set -x
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+export CTRLPROC1="ts041507"
+export CTRLPROC2="ts041508"
+export CTRLPROC3="ts030508"
+export CTRLPROC4="ongdmcen"
+export PROC1="NULL"
+export PROC2="NULL"
+export PROC3="NULL"
+export PROC4="NULL"
+export PROC4="NULL"
+export USUARIO="/"
+export PATHAPL="/tecnol/alertas"
+export PATHPROC="/sfctrl/sfgv/bin"
+export PATHSQL="${PATHAPL}/sql"
+export PATHLOG="${PATHAPL}/log"
+export LOGALARM="${PATHLOG}/ChkSf000GDMVtasPLU.log"
+export CHKBD="${PATHSQL}/chkdb.sql"
+export T6022600="${PATHSQL}/t6022600.sql"
+export ACTIVETLOG="${PATHSQL}/active_tlog.sql"
+export VEO41507="${PATHSQL}/veots041507.sql"
+export CHKTS041508="${PATHSQL}/chk_ts041508.sql"
+export COUNTTS041508="${PATHLOG}/ts041508_transac.count"
+export XSITCIER=''
+export TLOG_ACT_NUM=''
+###############################################################################
+###                            Funciones                                    ###
+###############################################################################
+function EnviarMail
+{
+	set -x
+	typeset PROC=${1}
+	typeset BODY=${2}
+	DESTINATARIO="operaciones@redcoto.com.ar,soportestoreflow@redcoto.com.ar"
+	echo ${BODY} | mail -s "Server ${HOSTNAME} - Control del ${PROC}" ${DESTINATARIO}
+}
+
+###############################################################################
+###                            Principal                                    ###
+###############################################################################
+# Verifica conexion a la base de datos
+ACCESO=`su - sfctrl "-c sqlplus ${USUARIO} @${CHKBD}" | awk ' /Connected/ { print $1 } '`
+if [ "${ACCESO}" != "Connected" ]
+then
+      echo "\n--------------------------------------\n`date` - Ejecutando sf000GDMVtasPLU_scan..." >> "${LOGALARM}"
+      echo "Base de Datos Oracle: INACCESIBLE." >> "${LOGALARM}"
+      exit 2
+fi
+
+# Determina el status del Centro
+XSITCIER=`su - sfctrl "-c sqlplus -s ${USUARIO} @${T6022600}"`
+XSITCIER=`echo "${XSITCIER}"|awk ' $0 != "" { last_rec = $0 }
+                                                  END { print last_rec } '`
+echo "\n--------------------------------------\n`date` - Ejecutando sf000GDMVtasPLU_scan..." >> "${LOGALARM}"
+echo "XSITCIER = ${XSITCIER}" >> "${LOGALARM}"
+case "${XSITCIER}" in
+1)    # Centro abierto
+               # Se controla existencia del ts041507
+               PROC1=`${PATHAPL}/chkproc "${CTRLPROC1}"|awk ' { print $2 } '`
+	       echo "Status ${CTRLPROC1} ${PROC1}" >> "${LOGALARM}"
+	       if [ "${PROC1}" = "DOWN" ]
+               then
+			su - sfctrl -c "${PATHPROC}/${CTRLPROC1}"
+			if [ $? = 0 ]
+			then
+				echo "Se levanta ${CTRLPROC1} automaticamente" >> "${LOGALARM}"
+				sleep 5
+               			PROC1=`${PATHAPL}/chkproc "${CTRLPROC1}"|awk ' { print $2 } '`
+	       			echo "Status ${CTRLPROC1} ${PROC1}" >> "${LOGALARM}"
+	       			if [ "${PROC1}" = "DOWN" ]
+               			then
+                        		EnviarMail ${CTRLPROC1} "Proceso ${CTRLPROC1} SE CAE - LEVANTARLO MANUALMENTO, O AVISAR A GUARDIA DE STOREFLOW"
+				fi
+			else
+                        	EnviarMail ${CTRLPROC1} "Proceso ${CTRLPROC1} DOWN - LEVANTARLO MANUALMENTE"
+			fi
+               fi
+	TLOG_ACT_NUM=`su - sfctrl "-c sqlplus -s ${USUARIO} @${ACTIVETLOG}"`
+	TLOG_ACT_NUM=`echo "$TLOG_ACT_NUM"|awk ' length($1) > 0 && length($1) <= 2 && $1 ~ /[0-9]*/ { print sprintf("%02d", $1) } '`
+	export VALID=`expr "$TLOG_ACT_NUM" : '\(^[0-9][0-9]*\)$'`
+
+	if [ ! "$VALID" ]
+	then
+       		echo "`date +"%d/%m/%Y-%H:%M"` - Imposible obtener al No de tlog activo." >> "${LOGALARM}"
+       		echo "El DB query devuelve:\n$TLOG_ACT_NUM\nExiting from Alert Scan..." >> "${LOGALARM}"
+
+       		EnviarMail ${CTRLPROC1} "Server $HOSTNAME - Imposible obtener al No de tlog activo.\nEl DB query devuelve:\n$TLOG_ACT_NUM.\nVer Log"
+       		exit 2
+	fi
+	TLOG_FILEPATH="/sfctrl/d/tlog$TLOG_ACT_NUM.dat"
+	TRANSAC_COUNT_LOG="${PATHLOG}/ts041507_transac.count"
+	export TLOG_FILEPATH TRANSAC_COUNT_LOG
+
+	if [ ! -f "$TLOG_FILEPATH" ]
+	then
+       		echo "`date +"%d/%m/%Y-%H:%M"` - Imposible encontrar al tlog activo.\n Exit del scan..." >> "${LOGALARM}"
+
+       		EnviarMail ${CTRLPROC1} "Server $HOSTNAME - Archivo de Tlog corriente $TLOG_FILEPATH: INEXISTENTE"|\
+       		exit 2
+	fi
+
+
+# Si el transac_count.log (de la alerta), no existe, esta es la 1ra
+# corrida de la alerta. Se inicializa el log de counts
+export INCIDENT_STR_ID BYTES_COUNT_STAT
+#
+#
+#######################################################################################
+
+# Lectura del tlogxx_transac_count.log y asignacion de los counts de
+# la corrida previa
+
+TLOG_BYTES_COUNT_PREV=`cat "$TRANSAC_COUNT_LOG"|awk ' { print $1 } '`
+TLOG_OFFSET_PREV=`cat "$TRANSAC_COUNT_LOG"|awk ' { print $2 } '`
+
+#read conf
+
+# Comienza la secuencia de lectura de los counts de bytes actuales
+TLOG_BYTES_COUNT_DIFF=''
+export TLOG_BYTES_COUNT_DIFF
+
+# Count de bytes en el tlog
+TLOG_BYTES_COUNT=`ls -l "$TLOG_FILEPATH"|awk ' { print $5 } '`
+
+# Se recobra el OFFSET actual del Tlog, copiado a la T9693200
+VALID=''
+
+TLOG_OFFSET=`su - sfctrl -c "sqlplus -s ${USUARIO} @${VEO41507}"`
+
+VALID=`expr "$TLOG_OFFSET" : '[        ]*\([0-9][0-9]*\)$'`
+
+if [ ! "$VALID" ]
+then
+        # El proc. ts041507 no esta procesando, o esta caido
+        INCIDENT_STR_ID="TS041507"
+        TRANSACTION_COUNT_STAT="BADSTAT"
+
+        #Se salvan los counts al log de counts
+        echo "$TLOG_BYTES_COUNT $TLOG_OFFSET" > "$TRANSAC_COUNT_LOG"
+        #Se salvan los counts actuales para estadisticas
+        echo "TLOG_BYTES_COUNT ts041507: $TLOG_BYTES_COUNT" >> "${LOGALARM}"
+        echo "TLOG_OFFSET  ts041507    : $TLOG_OFFSET" >> "${LOGALARM}"
+
+        EnviarMail ${CTRLPROC1} "Proceso ${CTRLPROC1} NO ESTA PROCESANDO - AVISAR A LA GUARDIA DE STOREFLOW"
+        exit 2
+
+fi
+
+#read conf
+
+# En este punto del flujo del programa, todo esta OK
+#Se salvan los counts al log de counts
+echo "$TLOG_BYTES_COUNT $TLOG_OFFSET" > "$TRANSAC_COUNT_LOG"
+
+#Se salvan los counts actuales para estadisticas
+echo "TLOG_BYTES_COUNT:      $TLOG_BYTES_COUNT" >> "${LOGALARM}"
+echo "TLOG_OFFSET     : $TLOG_OFFSET" >> "${LOGALARM}"
+
+# Se reportan OKSTAT al alarm daemon
+INCIDENT_STR_ID="ALL"
+TRANSACTION_COUNT_STAT="OKSTAT"
+echo "$HOSTNAME $INCIDENT_STR_ID $TRANSACTION_COUNT_STAT"
+
+
+
+               # Se controla existencia del ts041508
+               PROC2=`${PATHAPL}/chkproc "${CTRLPROC2}"|awk ' { print $2 } '`
+	       echo "Status ${CTRLPROC2} ${PROC2}" >> "${LOGALARM}"
+	       if [ "${PROC2}" = "DOWN" ]
+               then
+                        EnviarMail ${CTRLPROC2} "Proceso ${CTRLPROC2} DOWN - LEVANTARLO MANUALMENTE"
+                        exit 0
+               fi
+
+	       # Se controla existencia del ts030508
+               PROC3=`${PATHAPL}/chkproc "${CTRLPROC3}"|awk ' { print $2 } '`
+	       echo "Status ${CTRLPROC3} ${PROC3}" >> "${LOGALARM}"
+               if [ "${PROC3}" = "DOWN" ]
+               then
+                        EnviarMail ${CTRLPROC3} "Proceso ${CTRLPROC3} DOWN - LEVANTARLO MANUALMENTE"
+                        exit 0
+               fi
+
+               # Se controla la existencia del ongdmcen
+               PROC4=`${PATHAPL}/chkproc "${CTRLPROC4}"|awk ' { print $2 } '`
+	       echo "Status ${CTRLPROC4} ${PROC4}" >> "${LOGALARM}"
+               if [ "${PROC4}" = "DOWN" ]
+               then
+                        EnviarMail ${CTRLPROC4} "Proceso ${CTRLPROC4} DOWN - LEVANTARLO MANUALMENTE"
+                        exit 0
+               fi
+
+               # Se controla el estado de HUNG_UP del proceso ts041508, por crecimiento
+               # de los off-set en la tabla t7750700, con un sql. Cada status de los
+               # off-set se comparan contra el status previo, que se salva en un log.
+
+               export FECHA=`date +"%d%m%Y"`
+               export OFFSETPREV=''
+               export OFFSETCOUNT=''
+               export OFFSETDIFF=''
+
+               if [ ! -f "${COUNTTS041508}" ]
+               then
+                       # Corresponde inicializar el log y salir
+                       OFFSETCOUNT=`su - oracle "-c sqlplus -s ${USUARIO} @${CHKTS041508} ${FECHA}"|tail -1`
+                       echo "${OFFSETCOUNT}" > "${COUNTTS041508}"
+                       exit 0 
+               fi
+               OFFSETPREV=`cat "${COUNTTS041508}"|awk ' $1 ~ /^[0-9]+$/ { print $1 } '`
+               OFFSETCOUNT=`su - oracle "-c sqlplus -s ${USUARIO} @${CHKTS041508} ${FECHA}"|tail -1`
+               OFFSETDIFF=`expr ${OFFSETCOUNT} - ${OFFSETPREV}`
+		echo "TLOG_BYTES_COUNT ts041508: $OFFSETCOUNT" >> "${LOGALARM}"
+	#	echo "TLOG_OFFSET  ts041507    : $OFFSETDIFF" >> "${LOGALARM}"
+               if [ "${OFFSETDIFF}" -lt 0 ]
+               then
+                        echo "${OFFSETCOUNT}" > "${COUNTTS041508}"
+                        exit 0
+               fi
+
+               if [ "${OFFSETDIFF}" -eq 0 ]
+               then
+               		EnviarMail ${CTRLPROC2} "Proceso ${CTRLPROC2} COLGADO - REVISAR y RESTARTEAR MANUALMENTE Si Corresponde"
+			#echo "NO ANDA"
+               fi
+               echo "${OFFSETCOUNT}" > "${COUNTTS041508}"
+
+               ########### FIN del Control de estado de HUNG_UP del ts041508 ##############
+	;;
+2)    # Centro Cerrado
+      exit 0
+      ;;
+esac
+exit 0

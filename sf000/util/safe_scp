@@ -1,0 +1,1491 @@
+#! /bin/sh
+
+################################################################################
+#                                              Fernandez Garay Jorge - 11/2005
+# safe_scp_linux
+#
+# Esta es la version para linux del safe_scp.
+# Como la version Enterprise de RedHat no posee el ssh y scp tradicionales, se
+# implementa con Open SSH. En este package de seguridad, el scp es reemplazado
+# por scp, y el comando ssh se reemplaza con ssh.
+#
+################################################################################
+set -x
+
+
+usage()
+{
+
+        USAGE=" safe_scp command Script
+
+USAGE:
+
+safe_scp Exec_flag Source_Directory Source_file_name Target_host Target_Directory \\
+         Target_file_name Alternative_Directory Alternative_File_name scp_Retries \\
+         Delay_for_retries Rem_User Target_Owner Target Group Target_Mode
+
+DESCRIPTION
+
+        This command safely copies files between some remote hosts, and the host
+        where the command is executing, in a way that is ruled by the value of
+        the first parameter, the Execution Flag. In GET mode (Execution Flag = G )
+        , a remote file is transfered, via scp to local host.
+        In PUT mode (Execution Flag = P ), a local file is transferred to some re-
+        mote host. 
+        
+        Some checks are perform before attempting the copy, as follows:
+        args number, args validity, (each parameter is validated), remote connec-
+        tion, remote access and disk space availability.
+        Once the copy is complete, it will be checked for existance, size and 
+        check-sum. 
+
+        If either one of these tests would lead to a negative result, the remote
+        copy will not be attempted. Instead, if required, a local copy to some safe
+        directory, passed as argument to the command, will be performed, and the
+        command will exit with predefined exit status for each test.
+
+        This command is not intended for copying files locally. A Target-host Para-
+        meter should always be present, and should never be set to the string 'NULL'
+
+        Sequential order of provided parameters to this command is important.  So,
+        they will be referenced here by Sequential order number. 
+
+        Parameters 1 through 5 should neither be assigned 'NULL' values, nor
+        be absent from command line.
+
+
+Par. #1   Execution FLAG            Valid values are: P, G
+                                    P : Put mode
+                                    G : Get mode
+
+Par. #2   Source Directory          Path to directory that should contain the
+                                    source file to be remotely copied.
+
+Par. #3   Source file name          Name of local file to be remotely copied.
+
+Par. #4   Target host               Destination host name for remote copy.
+
+Par. #5   Target Directory          Path to directory, on remote host, where
+                                    the remote copy will be placed.
+
+Par. #6   Target file name          File name for destination remote copy.
+
+
+
+        Parameters 6 through 7 can be assigned the string 'NULL', though still
+        should always be present at command line. Furthermore, if any is assig-
+        ned the string 'NULL', so must be the other.
+
+
+Par. #7   Alternative Directory     A Path to some local directory to copy the
+                                    source file, in the emergency that no re-
+                                    mote copy could be performed. If assigned
+                                    the string 'NULL', no local copy will be
+                                    carried out, in such emergency.
+
+Par. #8   Alternative File name     File Name for destination local emergency
+                                    copy. It must be assigned the string 'NULL'
+                                    , if #6 Parameter is so.
+ 
+ 
+       Parameters 8 through 9 still always should be present at command line,
+       but they can be assigned the string 'NULL' independently of each other.
+
+
+Par. #9   scp Retries               Number of scp retries, ranging from 1 to 6,
+                                    this command will carry out, if a bad sta-
+                                    tus of the remote copy would be detected. If
+                                    assigned the string 'NULL', a default of 3 
+                                    will be taken.
+
+Par. #10  Delay for retries         A number, in seconds, ranging from 0 to 600
+                                    that this command will wait, before carry-
+                                    ing out the next scp retry. If assigned the
+                                    string 'NULL', a default of 120 seconds will
+                                    be chosen
+
+Par. #11  Remote User               A valid User, that should exist at the Re-
+                                    mote host. It will be used to build the args
+                                    to scp command as in
+                                         scp local_file rem_user@host:rem_file
+                                    Also will be used to set -l user flag when
+                                    building ssh commands
+                                    If unused, it must be set to the string NULL,
+                                    as it should be, in case that Parameters 12,
+                                    13, and 14 were to be set not NULL.
+
+       Parameters 12 through 14 always should be present at command line, but
+       they can be assigned the string 'NULL' all three, (and must be assigned
+       the sring NULL, in case that parameter No 11 is assigned not NULL).
+       If set to not NULL, so must be all three parameters
+
+
+Par. #12  Target Owner              A valid User, that should exist at the target
+                                    host. This user will own the target file.
+
+Par. #13  Target Group              A valid Group, that should exist at the target
+                                    host. This Group will own the target file.
+
+Par. #14  Target Mode               A three digits octal number, specifying the
+                                    permissions bit mask for the target file.
+
+
+EXIT STATUS
+
+       This command returns exit status codes, as detailed below
+
+       10      Inexistent file
+
+       12      Imposisible to locally copy file
+
+       15      No space to copy
+
+       22      The User has no permissions
+
+       33      Erroneous parameter passed to this command
+
+       34      Erroneous Alternative parameter passed to this command
+
+       35      Error when modifying file's Owner or file's Group
+
+       36      Error when modifying file's octal mode
+
+       50      Imposisible to remotely copy file
+
+       51      Can't resolve IP adress, starting with servername
+
+       52      No communication with host servername
+
+       53      No Remote access to server servername
+
+       54      Too much traffic in the Network
+
+       55      The Remote User does not exist"
+
+
+       echo "\n\n$USAGE"|more
+
+}
+
+
+
+check_args_number()
+{
+       set -x
+
+       # Controla el No de Positional Param. pasados al script
+
+       # Esta funcion recibe como argumentos, la lista completa de parametros del Script
+
+       PARAM_COUNT="$#"
+       export PARAM_COUNT
+
+       if [ "$PARAM_COUNT" -ne 15 ]
+       then
+             ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Menor cantidad de parametros que los requeridos. Abortando ..."
+             # [ "$PARAM_COUNT" -eq 0 ] && usage
+
+             return 32
+       else
+             return 0
+       fi
+}
+
+
+
+assign_param()
+{
+
+       set -x
+
+       # Esta funcion recibe como argumentos, la lista completa de parametros del Script
+
+       #Argumentos pasados a este comando
+
+       EXEC_FLAG="$1"
+       SOURCE_DIR="$2"
+       SOURCE_FILE_NAME="$3"
+       REM_HOST="$4"
+       TARGET_DIR="$5"
+       TARGET_FILE_NAME="$6"
+       ALTERNATIVE_DIR="$7"
+       ALTERNATIVE_FILE_NAME="$8"
+       MAX_RCOPY_RETRIES="$9"
+       USER="${15}"
+       shift
+       RETRAY_DELAY="$9"
+       shift
+       REM_USER="$9"
+       shift
+       TARGET_OWNER="$9"
+       shift
+       TARGET_GROUP="$9"
+       shift
+       TARGET_MODE="$9"
+
+       var_name=''
+       export var_name
+
+       for var_name in ALTERNATIVE_FILE_NAME ALTERNATIVE_DIR MAX_RCOPY_RETRIES RETRAY_DELAY REM_USER TARGET_OWNER TARGET_GROUP TARGET_MODE
+       do
+              eval [ "$`echo $var_name`" = "NULL" ] && eval "$var_name"=''
+       done
+
+       export EXEC_FLAG SOURCE_FILE_NAME TARGET_FILE_NAME SOURCE_DIR TARGET_DIR REM_HOST ALTERNATIVE_FILE_NAME ALTERNATIVE_DIR MAX_RCOPY_RETRIES RETRAY_DELAY REM_USER REM_USER TARGET_OWNER TARGET_GROUP TARGET_MODE
+
+       return 0
+
+}
+
+
+
+validate_param()
+{
+
+       set -x
+
+       #  Parametros pasados a esta funcion
+
+       #  $1: EXEC_FLAG
+       #  $2: SOURCE_DIR
+       #  $3: SOURCE_FILE_NAME
+       #  $4: REM_HOST
+       #  $5: TARGET_DIR
+       #  $6: TARGET_FILE_NAME
+       #  $7: ALTERNATIVE_DIR
+       #  $8: ALTERNATIVE_FILE_NAME
+       #  $9: MAX_RCOPY_RETRIES
+       #  $10: RETRAY_DELAY
+       #  $11: REM_USER
+       #  $12: TARGET_OWNER
+       #  $13: TARGET_GROUP
+       #  $14: TARGET_MODE
+
+       REMUSER_FLAG=''
+       export REMUSER_FLAG
+ 
+       [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+       # Validacion de Positional parameters
+
+       # Valida exex Flag - Param No 1
+
+       if [ "$EXEC_FLAG" != "G" ] && [ "$EXEC_FLAG" != "P" ]
+       then
+                    ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 1 erroneo - Validos: G, P. Abortando..."
+                    return 33
+       fi
+
+       # Valida el host remoto - Param No 4
+       # Este Parametro se valida dentro de la funcion check_connection
+
+       # Valida existencia del Source Dir - Param No 2
+
+       case "$EXEC_FLAG" in
+       P)     if [ !  -d "$SOURCE_DIR" ]
+              then
+                        ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 2 erroneo, o Directorio $SOURCE_DIR inexistente. Abortando..."
+                        return 33
+              fi
+              ;;
+       G)
+              REM_SOURCE_DIR_EXIST=''
+              export REM_SOURCE_DIR_EXIST
+
+               REM_SOURCE_DIR_EXIST=`ssh $USER@$REM_HOST $REMUSER_FLAG "[ -d $SOURCE_DIR ] && echo $SOURCE_DIR"`
+
+              if [ "$REM_SOURCE_DIR_EXIST" != "$SOURCE_DIR" ]
+              then
+                        ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 2 erroneo, o Rem Source Directory $SOURCE_DIR inexistente. Abortando..."
+                        return 33
+              fi
+              ;;
+       esac
+
+       # Valida la existencia del Source File - Param No 3
+
+       case "$EXEC_FLAG" in
+       P)      if [ ! -f "$SOURCE_DIR"/"$SOURCE_FILE_NAME" ]
+               then
+                         ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro N0 3 Archivo $SOURCE_FILE_NAME inexistente. Abortando..."
+                         return 10
+               fi
+               ;;
+       G)
+              REM_SOURCE_FILE_EXIST=''
+              export REM_SOURCE_FILE_EXIST
+ 
+               REM_SOURCE_FILE_EXIST=`ssh $USER@$REM_HOST $REMUSER_FLAG "[ -f $SOURCE_DIR/$SOURCE_FILE_NAME ] && echo $SOURCE_FILE_NAME"`
+ 
+              if [ "$REM_SOURCE_FILE_EXIST" != "$SOURCE_FILE_NAME" ]
+              then
+                        ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 3 erroneo, o Rem Source FILE $SOURCE_FILE_NAME inexistente. Abortan
+do..."
+                        return 10
+              fi
+              ;;
+       esac
+
+       # Valida la existencia del target Directory - Param No 5
+
+       case "$EXEC_FLAG" in
+       P)     TARGET_DIR_EXIST=''
+              export TARGET_DIR_EXIST
+ 
+              TARGET_DIR_EXIST=`ssh $USER@$REM_HOST $REMUSER_FLAG "[ -d $TARGET_DIR ] && echo $TARGET_DIR"`
+ 
+              if [ "$TARGET_DIR_EXIST" != "$TARGET_DIR" ]
+              then
+                          ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 5 erroneo, o Target Directory $TARGET_DIR inexistente. Abortando..."
+                          return 33
+              fi
+              ;;
+      G)      if [ ! -d "$TARGET_DIR" ]
+              then
+                          ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 5 erroneo, o Target Directory $TARGET_DIR inexistente. Abortando..."
+                          return 33
+              fi
+              ;;
+      esac
+
+      # Validacion del Param. No 6 Target File name
+
+      if [ "$TARGET_FILE_NAME" = '' -o "$TARGET_FILE_NAME" = "NULL" ]
+      then
+                ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 6 erroneo. Abortando..."
+                return 33
+      fi
+
+      # Verifica el Parametro No 7 ALTERNATIVE_DIR
+
+      [ "$ALTERNATIVE_DIR" = '' ] && [ "$ALTERNATIVE_FILE_NAME" != '' ] && { ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametros Nos 7 y 8, erroneos. Abortando..."; return 34; }
+      [ "$ALTERNATIVE_DIR" != '' ] && [ "$ALTERNATIVE_FILE_NAME" = '' ] && { ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametros Nos 7 y 8, erroneos. Abortando..."; return 34; }
+      [ "$ALTERNATIVE_DIR" != '' ] && [ ! -d "$ALTERNATIVE_DIR" ] && { ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 7, erroneo, o Directorio alternativo inexistente. Abortando..."; return 33; }
+
+      # Verifica el Parametro ALTERNATIVE_FILE_NAME N0 8
+
+      [ "$ALTERNATIVE_FILE_NAME" = '' ] && [ "$ALTERNATIVE_DIR" != '' ] && { ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametros Nos 7 y 8, erroneos. Abortando..."; return 34; }
+      [ "$ALTERNATIVE_FILE_NAME" != '' ] && [ "$ALTERNATIVE_DIR" = '' ] && { ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametros Nos 7 y 8, erroneos. Abortando..."; return 34; }
+
+      # Verifica el parametro No 9 
+
+      if [ "$MAX_RCOPY_RETRIES" = '' ]
+      then
+                  MAX_RCOPY_RETRIES="3"
+                  export MAX_RCOPY_RETRIES
+      else
+                  if [ "`expr "$MAX_RCOPY_RETRIES" : '^\([0-9][0-9]*\)$'`" = '' ]
+                  then
+                           # Valor no-numerico
+                           ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 9, invalido. Abortando..."
+                           return 34
+                  else
+                           if [ "$MAX_RCOPY_RETRIES" -lt 1 ] || [ "$MAX_RCOPY_RETRIES" -gt 6 ]
+                           then
+                                       # Numero fuera de rango
+                                       ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 9, invalido. Abortando..." 
+                                       return 34
+                           fi
+                  fi
+       fi
+
+       # Valida el parametro No 10
+
+       if [ "$RETRAY_DELAY" = '' ]
+       then
+                    RETRAY_DELAY="120"
+                    export RETRAY_DELAY
+       else
+                    if [ "`expr "$RETRAY_DELAY" : '^\([0-9][0-9]*\)$'`" = '' ]
+                    then
+                              # Valor no-numerico
+                              ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 10, invalido. Abortando..."
+                              return 34
+                    else
+                              if [ "$RETRAY_DELAY" -lt 0 ] || [ "$RETRAY_DELAY" -gt 600 ]
+                              then
+                                        # Numero fuera de rango
+                                        ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 10, invalido. Abortando..."
+                                        return 34
+                              fi
+                     fi
+        fi
+
+        # Valida el parametro No 11 - Remote User
+
+        if [ "$REM_USER" != '' ]
+        then
+                    if [ "$TARGET_OWNER" != '' ] || [ "$TARGET_GROUP" != '' ] || [ "$TARGET_MODE" != '' ]
+                    then
+                              ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 11, Si el usuario Remote es no NULL, los parametros No 12: Target Owner, No 13: Target Group y No 14: Target Mode, deben ser todos NULL. Abortando..."
+                              return 33
+                    fi
+
+                    REMOTE_USER_EXIST=''
+                    export REMOTE_USER_EXIST
+
+                    REMOTE_USER_EXIST=`ssh $USER@$REM_HOST $REMUSER_FLAG cat /etc/passwd|egrep "^$REM_USER:"|awk -F: ' { print $1 } '`
+
+                    if [ "$REMOTE_USER_EXIST" != "$REM_USER" ]
+                    then
+                               ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 11, Usuario $REM_USER no existe en server $REM_HOST. Abortando..."
+                               return 55
+                    fi
+
+                    if [ "$EXEC_FLAG" = "P" ]
+                    then
+                               REM_USER_PERMS=''
+                               TEST_DATE=`date +"%d%m%y"`
+                               export REM_USER_PERMS TEST_DATE
+
+                               REM_USER_PERMS=`ssh $USER@$REM_HOST $REMUSER_FLAG -l $REM_USER date +"%d%m%y"`
+
+                               if [ "$REM_USER_PERMS" != "$TEST_DATE" ]
+                               then 
+                                          ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 11, Usuario $REM_USER no tiene permisos en server $REM_HOST. Abortando..."
+                                          return 22
+                               fi
+                    fi
+        fi
+
+
+        # Valida el parametro No 12 - TARGET_OWNER
+
+        if [ "$TARGET_OWNER" != '' ]
+        then
+                    if [ "$REM_USER" != '' ] || [ "$TARGET_GROUP" = '' ] || [ "$TARGET_MODE" = '' ]
+                    then
+                              ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 12, Si el Target Owner es no NULL, tambien los parametros 12 y 13 deben ser no NULL, y el Parametro No 11: Usuario Remoto, debe ser NULL. Abortando..."
+                              return 33
+                    fi
+
+                    TARGET_OWNER_EXIST=''
+                    export TARGET_OWNER_EXIST
+
+                    if [ "$EXEC_FLAG" = "P" ]
+                    then
+                             TARGET_OWNER_EXIST=`ssh $USER@$REM_HOST $REMUSER_FLAG cat /etc/passwd|egrep "^$TARGET_OWNER:"|awk -F: ' { print $1 } '`
+
+                             if [ "$TARGET_OWNER_EXIST" != "$TARGET_OWNER" ]
+                             then
+                                        ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 12, Usuario $TARGET_OWNER no existe en server $REM_HOST. Abortando..."
+                                        return 55
+                             fi
+
+                    else
+
+                             TARGET_OWNER_EXIST=`cat /etc/passwd|egrep "^$TARGET_OWNER:"|awk -F: ' { print $1 } '`
+
+                             if [ "$TARGET_OWNER_EXIST" != "$TARGET_OWNER" ]
+                             then
+                                        LOCAL_HOST=`uname -n`
+                                        export LOCAL_HOST
+
+                                        ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 12, Usuario $TARGET_OWNER no existe en server $LOCAL_HOST. Abortando..."
+                                        return 56
+                             fi
+
+                    fi
+        fi
+
+
+        # Valida el parametro No 13 - TARGET_GROUP
+
+        if [ "$TARGET_GROUP" != '' ]
+        then
+                    if [ "$REM_USER" != '' ] || [ "$TARGET_OWNER" = '' ] || [ "$TARGET_MODE" = '' ]
+                    then
+                              ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 13, Si el Target Group es no NULL, tambien los parametros 12 y 14 deben ser no NULL, y el Parametro No 11: Usuario Remoto, debe ser NULL. Abortando..."
+                              return 33
+                    fi
+ 
+                    TARGET_GROUP_EXIST=''
+                    export TARGET_GROUP_EXIST
+
+                    if [ "$EXEC_FLAG" = "P" ]
+                    then
+ 
+                               #TARGET_GROUP_EXIST=`ssh $USER@$REM_HOST $REMUSER_FLAG cat /etc/group|egrep "^$TARGET_GROUP:"|awk -F: ' { print $1 } '`
+                               TARGET_GROUP_EXIST=`ssh $USER@$REM_HOST $REMUSER_FLAG cat /etc/group|awk ' /^'$TARGET_GROUP':/ { print "'$TARGET_GROUP'" } '`
+ 
+                               if [ "$TARGET_GROUP_EXIST" != "$TARGET_GROUP" ]
+                               then
+                                          ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 13, Gruopo $TARGET_GROUP no existe en server $REM_HOST. Abortando..."
+                                          return 55
+                               fi
+
+                    else
+                               TARGET_GROUP_EXIST=`cat /etc/group|awk ' /^'$TARGET_GROUP':/ { print "'$TARGET_GROUP'" } '`
+
+                               if [ "$TARGET_GROUP_EXIST" != "$TARGET_GROUP" ]
+                               then
+                                          LOCAL_HOST=`uname -n`
+                                          export LOCAL_HOST
+
+                                          ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 13, Gruopo $TARGET_GROUP no existe en server $LOCAL_HOST. Abortando..."
+                                          return 56
+                               fi
+
+                    fi
+        fi
+
+
+        # Valida el parametro No 14 - TARGET_MODE
+
+        if [ "$TARGET_MODE" != '' ]
+        then
+                    if [ "$REM_USER" != '' ] || [ "$TARGET_OWNER" = '' ] || [ "$TARGET_GROUP" = '' ]
+                    then
+                              ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 14, Si el Target Mode es no NULL, tambien los parametros 12 y 13 deben ser no NULL, y el Parametro No 11: Usuario Remoto, debe ser NULL. Abortando..."
+                              return 33
+                    fi
+
+                    NUM_VALID_STR=''
+                    export NUM_VALID_STR
+
+                    NUM_VALID_STR=`expr "$TARGET_MODE" : '^\([0-7][0-7][0-7]\)$'`
+
+                    if [ "$NUM_VALID_STR" = '' ]
+                    then
+                              ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Parametro No 14, no es un numero octal valido. Abortando..."
+                              return 33
+                    fi
+        fi
+
+
+        return 0
+
+}
+
+
+
+check_connection()
+{
+
+       set -x
+
+       # Determina el IP adress del remote host
+
+       TARGET_IP_ADRESS=''
+       export TARGET_IP_ADRESS
+ 
+ 
+       # Intenta resolver el IP adress via DNS
+       TARGET_IP_ADRESS=`nslookup $1 2>&1|sed '1,/Name/d'|awk ' { print $2 } '|sed '/[a-z]/d'`
+ 
+ 
+       if [ "$TARGET_IP_ADRESS" = '' ]
+       then
+             # DNS no pudo resolver el nombre $1. Intento resolver IP adress via /etc/hosts
+               TARGET_IP_ADRESS=`cat /etc/hosts|awk -v sucname="$1" ' $2 == sucname { print $1 } '|sed '/^[^0-9]/d'`
+ 
+             if [ "$TARGET_IP_ADRESS" = '' ]
+             then
+                   # No pudo resolver el IPadress via /etc/hosts
+ 
+                   ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: DNS y /etc/hosts no resuelven el nombre $1 Abortando ..."
+
+                   return 51            # Aborta al no poder resolver el nombre de la Base
+             fi 
+       fi
+
+
+
+       # Control del estado del vinculo con el Remote host
+ 
+       CONNECT_STAT=''
+       CONNECT_RETRIES=0
+       MAX_CONNECT_RETRIES="6"
+       export CONNECT_STAT CONNECT_RETRIES MAX_CONNECT_RETRIES
+ 
+       while [ "$CONNECT_STAT" = '' ] && [ "$CONNECT_RETRIES" -le "$MAX_CONNECT_RETRIES" ]
+       do
+
+            CONNECT_STAT=`/etc/ping -i 2 -c9 -q $TARGET_IP_ADRESS | /usr/bin/grep received | /usr/bin/grep -v grep | /usr/bin/cut -c24-24`
+ 
+
+            if [ "$CONNECT_STAT" -lt 6 ]
+            then
+ 
+                 CONNECT_RETRIES=`expr "$CONNECT_RETRIES" + 1`
+ 
+                 if [ "$CONNECT_RETRIES" -gt "$MAX_CONNECT_RETRIES" ]
+                 then
+
+                       ABORT_CONECTION=''
+                       ABORT_CONECTION="TRUE"
+                       export ABORT_CONECTION
+
+                       # Enviar un pager al operador, para que ponga en ejecucion
+                       # el procedimiento de emergencia por caida de vinculo,
+                       # enviando el archivo por Tape
+ 
+                       if [ "$CONNECT_STAT" -eq 0 ]
+                       then
+
+                               ABBORT_MESSAGE="$ ABBORT_MESSAGE - ""`date` $0: Comunicacion inexistente con $1.  Abortando..."
+                               return 52
+
+                       else
+
+                               ABBORT_MESSAGE="$ ABBORT_MESSAGE - ""`date` $0:Trafico pesado en la red. Abortando..."
+                               return 54
+
+                       fi
+
+                 fi
+ 
+                 # Delay de espera para reintentar conexion
+                 sleep 120
+                 CONNECT_STAT=''
+
+            else
+                 return 0
+            fi
+
+       done
+
+       return 0
+
+}
+
+
+
+check_rem_access()
+{
+
+       set -x
+
+       # Argumentos Pasados a la funcion
+       # $1: REM_HOST
+       # $2: USER
+ 
+       # Se controla el Acceso Remoto desde el fts a la Base, y que los dates de los servers sean iguales
+       export USER
+ 
+       REMUSER_FLAG=''
+       export REMUSER_FLAG
+ 
+       [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+       REM_ACCESS_STAT=''
+       export REM_ACCESS_STAT
+ 
+ 
+#       REM_ACCESS_STAT=`ssh $1 ls / 2>&1|awk ' $0 == "tmp" { print $0 } '`
+       REM_ACCESS_STAT=`ssh $USER@$REM_HOST $REMUSER_FLAG "[ -d /tmp ] && echo tmp"`
+ 
+       [ "$REM_ACCESS_STAT" = "tmp" ] && REM_ACCESS_STAT="OK"
+ 
+       if [ "$REM_ACCESS_STAT" != "OK" ]
+       then
+ 
+            # No hay acceso Remoto al servidor.
+        
+            ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Nohay acceso Remoto al servidor $1. Abortando..."
+ 
+            # Enviar un pager al Administrador u operador, para que:
+            # . De de alta la Suc. en DNS y/o actalice /etc/hosts del server fts, o
+            # . Otorgue Autenticacion en la Suc. para el server fts, via .rhosts
+            # . Tenga presente que debera ejecutar procedimiento de emergencia
+            #   enviando los Archivos de Precios a la Sucursal por Tape
+ 
+            REM_ACCESS_STAT="FALSE"
+ 
+            return 53          # Aborta por falta de acceso al Servidor
+
+       else
+            return 0
+ 
+       fi
+
+}
+
+
+space_to_copy()
+{
+ 
+       set -x
+
+       # Controla que exista espacio libre en disco de la Sucursal, para trasferir los archivos
+
+       # Argumentos Pasados a la funcion
+       # $1: SOURCE_DIR
+       # $2: SOURCE_FILE_NAME
+       # $3: REM_HOST
+       # $4: TARGET_DIR
+
+       REMUSER_FLAG=''
+       export REMUSER_FLAG
+ 
+       [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+       MOUNT_POINT_MATCH=''
+       SOURCE_FILE_SIZE='' 
+       FS_FREE_SPACE=''
+       SIZE_IN_BLOCKS=''
+       REM_OS_NAME=''
+       export MOUNT_POINT_MATCH SOURCE_FILE_SIZE FS_FREE_SPACE SIZE_IN_BLOCKS REM_OS_NAME
+
+       RSH_CMD_STR=''
+       [ "$EXEC_FLAG" = "G" ] && [ "$3" != '' ] && RSH_CMD_STR="ssh $3 $REMUSER_FLAG"
+       export RSH_CMD_STR
+ 
+       SOURCE_FILE_SIZE=`$RSH_CMD_STR ls -l "$1"/$2 | awk ' { print $5 } '` 
+
+       RSH_CMD_STR=''
+       [ "$EXEC_FLAG" = "P" ] && [ "$3" != '' ] && RSH_CMD_STR="ssh $3 $REMUSER_FLAG"
+
+       REM_OS_NAME=`$RSH_CMD_STR uname`
+ 
+       if [ "$REM_OS_NAME" = "AIX" ]
+       then
+                 MOUNT_POINT_MATCH=`$RSH_CMD_STR df $4|sed '1d'`
+       else
+                 MOUNT_POINT_MATCH=`$RSH_CMD_STR df -v $4|sed '1d'`
+       fi
+ 
+ 
+       if [ "$REM_OS_NAME" = "AIX" ]
+       then
+              FS_FREE_SPACE=`echo $MOUNT_POINT_MATCH|awk ' { print int( ($3*0.96) ) } '`
+       elif [ "$REM_OS_NAME" = "Linux" ]
+       then
+              FS_FREE_SPACE=`echo $MOUNT_POINT_MATCH|awk ' { print int( ($4*0.96) ) } '` 
+       else
+              FS_FREE_SPACE=`echo $MOUNT_POINT_MATCH|awk ' { print int( ($5*0.96) ) } '`
+       fi
+ 
+       if [ "`$RSH_CMD_STR uname -v`" = "4" ] || [ "`$RSH_CMD_STR uname -v`" = "2" ]
+       then
+               SIZE_IN_BLOCKS=`echo $SOURCE_FILE_SIZE|awk ' { print int( ($0/512) )+1 } '`
+       else
+               SIZE_IN_BLOCKS=`echo $SOURCE_FILE_SIZE|awk ' { print int( ($0/1024) )+1 } '`
+       fi
+ 
+       if [ "$SIZE_IN_BLOCKS" -gt "$FS_FREE_SPACE" ]
+       then
+ 
+             # No existe espacio en el Remote host, para copiar el archivo. Aborta con mensajes
+ 
+             ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Espacio insuficiente en el servidor $3, para copiar el archivo /$1/$2. Abortando..."
+ 
+             return 15
+
+       else
+             return 0
+ 
+       fi
+
+}
+
+
+
+check_target_file()
+{
+             set -x
+
+             # Argumentos pasados a esta funcion
+             # $1: SOURCE_DIR
+             # $2: SOURCE_FILE_NAME
+             # $3: REM_HOST              Si esta seteada a 'null', es copia local. Si no remota.
+             # $4: TARGET_DIR
+             # $5: TEMP_FILE_NAME
+
+             REMUSER_FLAG=''
+             export REMUSER_FLAG
+ 
+             [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+             # Se controla en el Servidor de destino, que el Archivo enviado exista; que el size del
+             # Target file coincida con el size del Source File; y que el checksum del Target file
+             # coincida con el Checksum del Source File.
+
+
+             S_FILE_SIZE=''
+             S_FILE_SUM=''
+             TARGET_FILE_STAT=''
+             T_FILE_SIZE=''
+             T_CHECK_SUM=''
+             export TARGET_FILE_STAT S_FILE_SIZE S_FILE_SUM T_FILE_SIZE T_CHECK_SUM
+ 
+             # Atributos del Source File
+ 
+             if [ "$EXEC_FLAG" = "P" ]
+             then
+                        S_FILE_SIZE=`ls -l "$1"/"$2" | awk ' { print $5 } '`
+ 
+                        if [ "`uname`" = "AIX" ]
+                        then
+                              S_FILE_SUM=`sum "$1"/"$2" 2>/dev/null|awk ' { print $1 } '`
+                        else
+                              # SCO Unix
+                              S_FILE_SUM=`sum -r "$1"/"$2" 2>/dev/null|awk ' { print $1 } '`
+                        fi
+             else
+                        # EXEC_FLAG" = "G"
+
+                        S_FILE_SIZE=`ssh $3 $REMUSER_FLAG ls -l "$1"/"$2" | awk ' { print $5 } '`
+ 
+                        if [ "`uname`" = "AIX" ]
+                        then
+                              S_FILE_SUM=`ssh $3 $REMUSER_FLAG sum "$1"/"$2" 2>/dev/null|awk ' { print $1 } '`
+                        else
+                              # SCO Unix
+                              S_FILE_SUM=`ssh $3 $REMUSER_FLAG sum -r "$1"/"$2" 2>/dev/null|awk ' { print $1 } '`
+                        fi
+             fi
+
+ 
+             if [ "$EXEC_FLAG" = "P" ]
+             then
+                        TARGET_FILE_STAT=`basename \`ssh $3 $REMUSER_FLAG ls -l $4/$5|awk ' { print $9 } '\``
+                        T_FILE_SIZE=`ssh $3 $REMUSER_FLAG ls -l $4/$5 | awk ' { print $5 } '`
+
+                        if [ "`ssh $3 $REMUSER_FLAG uname`" = "AIX" ]
+                        then
+ 
+                              T_CHECK_SUM=`ssh $3 $REMUSER_FLAG sum $4/$5 |awk ' { print $1 } '`
+ 
+                        else
+ 
+                              # SCO Unix
+                              T_CHECK_SUM=`ssh $3 $REMUSER_FLAG sum -r $4/$5 |awk ' { print $1 } '` 
+                        fi
+             else
+                        # EXEC_FLAG" = "G
+
+                        TARGET_FILE_STAT=`basename \`ls -l $4/$5|awk ' { print $9 } '\``
+                        T_FILE_SIZE=`ls -l $4/$5 | awk ' { print $5 } '`
+
+                        if [ "`uname`" = "AIX" ]
+                        then
+ 
+                              T_CHECK_SUM=`sum $4/$5 |awk ' { print $1 } '`
+ 
+                        else
+ 
+                              # SCO Unix
+                              T_CHECK_SUM=`sum -r $4/$5 |awk ' { print $1 } '`
+                        fi
+             fi
+
+ 
+             if [ "$5" = "$TARGET_FILE_STAT" ] && [ "$T_FILE_SIZE" = "$S_FILE_SIZE" ] && [ "$S_FILE_SUM" -eq "$T_CHECK_SUM" ]
+             then
+                    return 0
+             else
+                    return 50
+             fi
+
+}
+
+
+
+retries_limmit()
+{
+             set -x
+
+             REMUSER_FLAG=''
+             export REMUSER_FLAG
+ 
+             [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+             # Verifica si se ha superado el limite de retries, y ejecuta un proced. antes de abortar 
+
+             if [ "$RCOPY_RETRIES" -gt "$MAX_RCOPY_RETRIES" ]
+             then
+ 
+                      # Si en el Target Server ha quedado un Archivo de Nombre $TEMP_FILE_NAME, sera
+                      # borrado ante la posibilidad de que sea inconsistente
+  
+                      TARGET_FILE_STAT=''
+ 
+                      if [ "$EXEC_FLAG" = "P" ]
+                      then
+                                  TARGET_FILE_STAT=`basename \`ssh $USER@$REM_HOST $REMUSER_FLAG ls -l $TARGET_DIR/$TEMP_FILE_NAME|awk ' { print $9 } '\``
+ 
+                                  if [ "$TEMP_FILE_NAME" = "$TARGET_FILE_STAT" ]
+                                  then
+          
+                                           ssh "$USER@$REM_HOST" $REMUSER_FLAG rm "$TARGET_DIR"/"$TEMP_FILE_NAME"
+ 
+                                  fi
+                      else
+                                 TARGET_FILE_STAT=`basename \`ls -l $TARGET_DIR/$TEMP_FILE_NAME|awk ' { print $9 } '\``
+ 
+                                  if [ "$TEMP_FILE_NAME" = "$TARGET_FILE_STAT" ]
+                                  then
+ 
+                                           rm "$TARGET_DIR"/"$TEMP_FILE_NAME"
+ 
+                                  fi
+                      fi
+ 
+                      return 0
+              else
+                      return 1
+              fi
+}
+
+
+
+change_attrib()
+{
+
+         set -x
+
+         # TARGET_OWNER, TARGET_GROUP, TARGET_MODE: Parametros Nos 12, 13 y 14, pasados al script safe_scp
+         # $1: target Dir
+         # $2: File cuyos atributos seran modificados
+ 
+         REMUSER_FLAG=''
+         export REMUSER_FLAG
+ 
+         [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+         # Si los parametros Nos 12, 13, y 14 pasados a este script no estan seteados a 'NULL', cambia owner, group
+         # y permisos del target file
+
+         if [ "$TARGET_OWNER" != '' ] && [ "$TARGET_GROUP" != '' ] && [ "$TARGET_MODE" != '' ]
+         then
+
+                      # Se cambian owner, group y permisos del target file.
+ 
+                      CHECK_MODE=''
+                      export CHECK_MODE
+
+                      if [ "$EXEC_FLAG" = "P" ]
+                      then
+
+                                   ssh "$USER@$REM_HOST" $REMUSER_FLAG sudo chown $TARGET_OWNER $1/$2
+                                   ssh "$USER@$REM_HOST" $REMUSER_FLAG sudo chgrp $TARGET_GROUP $1/$2
+                                   ssh "$USER@$REM_HOST" $REMUSER_FLAG sudo chmod $TARGET_MODE $1/$2
+                                   CHECK_MODE="$?"
+
+                      else
+
+                                   # safe_scp GET
+
+                                   sudo chown $TARGET_OWNER $1/$2
+                                   sudo chgrp $TARGET_GROUP $1/$2
+                                   sudo chmod $TARGET_MODE $1/$2
+                                   CHECK_MODE="$?"
+
+                      fi
+
+         fi
+
+         return 0
+
+}
+
+
+check_attrib()
+{
+
+         set -x
+ 
+         # TARGET_OWNER, TARGET_GROUP, TARGET_MODE: Parametros Nos 12, 13 y 14, pasados al script safe_scp
+         # $1: target Dir
+         # $2: File cuyos atributos seran Chequeados luego de ser modificados
+ 
+         REMUSER_FLAG=''
+         export REMUSER_FLAG
+ 
+         [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+         if [ "$TARGET_OWNER" != '' ] && [ "$TARGET_GROUP" != '' ] && [ "$TARGET_MODE" != '' ]
+         then
+                      # Se chequean owner y group del target file
+
+                      CHECK_OWNER=''
+                      CHECK_GROUP=''
+                      export CHECK_OWNER CHECK_GROUP
+ 
+                      if [ "$EXEC_FLAG" = "P" ]
+                      then
+
+                                   CHECK_OWNER=`ssh "$USER@$REM_HOST" $REMUSER_FLAG ls -l $1/$2|awk ' $3 == "'$TARGET_OWNER'" { print $3 } '`
+                                   CHECK_GROUP=`ssh "$USER@$REM_HOST" $REMUSER_FLAG ls -l $1/$2|awk ' $4 == "'$TARGET_GROUP'" { print $4 } '`
+ 
+                      else
+ 
+                                   # safe_scp GET
+
+                                   CHECK_OWNER=`ls -l $1/$2|awk ' $3 == "'$TARGET_OWNER'" { print $3 } '`
+                                   CHECK_GROUP=`ls -l $1/$2|awk ' $4 == "'$TARGET_GROUP'" { print $4 } '` 
+ 
+                      fi
+ 
+                      if [ "$CHECK_OWNER" = "$TARGET_OWNER" ] && [ "$CHECK_GROUP" = "$TARGET_GROUP" ] && [ "$CHECK_MODE" -eq 0 ]
+                      then
+                                   return 0
+                      else
+
+                                  if [ "$CHECK_MODE" -eq 0 ]
+                                  then
+
+                                              ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Octal Mode del Target File distinto a $TARGET_MODEP luego de ser modificados. Abortando. .."
+                                               return 36
+
+                                  fi
+
+                                  ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Owner o Group del Target File distintos a $TARGET_OWNER o $TARGET_GROUP luego de ser modificados. Abortando. .."
+                                  return 35
+                      fi
+         fi
+
+}
+
+
+
+make_backup()
+{
+
+         set -x
+
+         # Se renombra el Archivo de Precios en Central, con extension .fecha.hora, en formato .ddmmaa.hhmm
+         # al copiarlo al directorio de respaldo
+ 
+         EXTENT1=`date +"%d%m%y"`
+         EXTENT2=`date +"%H%M"`
+         BACKUP_STAT=''
+         BACKUP_RETRIES=1
+         MAX_BACKUP_RETRIES="3"
+         export EXTENT1 EXTENT2 BACKUP_STAT BACKUP_RETRIES MAX_BACKUP_RETRIES
+ 
+         while [ "$BACKUP_RETRIES" -le "$MAX_BACKUP_RETRIES" ]
+         do
+ 
+                     # Copia el Source file al directorio de backup
+
+                     touch "$SOURCE_DIR"/backup/"$SOURCE_FILE_NAME"."$EXTENT1"."$EXTENT2"
+
+                     cp -p "$SOURCE_DIR"/"$SOURCE_FILE_NAME" "$SOURCE_DIR"/backup/"$SOURCE_FILE_NAME"."$EXTENT1"."$EXTENT2"
+ 
+ 
+                     if chk_altern_copy "$SOURCE_DIR" "$SOURCE_FILE_NAME" "" "$SOURCE_DIR"/backup "$SOURCE_FILE_NAME"."$EXTENT1"."$EXTENT2"
+                     then
+ 
+                                    # El backup termino OK,  se borra el original, sale del loop y retorna
+
+                                    rm -f "$SOURCE_DIR"/"$SOURCE_FILE_NAME"
+                                    break
+                     else
+ 
+                                    # El Backup termino mal, y se reintenta
+ 
+                                    BACKUP_RETRIES=`expr "$BACKUP_RETRIES" + 1`
+ 
+                     fi
+ 
+ 
+                     if [ "$BACKUP_RETRIES" -gt "$MAX_BACKUP_RETRIES" ]
+                     then
+ 
+                                    # Cancela los reintentos, deja un mensaje, borra el backup fallido
+                                    # , dejando el original en /precios. Rompe el loop y retorns
+ 
+                                    rm "$SOURCE_DIR"/backup/"$SOURCE_FILE_NAME"."$EXTENT1"."$EXTENT2"
+ 
+                                    echo "$0 `date`: WARNING_1 - La copia del $SOURCE_FILE_NAME al dir. backup es inconsistente. El archivo original, con Status OK queda en /$SOURCE_DIR"
+ 
+                                    break
+                     fi
+
+                     BACKUP_STAT=''
+         done
+
+         return 0
+
+}
+
+
+secure_scp()
+{
+        set -x
+
+        # Argumentos Pasados a la funcion
+        # $1: SOURCE_FILE_NAME
+        # $2: TARGET_FILE_NAME
+        # $3: SOURCE_DIR
+        # $4: TARGET_DIR
+        # $5: REM_HOST
+        # $6: MAX_RCOPY_RETRIES
+        # $7: RETRAY_DELAY
+
+        REMUSER_FLAG=''
+        REM_USER_CMD_STR=''
+        
+        export REMUSER_FLAG REM_USER_CMD_STR
+
+        [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+        [ "$REM_USER" ] && REM_USER_CMD_STR="$REM_USER@"
+
+        # Ejecuta el loop del scp
+
+        RCOPY_RETRIES=1
+        export RCOPY_RETRIES
+ 
+        while [ "$RCOPY_RETRIES" -le "$MAX_RCOPY_RETRIES" ]
+        do
+   
+             # Copia el Archivo fuente al Servidor de destino
+  
+             # El Archivo a transferir, se copia al servidor remoto con un nombre temporario, a fin
+             # de sustraerlo de cualquier proceso que pretenda tomarlo, antes que el scp haya terminado
+             # o antes de que sea chequeado; o removerlo sin problemas, si la copia falla.
+  
+             TEMP_FILE_NAME="$TARGET_FILE_NAME.SEND"
+             export TEMP_FILE_NAME
+ 
+             if [ "$EXEC_FLAG" = "P" ]
+             then
+                    scp "$SOURCE_DIR"/"$SOURCE_FILE_NAME" "$USER@$REM_HOST":"$TARGET_DIR"/"$TEMP_FILE_NAME"
+             else
+                    # safe_scp GET
+                    scp "$USER@$REM_HOST":"$SOURCE_DIR"/"$SOURCE_FILE_NAME" "$TARGET_DIR"/"$TEMP_FILE_NAME"
+             fi
+ 
+             if check_target_file "$SOURCE_DIR" "$SOURCE_FILE_NAME" "$REM_HOST" "$TARGET_DIR" "$TEMP_FILE_NAME"
+             then
+
+                   # Cambia owner, group y permisos, si corresponde
+
+                   change_attrib "$TARGET_DIR" "$TEMP_FILE_NAME"
+
+                   # El Source File ha sido transferido OK, y se renombra a su nombre definitivo.
+
+                   if [ "$EXEC_FLAG" = "P" ]
+                   then
+                              ssh "$USER@$REM_HOST" $REMUSER_FLAG mv -f "$TARGET_DIR"/"$TEMP_FILE_NAME" "$TARGET_DIR"/"$TARGET_FILE_NAME"
+                   else
+                              # safe_scp GET
+                              mv -f "$TARGET_DIR"/"$TEMP_FILE_NAME" "$TARGET_DIR"/"$TARGET_FILE_NAME"
+                   fi
+
+                   # Secontrolan los atributos del archivo renombrado, en el servidor de destino.
+
+                   if check_target_file "$SOURCE_DIR" "$SOURCE_FILE_NAME" "$REM_HOST" "$TARGET_DIR" "$TARGET_FILE_NAME" && check_attrib "$TARGET_DIR" "$TARGET_FILE_NAME"
+                   then
+
+                            #[ "$EXEC_FLAG" = "P" ] && [ -d "$SOURCE_DIR"/backup ] && make_backup
+ 
+                            RCOPY_STAT="OK"
+                            return 0
+                   else
+  
+                            # Fallo el move de la copia temporaria
+
+                            # El envio del Archivo ha fallado y se reintenta el envio
+ 
+                            RCOPY_RETRIES=`expr "$RCOPY_RETRIES" + 1`
+ 
+                            if retries_limmit
+                            then
+
+                                  # El No de reintentos excedio el limite, y se aborta el procedimiento
+ 
+                                  ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: scp - Target File inconsistente luego de $MAX_RCOPY_RETRIES intentos. Abortando..."                                                                      
+                                  return 50        # Aborta luego de 3 intentos fallidos
+ 
+                            fi
+ 
+                            # Ejecuta un delay entre retries
+ 
+                            sleep "$RETRY_DELAY"
+ 
+                            continue
+                    fi
+ 
+             else
+
+                    # El envio del Archivo ha fallado y se reintenta el envio
+ 
+                    RCOPY_RETRIES=`expr "$RCOPY_RETRIES" + 1`
+ 
+                    if retries_limmit
+                    then
+ 
+                           # El No de reintentos excedio el limite, y se aborta el procedimiento
+ 
+                           ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: scp - Target File inconsistente luego de $MAX_RCOPY_RETRIES intentos. Abortando..."
+                           return 50        # Aborta luego de 3 intentos fallidos
+
+                     fi
+ 
+                     # Ejecuta un delay entre retries
+
+                     sleep "$RETRY_DELAY"
+ 
+              fi
+
+         done
+
+}
+
+
+chk_altern_copy()
+{
+             set -x
+
+             # Argumentos pasados a esta funcion
+             # $1: SOURCE_DIR
+             # $2: SOURCE_FILE_NAME
+             # $3: REM_HOST              Si esta seteada a 'null', es copia local. Si no remota.
+             # $4: TARGET_DIR
+             # $5: TEMP_FILE_NAME
+
+             REMUSER_FLAG=''
+             export REMUSER_FLAG
+ 
+             [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+             # Se controla en el Servidor de destino, que el Archivo enviado exista; que el size del
+             # Target file coincida con el size del Source File; y que el checksum del Target file
+             # coincida con el Checksum del Source File.
+
+             S_FILE_SIZE=''
+             S_FILE_SUM=''
+             TARGET_FILE_STAT=''
+             T_FILE_SIZE=''
+             T_CHECK_SUM=''
+             export TARGET_FILE_STAT S_FILE_SIZE S_FILE_SUM T_FILE_SIZE T_CHECK_SUM
+ 
+             if [ "$EXEC_FLAG" = "P" ]
+             then 
+                        S_FILE_SIZE=`ls -l "$1"/"$2" | awk ' { print $5 } '`
+ 
+                        if [ "`uname`" = "AIX" ]
+                        then
+                              S_FILE_SUM=`sum "$1"/"$2" 2>/dev/null|awk ' { print $1 } '`
+                        else
+                              # SCO Unix
+                              S_FILE_SUM=`sum -r "$1"/"$2" 2>/dev/null|awk ' { print $1 } '`
+                        fi
+ 
+                        TARGET_FILE_STAT=`basename \`ls -l $4/$5|awk ' { print $9 } '\``
+                        T_FILE_SIZE=`ls -l $4/$5 | awk ' { print $5 } '`
+ 
+                        if [ "`uname`" = "AIX" ]
+                        then
+ 
+                              T_CHECK_SUM=`sum $4/$5 |awk ' { print $1 } '`
+ 
+                        else
+ 
+                              # SCO Unix
+                              T_CHECK_SUM=`sum -r $4/$5 |awk ' { print $1 } '` 
+                        fi
+             else
+                        # EXEC_FLAG = "G"
+
+                        S_FILE_SIZE=`ssh $3 $REMUSER_FLAG ls -l "$1"/"$2" | awk ' { print $5 } '`
+ 
+                        if [ "`ssh $3 $REMUSER_FLAG uname`" = "AIX" ]
+                        then
+                              S_FILE_SUM=`ssh $3 $REMUSER_FLAG sum "$1"/"$2" 2>/dev/null|awk ' { print $1 } '`
+                        else
+                              # SCO Unix
+                              S_FILE_SUM=`ssh $3 $REMUSER_FLAG sum -r "$1"/"$2" 2>/dev/null|awk ' { print $1 } '`
+                        fi
+ 
+                        TARGET_FILE_STAT=`basename \`ssh $3 $REMUSER_FLAG ls -l $4/$5|awk ' { print $9 } '\``
+                        T_FILE_SIZE=`ssh $3 $REMUSER_FLAG ls -l $4/$5 | awk ' { print $5 } '`
+ 
+                        if [ "`ssh $3 $REMUSER_FLAG uname`" = "AIX" ]
+                        then
+ 
+                              T_CHECK_SUM=`ssh $3 $REMUSER_FLAG sum $4/$5 |awk ' { print $1 } '`
+ 
+                        else
+ 
+                              # SCO Unix
+                              T_CHECK_SUM=`ssh $3 $REMUSER_FLAG sum -r $4/$5 |awk ' { print $1 } '`
+                        fi
+             fi
+
+
+ 
+             if [ "$5" = "$TARGET_FILE_STAT" ] && [ "$T_FILE_SIZE" = "$S_FILE_SIZE" ] && [ "$S_FILE_SUM" -eq "$T_CHECK_SUM" ]
+             then
+                    return 0
+             else
+                    return 50
+             fi
+
+}
+
+
+
+alternative_cp()
+{
+
+      set -x
+
+      # Argumentos pasados a esta funcion 
+      # $1: SOURCE_DIR
+      # $2: SOURCE_FILE_NAME
+      # $3: ALTERNATIVE_DIR
+      # $4: ALTERNATIVE_FILE_NAME
+
+      REMUSER_FLAG=''
+      export REMUSER_FLAG
+ 
+      [ "$REM_USER" ] && REMUSER_FLAG="-l $REM_USER"
+
+      RETURN_CODE="1"
+      LOOP_COUNT="0"
+      export RETURN_CODE LOOP_COUNT
+
+      if [ "$3" != '' -a "$4" != '' ]
+      then
+
+              REM_HOST_PARAM=''
+              export REM_HOST_PARAM
+
+              [ "$EXEC_FLAG" = "G" ] && REM_HOST_PARAM="$REM_HOST"
+              
+              if space_to_copy "$1" "$2" "$REM_HOST_PARAM" "$3"
+              then
+                         # Copia localmente mediante un loop de reintentos
+                         
+                         while [ "$RETURN_CODE" -ne "$SUCCESS" ]
+                         do
+                                LOOP_COUNT=`expr "$LOOP_COUNT" + 1`
+
+                                if [ "$LOOP_COUNT" -gt 3 ]
+                                then
+                                       # Fallo el cp local, luego de 3 reintentos
+
+                                       RETURN_CODE="12"
+                                       ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Fallo la copia segura y la copia alternativa."
+
+                                       # Se remueve la copia inconsistente
+
+                                       if [ "$EXEC_FLAG" = "P" ]
+                                       then
+                                                 rm "$3"/"$4"
+                                       else
+                                                 # $EXEC_FLAG = "G"
+ 
+                                                 ssh "$USER@$REM_HOST" "$REMUSER_FLAG" rm "$3"/"$4"
+                                       fi
+
+                                       break
+                                fi
+
+                                if [ "$EXEC_FLAG" = "P" ]
+                                then
+                                         cp "$1"/"$2" "$3"/"$4"
+                                else
+                                         # $EXEC_FLAG = "G"
+
+                                         ssh "$USER@$REM_HOST" "$REMUSER_FLAG" cp "$1"/"$2" "$3"/"$4"
+                                fi
+
+                                if chk_altern_copy "$1" "$2" "$REM_HOST" "$3" "$4"
+                                then
+                                       RETURN_CODE="0"
+                                else
+                                       RETURN_CODE="1"
+                                fi
+
+                          done
+
+                          return "$RETURN_CODE"
+
+               else
+
+                          # No hubo espacio para copiar localmente
+
+                          RETURN_CODE="12"
+                          ABBORT_MESSAGE="$ABBORT_MESSAGE - ""`date` $0: Fallo la copia remota y la local. La local por falta de espacio. Abortando..."
+                          return "$RETURN_CODE"
+               fi
+
+      else
+               return 1
+      fi
+
+}
+
+
+
+terminate()
+{
+
+      set -x
+
+      # Argumentos pasados a esta funcion
+      # $1: Exit Code
+      # $2: Mensaje de diagnostico de error
+
+      echo "$2"
+      [ "$PARAM_COUNT" -eq 0 ] && usage
+      exit "$1"
+}
+
+
+#######################################################################################################################
+#                              MAIN PROGRAM
+#######################################################################################################################
+
+set -x
+
+RETURN_VALUE=''
+ABBORT_MESSAGE=''
+SUCCESS="0"
+export RETURN_VALUE SUCCESS ABBORT_MESSAGE
+
+# Parametros pasados al script
+
+ARGS=$*
+export ARGS
+ 
+set -- $ARGS
+
+check_args_number $ARGS && assign_param $ARGS && check_connection "$REM_HOST" && check_rem_access "$REM_HOST $USER" && validate_param $ARGS
+RETURN_VALUE="$?"
+[ "$RETURN_VALUE" -ne "$SUCCESS" ] && terminate "$RETURN_VALUE" "$ABBORT_MESSAGE"
+
+if space_to_copy "$SOURCE_DIR" "$SOURCE_FILE_NAME" "$REM_HOST" "$TARGET_DIR"
+then
+
+        if secure_scp
+        then
+
+                exit 0
+
+        else
+
+                RETURN_VALUE="$?"
+
+                alternative_cp "$SOURCE_DIR" "$SOURCE_FILE_NAME" "$ALTERNATIVE_DIR" "$ALTERNATIVE_FILE_NAME"
+
+                RETURN_CODE="$?"
+
+                case "$RETURN_CODE" in
+                0|1)   terminate "$RETURN_VALUE" "$ABBORT_MESSAGE"
+                       ;;
+                12)    terminate "$RETURN_CODE" "$ABBORT_MESSAGE"
+                       ;;
+                esac
+
+        fi
+
+else
+
+        RETURN_VALUE="$?"
+
+        if [ "$RETURN_VALUE" -ne "$SUCCESS" ]
+        then
+
+               alternative_cp "$SOURCE_DIR" "$SOURCE_FILE_NAME" "$ALTERNATIVE_DIR" "$ALTERNATIVE_FILE_NAME"
+          
+               terminate "$RETURN_VALUE" "$ABBORT_MESSAGE"
+
+        fi
+
+fi

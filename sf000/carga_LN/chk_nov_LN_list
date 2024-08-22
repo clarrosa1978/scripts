@@ -1,0 +1,58 @@
+#! /bin/ksh
+
+############################################################################
+#                                      Fernandez Garay Jorge - 08/2004
+# chk_nov_LN_list
+#
+# Este programa es lanzado por el progarama launch_chk_nov_LN_list, inte-
+# grantes del JOB 'CHKNOVLIST',  como 5to Job de la Aplicacion de CONTROL-M
+# 'CARGA_NOV_LN' en sucursales.
+# Esta cadena ejecuta el update de Novedades De Lista Negra, en tablas de
+# Storeflow.
+# Se implmenta como un job ciclico, con condicion horaria de arranque a
+# Rearma la Lista de Archivos de Noved. de Lista Negra pendientes de pro-
+# cesamiento (carecen de extension '.proc', en el nombre), para determi-
+# si ha quedado algun archivo sin procesar.
+# Si la Lista quedo vacia, sale con exit stat. 0, permitiendo que ejecute
+# el Proximo archivo de la cadena.
+# Si queda algun archivo en la lista, sale con exit stat 5, para que el 
+# JOB de CONTROL-M 'CHKNOVLIST' ponga la condicion de entrada en el JOB
+# 'LOAD_NOV', 3er JOB de la cadena, de manera que se reejecuten ese JOB
+# , 'ACTU_NOV_LN' y 'CHKNOVLIST', necesarios para el procesamiento com-
+# pleto del Archivo de Nov. Pendiente de Proceso
+# 
+############################################################################
+
+set -x
+
+HOSTNAME=`uname -n`
+LN_NOV_DIR="/sfctrl/data/carga"
+FILES_TO_PROCESS_LIST=''
+export HOSTNAME LN_NOV_DIR FILES_TO_PROCESS_LIST
+
+# A los archivos de Novedades de Lista Negra Procesados, se les agrega la 
+# extension '.proc', en el 2do job de la cadena, y se mantienen en linea
+# los ultimos 7, comprimidos.
+
+# Obtiene La lista de archivos de Noved de Lista Negra sin procesar (sin extension '.proc')
+# ordenados por fecha
+FILES_TO_PROCESS_LIST=`ls $LN_NOV_DIR|egrep '^novln\.[0-9]+$'|sort -k 1.11,1.14 -k 1.9,1.10 -k 1.7,1.8`
+export FILES_TO_PROCESS_COUNT=`echo "$FILES_TO_PROCESS_LIST"|wc -w|awk ' { print $1 } '`
+
+if [ "$FILES_TO_PROCESS_COUNT" -eq 0 ]
+then
+        # No quedan Novedades de Lista Negra Pendientes de procesamiento.
+        exit 0
+else
+      if [ "$FILES_TO_PROCESS_COUNT" -gt 0 ]
+      then
+              # Es un incidente que exista mas de 1 archivo de Noved. de Lista Negra a procesar.
+              # Ello significa que algun archivo anterior no se ha cargado.
+              # Se reejecutara la cadena, desde el 3er al 5to JOB, inclusive.
+
+              echo "\n\nEXISTEN MAS DE 1 ARCHIVO DE NOVEDADES DE LISTA NEGRA A PROCESAR"
+              echo "Se reejecutaran los JOBs LOAD_NOV, ACTU_NOV_LN y CHKNOVLIST"
+
+              exit 12
+      fi
+fi

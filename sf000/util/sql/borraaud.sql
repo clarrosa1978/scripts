@@ -1,0 +1,7 @@
+INSERT INTO SYS.auditorias SELECT * FROM SYS.aud$
+/
+commit
+/
+TRUNCATE TABLE SYS.AUD$
+/
+

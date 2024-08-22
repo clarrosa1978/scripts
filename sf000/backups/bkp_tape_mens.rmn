@@ -1,0 +1,28 @@
+
+run {
+ 	configure device type disk parallelism 6;
+ 	allocate channel t1 type 'sbt_tape' parms 'ENV=(TDPO_OPTFILE=/usr/tivoli/tsm/client/oracle/bin64/sf000mens/tdpo_sf000mens.opt)';
+ 	allocate channel t2 type 'sbt_tape' parms 'ENV=(TDPO_OPTFILE=/usr/tivoli/tsm/client/oracle/bin64/sf000mens/tdpo_sf000mens.opt)';
+ 
+ 	#backup the whole db
+ 	backup
+   	tag whole_database_open
+   	format 'df_%d_%u_%T'
+   	database;
+ 
+ 	# switch out of the current logfile
+ 	sql 'alter system archive log current';
+ 
+ 	#backup the archived logs
+ 	backup 
+   	archivelog all delete input
+   	format 'al_%d_%u_%T';
+ 
+ 	# backup a copy of the controlfile that contains records for the 
+ 	# other backups just made
+ 	backup 
+   	current controlfile 
+   	format 'cf_%d_%u_%T';
+ 	backup spfile
+ 	format 'sp_%d_%u_%T';
+}

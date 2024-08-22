@@ -1,0 +1,5 @@
+Menu PROCESOS
+Subir Procesos SFVCC;vcc_online.sh;
+Bajar Procesos SFVCC;vcc_offline.sh;
+Subir Procesos SFVCC12 (SF_DNI, SF_ANSES, SF_MPAGO);vcc12_online.sh;
+Bajar Procesos SFVCC12 (SF_DNI, SF_ANSES, SF_MPAGO);vcc12_offline.sh;

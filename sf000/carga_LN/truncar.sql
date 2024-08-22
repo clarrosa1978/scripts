@@ -1,0 +1,3 @@
+exec TRUNCAR_T6197500_TEMP
+quit
+

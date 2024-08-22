@@ -1,0 +1,100 @@
+#! /bin/sh
+
+export HOSTNAME=`hostname`
+
+notify_by_mail()
+{
+        #set -x
+
+        # Notifica el incidente por mail
+        # En $1 recibe El mensaje a notificar
+
+        echo "$1"|/bin/mail -s "Control LOG Proceso SF_CLIENDO" operaciones@redcoto.com.ar,SoporteStoreflow@redcoto.com.ar
+
+}
+
+scan_log()
+{
+set -x
+
+      export CHECKLOG=`ls -ltr /sfcliendo/tmp/sfcliendo.*.log | awk '{print $9}' |tail -1`
+      if [ $? = 0 ]
+      then
+		fuser ${CHECKLOG}
+		if [ $? = 0 ]
+	        then
+			export LOGFILE_NAME=${CHECKLOG}
+		else
+			echo "No existe archivo de log o el proceso SF_CLIENDO  no esta levantado."
+			exit 1
+		fi
+      else
+		echo "No se pudo realizar un listado de los archivos de log."	
+		exit 1
+      fi
+
+      # Lines Count del $LOGFILE_NAME, al tiempo de ultima corrida de este script
+      export RECORD_DATE=`ls -ltr /sfcliendo/tmp/sfcliendo.*.log | awk '{print $9}' |tail -1 | cut -d"." -f2`
+      export RECORD_COUNT_FILE="/tecnol/alertas/log/sfcliendo.${RECORD_DATE}.count"
+      if [ -e $RECORD_COUNT_FILE ]
+      then
+                echo "El archivo count existe. Continuo."
+      else
+                `echo "0" > $RECORD_COUNT_FILE`
+      fi
+      
+      # Determina la cantidad actual de records del log
+      export NEW_COUNT=`wc -l $LOGFILE_NAME | awk ' { print $1 } '`
+      if [ "$NEW_COUNT" = 0 ]
+      then
+             echo "El archivo log esta vacio."
+             exit 0
+      fi
+
+      export PREVIOUS_COUNT=`cat "$RECORD_COUNT_FILE"`
+      # Calcula la cantidad de lineas de Novedades, a scanear desde la ultima corrida
+      echo $NEW_COUNT
+      echo $PREVIOUS_COUNT
+      export NOVED_COUNT_LINES=`expr $NEW_COUNT - $PREVIOUS_COUNT`
+      if [ "$NOVED_COUNT_LINES" = 0 ]
+      then
+             echo "No existen nuevas lineas en el archivo log."
+             exit 0
+      fi
+
+      export ERROR_LINES=''
+
+# Para exceptual un Mensaje de algun log solamente ahi que agregar un grep -v # 
+# en la variable ERROR_LINES #
+
+
+      ERROR_LINES=`tail -"$NOVED_COUNT_LINES" "$LOGFILE_NAME" | grep -e "SBD Error haciendo SELECT sobre tabla" > /tecnol/alertas/log/sfcliendo.error.log`
+
+      ERROR_LINES=`cat "/tecnol/alertas/log/sfcliendo.error.log"`
+
+      # Actualiza El archivo de Control de Ultimo record Procesado
+      CTRL_RECORD=`printf "%s %s" "$TODAY" "$NEW_COUNT"`
+      echo "$CTRL_RECORD" > "$RECORD_COUNT_FILE"
+}
+
+# El valor de esta variable se setea en la funcion scan_log
+export ERROR_LINES=''
+
+scan_log
+
+export ERROR_MESSAGE=''
+
+if [ "$ERROR_LINES" != '' ]
+then
+        # Se notifican los erores via mail
+        ERROR_MESSAGE="Informar a la guardia de Storeflow!!!
+
+        Errores encontrados en el log del proceso SFCLIENDO en $HOSTNAME:  
+
+        ""$ERROR_LINES"       
+
+        notify_by_mail "$ERROR_MESSAGE"
+
+fi
+
+exit 0

@@ -1,0 +1,6 @@
+pid=`ps -fu oracle | egrep "LOCAL|prespawn" | grep -v $$ | grep -v ksh | grep -v sshd | awk '{ print $2}'`
+for i in $pid
+do
+   echo "MATANDO LOCAL $i"
+        kill -9 $i 2>/dev/null
+done

@@ -1,0 +1,7 @@
+/*PTES0650.sql
+Llama al PTES0650, que informa por mail el ultimo cierre de cada sucursal
+            */
+BEGIN
+PTES0650;
+END;
+/

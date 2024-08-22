@@ -1,0 +1,1 @@
+sqlldr / DATA=/sfctrl/tmp/itau/txt/Itau_COTO_CD_Master_PB.txt,CONTROL=/sfctrl/tmp/itau/cargaItauMasterPB.ctl,LOG=/sfctrl/tmp/itau/log/itauMasterPB.log,ROWS=10000,ERRORS=9999999,BAD=bad.log,DISCARD=discard.log

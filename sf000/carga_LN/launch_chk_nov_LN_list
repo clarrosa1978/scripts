@@ -1,0 +1,42 @@
+#! /bin/ksh
+
+############################################################################
+#                                   Fernandez Garay Jorge - 08/2004
+# launch_chk_nov_LN_list 
+#
+# Lanzado por el Job CHKNOVLN, de la cadena CARGA_NOV_LN de Control-M,
+# que corre en sucursales para realizar la Carga de Novedades de Lista Negra.
+# Ejecuta el programa chk_nov_LN_list, que verifica si quedan Archivos de
+# Novedades de Lista Negra Pendientes de Procesamiento.
+#
+############################################################################
+
+set -x
+
+if [ "$#" -ne 0 ]
+then
+         echo "\n\n`date +"%d/%m/%Y"` $0: Error en la cantidad de parametros recibida"
+
+         exit 32
+fi
+
+EXIT_STAT=''
+export EXIT_STAT
+
+if [ -f /tecnol/carga_LN/chk_nov_LN_list -a -x /tecnol/carga_LN/chk_nov_LN_list ]
+then
+         /tecnol/carga_LN/chk_nov_LN_list
+         EXIT_STAT="$?"
+
+         if [ "$EXIT_STAT" -ne 0 ]
+         then
+                  echo "\n\n$0: LOs errores de cancelacion del prog. /tecnol/carga_LN/actualizo.sh, hay que"
+                  echo "buscarlos en el sysout del job CHKNOVLN"
+         fi
+
+else
+         echo "\n\n`date +"%d/%m/%Y"` $0: Este programa no existe o no posee permiso de ejecucion"
+         exit 31
+fi
+
+exit "$EXIT_STAT"

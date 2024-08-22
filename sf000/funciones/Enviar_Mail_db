@@ -1,0 +1,32 @@
+###############################################################################
+# Nombre.............: Enviar_Mail                                            #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Envia un mail a un alias o una direccion STMP.         #
+# Nombre.............: Enviar_Mail                                            #
+# Descripcion........: Recibe como parametro el destiantario, el asunto y el  #
+#                      mensaje del mail.                                      #
+# Valores de Retorno.: 0 - La funcion termino ok.                             #
+#                      1 - La funcion fallo.                                  #
+# Modificacion.......: 2005/07/15                                             #
+###############################################################################
+function Enviar_Mail_db
+{
+set -x
+        typeset DESTINATARIO1="${1}"
+        typeset DESTINATARIO2="${2}"
+        typeset DESTINATARIO3="${3}"
+        typeset DESTINATARIO4="${4}"
+        typeset ASUNTO="${5}"
+        typeset MENSAJE="${6}"
+        typeset HORA=`date '+%H:%M:%S'`
+        typeset EXIT="1"
+        autoload Check_Par
+        Check_Par 6 "$@"
+        if [ $? = 0 ] 
+        then
+                cat ${MENSAJE} | mhmail "${DESTINATARIO1}" "${DESTINATARIO2}" "${DESTINATARIO3}" "${DESTINATARIO4}" -subject "${ASUNTO} - ${HORA}"
+                [ $? = 0 ] && EXIT="0"
+        fi
+        return ${EXIT}
+}
+

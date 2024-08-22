@@ -1,0 +1,61 @@
+#################################################################################################
+#  Seccion:             INCIDENTES (logs para la operacion)                                     #
+#  Actualizado por:     Cristian Larrosa                Fecha:          20/07/2006              #
+#  Tabla en ECS:        PRECIOS-GDM-ZE000               Aplicacion:     PRECIOS-GDM-ZE000       #
+#  Nombre del Job:      DATEHORA                        Grupo:          GENERACION              #
+#################################################################################################
+#  Descripcion del Job: Obtiene el parametro DATOHORA.                   .                      #
+#################################################################################################
+#  Exit  1:                                                                                     #
+#       Error: Error en la contidad de parametros pasados al script.                            #
+#                                                                                               #
+#       Accion: Chequear en Control-M los parametros que le esta pasando al script.             #
+#                                                                                               #
+#       Recuperacion: Modificar los parametros en Control-M y rearrancar.                       #
+#                                                                                               #
+#  Exit  3:                                                                                     #
+#       Error: Error al tratar de grabar en el archivo /tecnol/precios/log/obtdatehora.FECHA.log# 
+t                                                                                               #
+#       Accion: Chequear si se lleno el filesystem /tecnol.                                     #
+#                                                                                               #
+#       Recuperacion: Liberar espacio en el filesystem y dar RERUN al job.                      #
+#                                                                                               #
+#  Exit  5:                                                                                     #
+#       Error: Fallo la ejecucion del SQL.                                                      #
+#                                                                                               #
+#       Accion: Ver el sysout para detectar el error, llamar a la guardia de Administracion AIX #
+#                                                                                               #
+#       Recuperacion: Lo que indique la persona que este de guardia.                            #
+#                                                                                               #
+#  Exit  7:                                                                                     #
+#       Error: Errores de Oracle durante la ejecucion.                                          #
+#                                                                                               #
+#       Accion: Llamar a la guardia DBA, segun corresponda con el error del sysout.             #
+#                                                                                               #
+#       Recuperacion: Lo que indique la persona que este de guardia.                            #
+#                                                                                               #
+#  Exit  9:                                                                                     #
+#       Error: No se genero el archivo de spool /tecnol/precios/log/obtdatehora.FECHA.lst.      #
+#                                                                                               #
+#       Accion: Ver el sysout del job para ver porque fallo y llamar a la guardia de            #
+#               Administracion AIX.                                                             #
+#                                                                                               #
+#       Recuperacion: Lo que indique la guardia de Administracion AIX.                          #
+#                                                                                               #
+#  Exit  77:                                                                                    #
+#       Error: Sin permisos de lectura sobre el archivo /tecnol/precios/sql/obtdatehora.sql.    #
+#                                                                                               #
+#       Accion: Chequear si el usuario de ejecucion tiene permisos de lectura sobre el sql.     #
+#                                                                                               #
+#       Recuperacion: Dar permiso de lectura al archivo sql para ese usuario y dar RERUN al job.#
+#                                                                                               #
+#  Exit  88:                                                                                    #
+#       Error: Sin permisos de ejecucion para el comando sqlplus.                               #
+#                                                                                               #
+#       Accion: Chequear si el usuario con que se ejecuta el script tiene permisos para         #
+#               ejecutar el comando sqlplus.                                                    #
+#                                                                                               #
+#       Recuperacion: Si el usuario no tiene permisos para ejecutar ese comando, llamar a la    #
+#                     guardia de Administracion AIX.                                            #
+#                                                                                               #
+#################################################################################################

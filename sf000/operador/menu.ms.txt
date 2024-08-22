@@ -1,0 +1,8 @@
+MENU MULTISTORE
+Chequear jobs de venta (Debe haber 122);queryms.sh;
+Arrancar jobs de venta;startms.sh;
+Parar jobs de venta;stopms.sh;
+Reiniciar ts041507;proceso.sh;/sfctrl/sfgv/bin/ts041507
+Reiniciar ts041508;proceso.sh;/sfctrl/sfgv/bin/ts041508
+Reiniciar ts030508;proceso.sh;/sfctrl/sfgv/bin/ts030508
+Reiniciar ongdmcen;proceso.sh;/sfctrl/sfgv/bin/ongdmcen

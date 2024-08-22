@@ -1,0 +1,6 @@
+MENU PRINCIPAL
+Administracion de SF000 (CotoBeneficio, MultiStore ...);menu.operador;menu.sf.txt
+Administracion de Procesos (dsmstat ...);menu.operador;menu.proc.txt
+Administracion de Servicios (samba ...) ;menu.operador;menu.serv.txt
+Administracion de Aplicaciones (ControlM ...);menu.operador;menu.apli.txt
+Administracion de Base de Datos (CTM7..);menu.operador;menu.db.txt

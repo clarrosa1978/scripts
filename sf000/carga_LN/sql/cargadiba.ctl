@@ -1,0 +1,12 @@
+OPTIONS
+(
+        ROWS=10000,
+        ERRORS=1000000,
+        DIRECT=NO
+)
+LOAD DATA 
+APPEND INTO TABLE u601.T6197500
+(
+        CTARJETA position(1:10) ,
+	CSITCRED position(11:11)
+)

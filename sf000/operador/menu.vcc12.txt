@@ -1,0 +1,13 @@
+Menu VCC12
+Subir SF_ANSES;sfvcc12_online.sh;SF_ANSES
+Bajar SF_ANSES;sfvcc12_offline.sh;SF_ANSES
+Subir SF_DNI;sfvcc12_online.sh;SF_DNI
+Bajar SF_DNI;sfvcc12_offline.sh;SF_DNI
+Subir SF_MPAGO;sfvcc12_online.sh;SF_MPAGO
+Bajar SF_MPAGO;sfvcc12_offline.sh;SF_MPAGO
+Subir SF_CLNACION;sfvcc12_online.sh;SF_CLNACION
+Bajar SF_CLNACION;sfvcc12_offline.sh;SF_CLNACION
+Subir SF_RAPPI;sfvcc12_online.sh;SF_RAPPI
+Bajar SF_RAPPI;sfvcc12_offline.sh;SF_RAPPI
+Subir TODOS;vcc12_online.sh
+Bajar TODOS;vcc12_offline.sh

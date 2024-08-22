@@ -1,0 +1,7 @@
+MENU BASE DE DATOS
+Levantar Listener CTM7SF____;lsnr.sh;UPSF
+Bajar Listener CTM7SF_______;lsnr.sh;DOWNSF
+Chequear Listener CTM7SF____;chklsnr.sh;LISTENER
+Levantar base CTM7SF________;ejecutasql.sh;updbctrlm
+Bajar base CTM7SF___________;ejecutasql.sh;downdbctrlm
+Chequear Base de CTM7SF7____;chkdb.sh;CTM7

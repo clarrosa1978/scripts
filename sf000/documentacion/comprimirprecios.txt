@@ -1,0 +1,31 @@
+#################################################################################################
+#  Seccion:             INCIDENTES (logs para la operacion)                                     #
+#  Actualizado por:     Cristian Larrosa                Fecha:          20/07/2006              #
+#  Tabla en ECS:        PRECIOS-GDM-ZE000               Aplicacion:     PRECIOS-GDM-ZE000       #
+#  Nombre del Job:      COMPPREC                        Grupo:          GENERACION              #
+#################################################################################################
+#  Descripcion del Job: Comprime los archivos de precios a ser transferidos.                    #
+#################################################################################################
+#  Exit  1:                                                                                     #
+#       Error: Error en la contidad de parametros pasados al script.                            #
+#                                                                                               #
+#       Accion: Chequear en Control-M los parametros que le esta pasando al script.             #
+#                                                                                               #
+#       Recuperacion: Modificar los parametros en Control-M y rearrancar.                       #
+#                                                                                               #
+#  Exit  3:                                                                                     #
+#       Error: Error al tratar de grabar en el archivo                                          # 
+#             /tecnol/precios/log/comprimirprecios.FECHA.log                                    # 
+#                                                                                               #
+#       Accion: Chequear si se lleno el filesystem /tecnol.                                     #
+#                                                                                               #
+#       Recuperacion: Liberar espacio en el filesystem y dar RERUN al job.                      #
+#                                                                                               #
+#  Exit  13:                                                                                    #
+#       Error: Error al tratar de comprimir un archivo.                                         #
+#                                                                                               #
+#       Accion: Ver el sysout para detectar el error, llamar a la guardia de Administracion AIX #
+#                                                                                               #
+#       Recuperacion: Lo que indique la persona que este de guardia.                            #
+#                                                                                               #
+#################################################################################################

@@ -1,0 +1,45 @@
+
+#adm01:/home/ibellucci>cat script.sh
+#!/bin/ksh
+#set -x
+#TESTING CON SCRIPT TEST
+#PROC4="NULL"
+#export LAST="NULL"
+#export CTRLPROC4="test.sh"
+#export COUNT="0"
+
+# Se controla si ongdmcen esta tomando el log
+
+#               LAST=`ls -t /sfctrl/tmp/ongdmcen* | head -1`
+#               PROC4=`/usr/sbin/fuser /sfctrl/tmp/${LAST} | awk '{print $1}'`
+#               echo "Status ${CTRLPROC4} ${PROC4}"
+#               if [ "${PROC4}" == "" ]
+#               then
+#                    "Proceso ${CTRLPROC4} no esta escribiendo en el log - REVISAR ULTIMA FECHA"
+#                    exit 0
+#               fi
+
+# Se controla archivos pendientes mayores a la corrida anterior
+
+#               PROC4=`ls /sfctrl/data/descarga/ | wc -l`
+#               echo $PROC4 > /sfctrl/tmp/file.txt
+#               echo "Status ${CTRLPROC4} files: ${PROC4} "
+#               if (( "${PROC4}" == "0"))
+#               then
+#                 echo "NO HAY ARCHIVOS DE PRECIOS PARA ENVIAR A LAS SUCURSALES EN EL SF000"
+#                 exit 0
+#               fi
+
+
+# Segunda parte en otro archivo o sleep
+
+        #       COUNT=`cat /sfctrl/tmp/file.txt`
+#                PROC4=`ls /sfctrl/data/descarga/ | wc -l`
+        #       if (( "${PROC4}" >= "${COUNT}"))
+        #        then
+        #           echo "Proceso ${CTRLPROC4} con archivos pendiente - ENVIARLOS MANUALMENTE"
+        #           echo "pendiente de revisar"
+        #           exit 0
+        #        fi
+        #     fi
+

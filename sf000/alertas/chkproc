@@ -1,0 +1,22 @@
+#########################################################################
+#                           10/1998               Jorge Fernandez Garay
+#	chkproc_light
+#
+#       Version light de chkproc 
+#	Envia a stdout una linea con tres campos: Nombre del Proceso,
+#       estado (UP/DOWN), y cantidad de ocurrencias del proceso.
+#
+#########################################################################
+
+#set -x
+
+export PROCESO="${1}"
+export PROC_COUNT='0'
+export KEY_PROC PROC_COUNT
+export PROC_COUNT=`ps -ef|sed '1d'|awk ' $5 ~ ":" { print $8 } '|xargs -i basename {}|awk -v proc="$PROCESO" ' $1 == proc { print $0 } '|wc -l`
+if [ "$PROC_COUNT" -gt 0 ]
+then
+    echo "${PROCESO} UP ${PROC_COUNT}"
+else
+    echo "${PROCESO} DOWN 0"
+fi

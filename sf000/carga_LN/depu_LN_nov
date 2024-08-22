@@ -1,0 +1,69 @@
+#! /bin/ksh
+
+############################################################################
+#                                      Fernandez Garay Jorge - 08/2004
+# depu_LN_nov
+#
+# Este programa es lanzado por el progarama depu_nov como ultimo Job de la 
+# Aplicacion de CONTROL-M 'CARGA_NOV_LN' en sucursales.
+# El Job se denomina 'DEPU_LN_NOV'
+# Esta cadena ejecuta el update de Novedades De Lista Negra.
+# Se implmenta como un job normal.
+#
+# Si existen mas de 7 archivos historicos, los depura. Tambien depura
+# los logs de ejecucion de mas de 7 dias de creados.
+#
+############################################################################
+
+set -x
+
+HOSTNAME=`uname -n`
+LN_NOV_DIR="/sfctrl/data/carga"
+HISTORY_FILES_LIST=''
+export HOSTNAME LN_NOV_DIR HISTORY_FILES_LIST
+
+# A los archivos de Novedades de Lista Negra Procesados, se les agrega la 
+# extension '.proc', en el 2do job de la cadena, y se mantienen en linea
+# los ultimos 7, comprimidos.
+
+# Obtiene la lista de archivos historicos de Novev de LN que estan en linea,
+# clasificados por fecha, del mas reciente al mas antiguo.
+export HISTORY_FILES_LIST=`ls $LN_NOV_DIR|egrep '^novln\.[0-9]+\.proc\.Z$'|sort -r -k 1.11,1.14 -k 1.9,1.10 -k 1.7,1.8`
+export HISTORY_FILES_COUNT=`echo "$HISTORY_FILES_LIST"|wc -w|awk ' { print $1 } '`
+
+export file_count='0'
+
+if [ "$HISTORY_FILES_COUNT" -gt 7 ]
+then
+        # Se depuran  archivos de Novedades
+        for fname in $HISTORY_FILES_LIST
+        do
+               file_count=`expr "$file_count" + 1`
+               [ "$file_count" -gt 7 ] && rm -f "$LN_NOV_DIR"/"$fname"
+        done
+
+        # Se controla que solo existan 7 archivos historicos o menos, luego de la depuracion
+        HISTORY_FILES_LIST=`ls $LN_NOV_DIR|egrep '^novln\.[0-9]+\.proc\.Z$'|sort -r -k 1.11,1.14 -k 1.9,1.10 -k 1.7,1.8`
+        HISTORY_FILES_COUNT=`echo "$HISTORY_FILES_LIST"|wc -w|awk ' { print $1 } '`
+
+        export DEPU_NOV_FLAG="FALSE"
+
+        if [ "$HISTORY_FILES_COUNT" -le 7 ]
+        then
+                # ALL OK
+                DEPU_NOV_FLAG="TRUE"
+        fi
+
+
+else
+        # Solo existen Archivos procesados de hasta una semana
+        exit 0
+fi
+
+if [ "$DEPU_NOV_FLAG" = "FALSE" ]
+then
+        echo "$0: FALLO AL DEPURAR ARCHIVOS HISTORICOS DE NOVED. DE LISTA NEGRA"
+        exit 4
+else
+        exit 0
+fi

@@ -1,0 +1,51 @@
+set heading off 
+set echo off
+set termout on
+set serveroutput on
+set verify on
+set pagesize 0 
+spool &3
+DECLARE
+   v_cantidad   NUMBER DEFAULT 0;
+BEGIN
+   FOR i IN (SELECT c.idcompag,
+                    (SELECT nomvalor
+                       FROM cdigi.rcparametros@sf000_sf&2
+                      WHERE idnombre = 'SUCURSAL') sucursal, c.idcotipo,
+                    t.desctipo, t.desccorta, c.impocomp, c.idmovsts,
+                    c.feinsert, c.idpedido, c.feccompr, c.comprnro,
+                    c.termintk, c.transatk, p.nrotarje, p.entidadt,
+                    p.idbancoe, p.bancoemi, p.codautor, p.comercio,
+                    p.termipos, p.transpos, p.idtarjol, p.lugarcob,
+                    p.nucuotas, p.formatoc, '0'xprocesa, '0'
+               FROM cdigi.rccomprobantes@sf000_sf&2 c,
+                    cdigi.rccomprobantestipos@sf000_sf&2 t,
+                    cdigi.rccupones@sf000_sf&2 p
+              WHERE c.idcotipo = t.idcotipo
+                AND c.idcompag = p.idcompag(+)
+                AND c.feccompr = TO_CHAR(TO_DATE(&1, 'YYYYMMDD') - 1, 'YYYYMMDD')
+                AND c.idmovsts > 0)
+   LOOP
+      INSERT INTO cdigi.cdigimovs
+           VALUES (i.idcompag, i.sucursal, i.idcotipo, i.desctipo,
+                   i.desccorta, i.impocomp, i.idmovsts, i.feinsert,
+                   i.idpedido, i.feccompr, i.comprnro, i.termintk,
+                   i.transatk, i.nrotarje, i.entidadt, i.idbancoe,
+                   i.bancoemi, i.codautor, i.comercio, i.termipos,
+                   i.transpos, i.idtarjol, i.lugarcob, i.nucuotas,
+                   i.formatoc, '0', 0);
+
+      v_cantidad := v_cantidad + 1;
+
+      IF v_cantidad > 1
+      THEN
+         COMMIT;
+         v_cantidad := 0;
+      END IF;
+   END LOOP;
+
+   COMMIT;
+END;
+/
+spool off
+exit

@@ -1,0 +1,23 @@
+###############################################################################
+# Nombre.............: Check_Par                                              #
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Chequea la cantidad de parametros pasados a un script. #
+# Descripcion........: Recibe como parametro la cantidad de parametros a con- #
+#                      trolar y la lista de parametros recibos en timpo de    #
+#                      ejecucion.                                             #
+# Valores de Retorno.: 0 - La funcion termino ok.                             #
+#                      1 - La funcion fallo.                                  #
+# Modificacion.......: 13/04/2005                                             #
+###############################################################################
+function Check_Par
+{
+        typeset EXIT="1"
+        typeset CANTPAR=$1
+        typeset PARM=$#
+        let "PARM=${PARM}-1"
+        if [ ${PARM} -eq ${CANTPAR} ]
+        then
+                EXIT="0"
+        fi
+        return ${EXIT}
+}

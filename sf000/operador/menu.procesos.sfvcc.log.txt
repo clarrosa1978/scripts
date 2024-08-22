@@ -1,0 +1,8 @@
+MENU LOGS SFVCC
+Ver log proceso SF_VCC (Recibe mensajes de las sucursales).;ver_log_sfvcc.sh;SF_VCC
+Ver log proceso SF_TOS (Administra cola de timeouts).;ver_log_sfvcc.sh;SF_TOS
+Ver log proceso SF_DCC (Despacha transacciones al proceso correspondiente).;ver_log_sfvcc.sh;SF_DCC
+Ver log proceso SF_CLIENTE (Proceso transacciones ClubNacion,Clarin365).;ver_log_sfvcc.sh;SF_CLIENTE
+Ver log proceso SF_PUNTOS (Proceso transacciones Comunidad Coto Puntos).;ver_log_sfvcc.sh;SF_PUNTOS
+Ver log proceso SF_PIM (Proceso transacciones PIM).;ver_log_sfvcc.sh;SF_PIM
+Ver log proceso SF_DNI (Proceso cuentas bapro).;ver_log_sfvcc.sh;SF_DNI

@@ -1,0 +1,8 @@
+spool &1
+
+BEGIN 
+  ZONA_PROD.PR_CONTABILIDAD_ZE_I;
+  COMMIT; 
+
+END; 
+spool off

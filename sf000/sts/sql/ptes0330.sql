@@ -1,0 +1,11 @@
+SET SERVEROUTPUT ON
+SET VERIFY OFF
+SET TERMOUT ON
+SET FEED OFF
+
+spool &1
+
+exec ptes0330;
+
+spool off
+quit

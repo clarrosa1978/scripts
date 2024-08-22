@@ -1,0 +1,52 @@
+#! /bin/zsh
+
+############################################################################
+#                                   Fernandez Garay Jorge - 08/2004
+# chk_LN_nov
+#
+# Lanzado por el Job CHK_LN_NOV, de la cadena CARGA_NOV_LN de Control-M,
+# que corre en sucursales para realizar la Carga de Novedades de Lista Negra.
+# Ejecuta el programa detect_LN_nov, que detecta si ha llegado el archivo de
+# Novedades de Lista Negra, transmitido desde el SP9.
+#
+############################################################################
+
+set -x
+
+# Recibe como parametro en $1 la fecha de Planificacion del JOB (ORDER DATE)
+# en formato ddmmAAAA, para pasar al programa 'detect_LN_nov'
+
+if [ "$#" -ne 1 ]
+then
+         echo "\n\n`date +"%d/%m/%Y"` $0: Error en la cantidad de parametros recibida- Debe recibir la fecha de Planificacion"
+         exit 32
+fi
+
+export PLANIF_DATE="$1"
+export CHK_DATE=`expr "$PLANIF_DATE" : '^[0-9][0-9]*$'`
+if [ "$CHK_DATE" -ne 8 ]
+then 
+         echo "\n\n`date +"%d/%m/%Y"` $0: Parametro recibido $PLANIF_DATE: INVALIDO - Debe ser una Fecha [ddmmAAAA]"
+         exit 33
+fi
+
+EXIT_STAT=''
+export EXIT_STAT
+
+if [ -f /tecnol/carga_LN/detect_LN_nov -a -x /tecnol/carga_LN/detect_LN_nov ]
+then
+         /tecnol/carga_LN/detect_LN_nov "$PLANIF_DATE"
+         EXIT_STAT="$?"
+
+         if [ "$EXIT_STAT" -ne 0 ]
+         then
+                  echo "\n\n$0: LOs errores de cancelacion del prog. /tecnol/carga_LN/detect_LN_nov, hay que"
+                  echo "buscarlos en el sysout del job CHK_LN_NOV"
+         fi
+
+else
+         echo "\n\n`date +"%d/%m/%Y"` $0: Este programa no existe o no posee permiso de ejecucion"
+         exit 31
+fi
+
+exit "$EXIT_STAT"

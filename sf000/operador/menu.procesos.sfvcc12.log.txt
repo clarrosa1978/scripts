@@ -1,0 +1,2 @@
+MENU LOGS SFVCC12
+Ver log proceso SF_MPAGO (Proceso MercadoPago).;ver_log_sfvcc12.sh;SF_MPAGO

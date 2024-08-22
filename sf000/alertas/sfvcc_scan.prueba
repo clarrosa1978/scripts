@@ -1,0 +1,197 @@
+#!/bin/ksh
+###############################################################################
+# Autor..............: Cristian Larrosa                                       #
+# Objetivo...........: Controlar SF_TOS,SF_CLIENTE,SF_DCC,SF_VCC,SF_CLIENDO.  #
+# Nombre del programa: sfvcc_scan                                             #
+# Solicitado por.....: Administracion Unix                                    #
+# Descripcion........: Controla los procesos SF_TOS,SF_CLIENTE,SF_DCC,SF_VCC  #
+# 	               SF_PUNTOS, SF_CLIENDO                                  #
+# Este Procedimiento recibe 1 parametro: la regla de la alerta,que determina  #
+# que procesos se controla, y en que ventana horaria.                         #
+# En caso de encontrar los procesos caidos, los levanta                       #
+# Creacion...........: 25/09/2007                                             #
+# Modificacion.......: 12/12/2018                                             #
+###############################################################################
+
+set -x
+###############################################################################
+###                            Variables                                    ###
+###############################################################################
+export USUARIO="/"
+export PATHAPL="/tecnol/alertas"
+export PATHSQL="/tecnol/alertas/sql"
+export PATHPROC="/sfvcc/bin"
+export PATHLOG="${PATHAPL}/log"
+export LOGALARM="${PATHLOG}/sfvcc_scan.log"
+export CHKBD="${PATHSQL}/chkdb.sql"
+export DIA="`date +%d`"
+export PATHLOGAPP="/sfvcc/tmp"
+export PATHLOGAPP2="/sfcliendo/tmp"
+
+###############################################################################
+###                            Funciones                                    ###
+###############################################################################
+function EnviarMail
+{
+	set -x
+	typeset PROC=${1}
+	typeset BODY=${2}
+	DESTINATARIO="operaciones@redcoto.com.ar"
+	echo ${BODY} | mail -s "Server ${HOSTNAME} - Control de proceso ${PROC}" ${DESTINATARIO}
+}
+
+. /tecnol/funciones/Borrar
+. /tecnol/funciones/Check_Par
+
+#autoload Borrar
+
+###############################################################################
+###                            Principal                                    ###
+###############################################################################
+# Verifica conexion a la base de datos
+ACCESO=`su - sfvcc "-c sqlplus ${USUARIO} @${CHKBD}" | awk ' /Connected/ { print $1 } '`
+if [ "${ACCESO}" != "Connected" ]
+then
+      echo "\n--------------------------------------\n`date` - Ejecutando sfvcc_scan..." >> "${LOGALARM}"
+      echo "Base de Datos Oracle: INACCESIBLE." >> "${LOGALARM}"
+      exit 2
+fi
+
+
+# Verifico si hubo existen los counts, sino los genero
+Borrar ${FLAG}
+FLAG="${PATHLOGAPP}/flag.count"
+touch ${FLAG}
+sleep 5
+
+for PR in SF_TOS SF_CLIENTE SF_DCC SF_VCC SF_PUNTOS SF_CLIENDO SF_DNI SF_MPAGO
+do
+		PROC=`${PATHAPL}/chkproc "${PR}"|awk ' { print $2 } '`
+		echo "\n--------------------------------------\n`date` - Chequeando ${PR}..." >> "${LOGALARM}"
+		echo "Status ${PR} ${PROC}" >> "${LOGALARM}"
+		if [ "${PROC}" = "DOWN" ]
+		then
+			EnviarMail ${PR} "Proceso ${PR} DOWN - LEVANTARLO MANUALMENTE"
+		else
+			FECHA=`date +"%d%m%Y"`
+			case $PR in
+			SF_TOS ) 
+					export COUNTLOGPREV="${PATHLOGAPP}/tos.count"
+					export LOGAPP="${PATHLOGAPP}/tos.${DIA}.log"
+					export SERVICIOS="Cola de timeouts para mensajes"
+					;;
+
+			SF_CLIENTE ) 
+                                        export COUNTLOGPREV="${PATHLOGAPP}/sfcliente.count"
+                                        export LOGAPP="${PATHLOGAPP}/sfcliente.${DIA}.log"
+					export SERVICIOS="ClubNacion, Clarin365"
+                                        ;;
+                        SF_CLIENDO )
+                                        export COUNTLOGPREV="${PATHLOGAPP2}/sfcliendo.count"
+                                        export LOGAPP="${PATHLOGAPP2}/sfcliendo.${DIA}.log"
+                                        export SERVICIOS="CotoBeneficio"
+                                        ;;
+			
+			SF_DCC )
+                                        export COUNTLOGPREV="${PATHLOGAPP}/dcc.count"
+                                        export LOGAPP="${PATHLOGAPP}/dcc.${DIA}.log"
+					export SERVICIOS="Dispatcher"
+                                        ;;
+
+			SF_VCC ) 
+                                        export COUNTLOGPREV="${PATHLOGAPP}/vcc.count"
+                                        export LOGAPP="${PATHLOGAPP}/vcc.${DIA}.log"
+					export SERVICIOS="ClubNacion, Clarin365, Coto Beneficio, Join, Envios a Domicilio, etc"
+                                        ;;
+			SF_PUNTOS )	
+					export COUNTLOGPREV="${PATHLOGAPP}/sfpuntos.count"
+					export LOGAPP="${PATHLOGAPP}/sfpuntos.${DIA}.log"
+					export SERVICIOS="Comunidad Coto Puntos"
+					;;
+                        SF_PIM )    
+                                        export COUNTLOGPREV="${PATHLOGAPP}/sfpim.count"
+                                        export LOGAPP="${PATHLOGAPP}/sfpim.${DIA}.log"
+                                        export SERVICIOS="PIM"
+                                        ;;
+                        SF_DNI )
+                                        export COUNTLOGPREV="${PATHLOGAPP}/sfdni.count"
+                                        export LOGAPP="${PATHLOGAPP}/sfdni.${DIA}.log"
+                                        export SERVICIOS="Cuenta DNI de BAPRO."
+                                        ;;
+                        SF_MPAGO )
+                                        export COUNTLOGPREV="${PATHLOGAPP}/sfmpago.count"
+                                        export LOGAPP="${PATHLOGAPP}/sfmpago.${DIA}.log"
+                                        export SERVICIOS="Mercado Pago."
+                                        ;;
+
+			
+			esac
+			if [ ! -s ${COUNTLOGPREV} ] && [ ${COUNTLOGPREV} -ot ${FLAG} ]
+                        then
+                        	COUNTLOGACT="`ls -l ${LOGAPP} |awk ' { print $5 } '>${COUNTLOGPREV}`"
+                        	exit 0
+			fi
+			OFFSETPREV=`cat "${COUNTLOGPREV}"|awk ' $1 ~ /^[0-9]+$/ { print $1 } '`
+			OFFSETCOUNT="`ls -l ${LOGAPP} | awk ' { print $5 } '`"
+			OFFSETDIFF=`expr ${OFFSETCOUNT} - ${OFFSETPREV}`
+			echo "BYTES_COUNT ${PR}: $OFFSETCOUNT" >> "${LOGALARM}"
+			if [ "${OFFSETDIFF}" -gt 0 ]
+			then
+				echo "${OFFSETCOUNT}" > "${COUNTLOGPREV}"
+				if [ ${PR} = "SF_CLIENTE" ]
+				then
+					PROCESA="`tail -20 ${LOGAPP} | grep 'DCC<-----CLIE'`"
+					if [ ! "${PROCESA}" ]
+					then 
+						PROCESA2="`tail -20 ${LOGAPP} | grep 'DCC----->CLIE'`"
+                                                if [ ! "${PROCESA2}" ]
+                                                then
+                                                        echo "NO PROCESA - SE AVISA VIA MAIL." >> "${LOGALARM}"
+                                                        EnviarMail ${PR} "Proceso ${PR} NO RESPONDE MENSAJES A SUCURSALES - Servicios afectados ${SERVICIOS}"
+#                                                        return
+                                                fi
+					fi
+				fi
+			
+				if [ ${PR} = "SF_PUNTOS" ]
+                                then
+                                        PROCESA="`tail -20 ${LOGAPP} | grep 'SATURACION de THREADs'`"
+                                        if [ "${PROCESA}" ]
+                                        then
+						echo "NO PROCESA - SE AVISA VIA MAIL." >> "${LOGALARM}"
+						EnviarMail ${PR} "Proceso ${PR} NO RESPONDE POR SATURACION de THREADs - Servicios afectados ${SERVICIOS}"
+						return
+					fi
+				fi
+				if [ ${PR} = "SF_CLIENDO" ]
+                                then
+                                        PROCESA="`tail -20 ${LOGAPP} | grep 'DCC<-----CLIE'`"
+                                        if [ ! "${PROCESA}" ]
+                                        then
+                                                PROCESA2="`tail -20 ${LOGAPP} | grep 'DCC----->CLIE'`"
+                                                if [ ! "${PROCESA2}" ]
+                                                then
+                                                        echo "NO PROCESA - SE AVISA VIA MAIL." >> "${LOGALARM}"
+                                                        EnviarMail ${PR} "Proceso ${PR} NO RESPONDE MENSAJES A SUCURSALES - Servicios afectados ${SERVICIOS}"
+						else
+						        ERROR_LINES="`tail -20 ${LOGAPP} | grep -e 'SBD Error haciendo SELECT sobre tabla'`"
+							export ERROR_LINES
+							if [ "$ERROR_LINES" != '' ]
+							then
+								EnviarMail ${PR} "Errores encontrados en el log. Reiniciar el servicio SFCLIENDO.\n\n
+  								""${ERROR_LINES}"""
+								return	
+							fi
+						fi
+                                                
+                                        fi
+                                fi
+			fi
+			if [ "${OFFSETDIFF}" -eq 0 ]
+			then
+				echo "NO PROCESA - SE AVISA VIA MAIL." >> "${LOGALARM}"
+				EnviarMail ${PR} "Proceso ${PR} NO PROCESA - Servicios afectados ${SERVICIOS}"
+			fi
+			echo "${OFFSETCOUNT}" > "${COUNTLOGPREV}"
+		fi
+done

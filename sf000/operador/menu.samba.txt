@@ -1,0 +1,4 @@
+MENU SERVICIOS SAMBA 
+Levantar Servicios SAMBA;admserv_samba.sh;UPSERV
+Bajar Servicios SAMBA;admserv_samba.sh;DOWNSERV
+Controlar Servicios SAMBA;admserv_samba.sh;VERSERV

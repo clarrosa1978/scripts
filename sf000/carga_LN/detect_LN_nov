@@ -1,0 +1,59 @@
+#! /bin/ksh
+
+############################################################################
+#                                      Fernandez Garay Jorge - 08/2004
+# detect_LN_nov
+#
+# Este programa es lanzado por el progarama chk_nov como 1er Job de la 
+# Aplicacion de CONTROL-M 'CARGA_NOV_LN' en sucursales.
+# El Job se denomina 'CHK_LN_NOV'.
+# Esta cadena ejecuta el update de Novedades De Lista Negra.
+# Se implmenta como un job ciclico, con condicion horaria de arranque a
+# las 03:00 hs, reejecutandose cada 1 h, hasta que detecte la existencia
+# del archivo de Novedades de Lista Negra de Tarjetas de Credito, nombra-
+# do como /sfctrl/data/carga/novln.ddmmaaaa y distribuido desde el SP9.
+#
+# Si a las 06:00 hs el archivo no ha llegado, envia a Operaciones un mail
+# de alerta.
+#
+############################################################################
+
+set -x
+
+# Procesa el argumento recibido desde el JOB (Ordder Date)
+
+export ORDER_DATE="$1"
+export PLANI_DATE="$ORDER_DATE"
+
+HOSTNAME=`uname -n`
+LN_NOV_DIR="/sfctrl/data/carga"
+export HOSTNAME LN_NOV_DIR
+
+# Inspecciona el Dir. buscando el archivo de Noved. de Lista Negra generado y
+# transmitido en la Fecha de Planificacion del JOB
+export NOVED_LN_FILE
+NOVED_LN_FILE=`ls "$LN_NOV_DIR"|eval egrep '^novln\."$PLANI_DATE"$'`
+
+export HOUR_TIME_NOW=""
+
+if [ "$NOVED_LN_FILE" = '' ]
+then
+        # No ha sido transmitido aun el Arch de Novedades desde el SP9
+        HOUR_TIME_NOW=`date +"%H:%M"|awk -F ":" ' { print $1 } '`
+
+        if [ "$HOUR_TIME_NOW" -ge 23 ]
+        then
+               # Pasadas las 7 de la mañana, se notifica via mail del incidente
+               echo "El Archivo de Novedades de Lista Negra NO HA SIDO TRANSMITIDO AUN desde el SP9"\
+               |/usr/bin/mail -s "Server $HOSTNAME - STOREFOLW: Control de Carga de Lista Negra" operacionesaix@coto.com.ar
+
+               exit 11
+        else
+               # La falta de recepcion del archivo, no alcanzo aun nivel critico. Se reintenta en 1 h.
+               exit 10
+        fi
+
+else
+        # El Archivo de Noved. de Lista Negra ya esta en linea, para procesar
+        exit 0
+fi
