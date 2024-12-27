@@ -6,7 +6,7 @@ def check_password(server_ip, server_port, username, password):
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         # Attempt to connect to the remote server
-        client.connect(server_ip, port=server_port, username=username, password=password)
+        client.connect(server_ip, port=22, username=username, password=password)
         print("Password is correct!")
         client.close()
     except paramiko.AuthenticationException:
@@ -15,9 +15,9 @@ def check_password(server_ip, server_port, username, password):
         print(f"An error occurred: {e}")
 
 # Example usage
-server_ip = "192.168.1.10"  # Replace with your server's IP address
+server_ip = "192.168.1.1"  # Replace with your server's IP address
 server_port = 22            # Replace with your server's SSH port if different
-username = "user"           # Replace with the username you want to check
-password = "password"       # Replace with the password you want to check
+username = "root"           # Replace with the username you want to check
+password = "123456"       # Replace with the password you want to check
 
 check_password(server_ip, server_port, username, password)
